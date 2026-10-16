@@ -29,6 +29,8 @@ changes the full-time repository or the site.
   plus git).
 - What Full Time is doing right now: `state/FULLTIME-NOW.md`.
 - Krish's changes: `CHANGES.md`.
+- Where the last interactive session stopped, and the setup steps for the
+  next one: the newest `HANDOVER-*.md`.
 
 ## How it stays across full-time
 
@@ -103,6 +105,7 @@ describes, with `fulltime` added to the ventures.
 
 ```
 AGENTS.md         the brief every run reads first
+HANDOVER-*.md     where the last interactive session stopped (newest first)
 PLAYBOOK.md       the operating system, applied to Full Time
 rulings.json      the seven decisions the playbook needs, and what each opens
 BROWSER.md        read-only rules for the signed-in browser

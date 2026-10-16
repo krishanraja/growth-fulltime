@@ -5,6 +5,10 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-16: a handover for the setup session (`HANDOVER-2026-10-16.md`),
+  which `AGENTS.md` now tells every run to read after itself. Krish: "just
+  save all of this in to the repo so the next codex session can go from here
+  and set up the autonomous engine".
 - 2026-10-16: the engine is built from the document in `knowledge/`. Krish
   attached "Full Time: The 1,000 Free Users in 30 Days Playbook" with the
   instruction below. Its seven decisions (section 9) are in `rulings.json`,

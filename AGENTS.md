@@ -8,7 +8,9 @@ repository, `krishanraja/full-time`, and the live site, through
 `python3 growth.py sync`, and you never change either.
 
 Read, in this order, before any job:
-1. this file, to the end;
+1. this file, to the end, then the newest `HANDOVER-*.md` at the repository
+   root, if one exists: where the last interactive session stopped and what
+   it left for you (the sync's reading beats it wherever they differ);
 2. `local/state/FULLTIME-NOW.md`, written by the sync you run first (rule 2);
 3. `PLAYBOOK.md`: the operating system, applied to Full Time;
 4. `BROWSER.md`: what you may and may never do in Krish's signed-in browser;
