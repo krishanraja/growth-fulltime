@@ -1,0 +1,51 @@
+# Keeps state/FULLTIME-NOW.md current with krishanraja/full-time and the live
+# rail at fulltime.fm, so anyone opening this repository (Krish, Codex,
+# Cowork) sees what Full Time is doing and whether today is a push day,
+# without running anything. It reads full-time and the site, and commits
+# state/ only when the full-time commit, the canon, the rules, the rulings,
+# the rail, the feed or the open pull requests changed. It never touches
+# full-time.
+#
+# If Full Time's rules changed, the run still commits the STOP notice, then
+# fails, so GitHub's failed-run email reaches the repository owner.
+name: sync with full-time
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Read full-time and the rail
+        id: sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          python3 growth.py sync --publish --quiet
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+      - name: Commit the reading if it changed
+        run: |
+          if [ -n "$(git status --porcelain state/)" ]; then
+            git config user.name "growth-fulltime sync"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add state/
+            git commit -m "sync: full-time $(python3 -c "import json; print(json.load(open('state/fulltime.json'))['sha'][:10])")"
+            git push
+          else
+            echo "no change"
+          fi
+      - name: Fail if Full Time's rules changed
+        if: steps.sync.outputs.code != '0'
+        run: |
+          echo "Full Time's rules changed, or the sync failed. Read state/FULLTIME-NOW.md."
+          exit 1

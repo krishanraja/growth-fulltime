@@ -1,0 +1,187 @@
+{
+ "repo": "krishanraja/full-time",
+ "sha": "319d324920b7a4b7839e203b48be8378f80ef934",
+ "synced_at": "2026-10-16T15:50:37+00:00",
+ "previous_sha": null,
+ "canon_from_index": true,
+ "canon": {
+  "docs/22-vision-and-beta.md": "8b7290f6c0a3d646",
+  "docs/12-roadmap.md": "f70e7df818dfe63a",
+  "docs/00-product.md": "7948356c0178f0dd",
+  "docs/21-go-to-market-agent.md": "6f0328fbfd58bf1a",
+  "docs/07-marketing.md": "e5e183e7188600fe",
+  "docs/01-brand.md": "d1f3f6a548defbc4",
+  "docs/product-state.json": "21eccb64cae77d44",
+  "NOW.md": "f5900eeadabca501",
+  "docs/19-release-state.md": "34041a668b216d8b",
+  "docs/09-growth.md": "69fbad02fd6d2f24",
+  "docs/11-legal.md": "3b05aac034b7a302",
+  "AGENTS.md": "522b2411a95f0d28"
+ },
+ "rules": {
+  "docs/01-brand.md ## Voice": "b918bf0fa1f8c81f",
+  "docs/01-brand.md ## Review checklist": "ba12511d5958b8b4",
+  "docs/07-marketing.md ## Copy bank": "188f71fba7053425",
+  "docs/07-marketing.md ## Current promise boundaries": "65189ede4031b54e",
+  "docs/07-marketing.md ## Release gate": "a031d5892eb1c5c1",
+  "docs/21-go-to-market-agent.md ## Autonomy boundary": "caceb8bda193b0e3",
+  "docs/21-go-to-market-agent.md ## Final gate": "2a29c238153db173",
+  "docs/22-vision-and-beta.md ## The pilot beta": "dca94cccd872cc16",
+  "docs/22-vision-and-beta.md ## The December release bar": "4c4f0672a14407bd",
+  "docs/product-state.json commercialState": "93b4389fcdd995a9",
+  "docs/product-state.json claims": "7cedc8282c3b45eb"
+ },
+ "rules_ok": true,
+ "changed_since_last_sync": [],
+ "canon_added": [],
+ "canon_removed": [],
+ "commits": [
+  {
+   "sha": "319d324920",
+   "date": "2026-10-16T15:13:18Z",
+   "subject": "Merge pull request #80 from krishanraja/claude/eager-fermi-1nbzji"
+  },
+  {
+   "sha": "b22f0d4c29",
+   "date": "2026-10-16T15:11:12Z",
+   "subject": "Record the December bar's numbers as confirmed"
+  },
+  {
+   "sha": "035ca3dc10",
+   "date": "2026-10-16T15:06:37Z",
+   "subject": "Give the docs a vision, a pilot beta and a December bar"
+  },
+  {
+   "sha": "c509e62ed2",
+   "date": "2026-10-16T07:47:27Z",
+   "subject": "Merge pull request #78 from krishanraja/harness/canon-sync"
+  },
+  {
+   "sha": "04e164e769",
+   "date": "2026-10-15T23:15:47Z",
+   "subject": "docs(canon): sync the canon block to v2026.10.15.2"
+  },
+  {
+   "sha": "b47e89ebd1",
+   "date": "2026-10-15T23:07:10Z",
+   "subject": "docs(steward): 2026-10-15 stamp head at a453ebd, roll eight bullets older than 30 days"
+  },
+  {
+   "sha": "a453ebd175",
+   "date": "2026-10-15T14:36:34Z",
+   "subject": "Merge pull request #79 from krishanraja/claude/wizardly-ptolemy-saezyu"
+  },
+  {
+   "sha": "df2c20c706",
+   "date": "2026-10-15T14:35:14Z",
+   "subject": "Bump sharp to 0.35.5 to clear the production audit"
+  },
+  {
+   "sha": "7b71ccbff1",
+   "date": "2026-10-15T11:58:58Z",
+   "subject": "Call the docs steward from krishanraja/ai-harness"
+  }
+ ],
+ "open_pulls": [],
+ "decisions": [
+  "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
+  "2026-09-27 - Premier League only, one match, no scroll",
+  "2026-09-05 - Publish the pundits that passed",
+  "2026-09-04 - Launch by founder override",
+  "2026-08-10 - One documentation hierarchy",
+  "2026-08-08 - Six minds, not six voices"
+ ],
+ "rulings": {
+  "D1": {
+   "status": "pending",
+   "recorded": false,
+   "in_force": false
+  },
+  "D2": {
+   "status": "pending",
+   "recorded": false,
+   "in_force": false
+  },
+  "D3": {
+   "status": "pending",
+   "recorded": false,
+   "in_force": false
+  },
+  "D4": {
+   "status": "pending",
+   "recorded": false,
+   "in_force": false
+  },
+  "D5": {
+   "status": "pending",
+   "recorded": false,
+   "in_force": false
+  },
+  "D6": {
+   "status": "pending",
+   "recorded": false,
+   "in_force": false
+  },
+  "D7": {
+   "status": "pending",
+   "recorded": false,
+   "in_force": false
+  }
+ },
+ "rail": [
+  {
+   "drop": "4e640fad-e3ea-400e-9e1f-e8481ff9a182",
+   "date": "2026-10-11",
+   "home": "Crystal Palace",
+   "away": "Nottingham Forest",
+   "score": [
+    3,
+    1
+   ],
+   "pundits": [
+    "zen"
+   ],
+   "fill": 1
+  },
+  {
+   "drop": "18f075fd-3c2b-47d1-b2ed-c1ebda74acd5",
+   "date": "2026-09-20",
+   "home": "Manchester City",
+   "away": "Sunderland",
+   "score": [
+    5,
+    3
+   ],
+   "pundits": [
+    "romantic"
+   ],
+   "fill": 1
+  },
+  {
+   "drop": "8b7b68ac-9618-49be-b810-da65eeddc21e",
+   "date": "2026-09-19",
+   "home": "Tottenham",
+   "away": "Aston Villa",
+   "score": [
+    2,
+    3
+   ],
+   "pundits": [
+    "gaffer"
+   ],
+   "fill": 1
+  }
+ ],
+ "push": {
+  "open": false,
+  "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
+ },
+ "feed": [
+  {
+   "title": "A comfortable result, an uncomfortable process",
+   "date": "Mon, 12 Oct 2026 04:51:41 GMT",
+   "link": "https://fulltime.fm/?drop=4e640fad-e3ea-400e-9e1f-e8481ff9a182&pundit=zen"
+  }
+ ],
+ "notes": []
+}

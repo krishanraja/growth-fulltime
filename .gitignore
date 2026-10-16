@@ -1,0 +1,7 @@
+# Everything this engine keeps on the machine that runs it: the sync, packs,
+# the creative record and lists that name real people. The repository is
+# public, so none of it is ever committed (AGENTS.md, rule 8).
+/local/
+__pycache__/
+*.pyc
+.DS_Store

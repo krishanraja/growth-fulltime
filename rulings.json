@@ -1,0 +1,75 @@
+{
+ "_about": "The seven decisions the 1,000-user playbook needs (knowledge/full-time-1000-users-playbook.md, section 9). A channel in 'unlocks' stays held until its ruling is in force. A ruling is in force only when it is 'approved' here AND its 'evidence' is a heading in full-time's decision log (docs/12-roadmap.md), because the full-time repository is the source of truth for product doctrine. To record one: Krish rules; a full-time session adds the decision-log entry; an interactive session here sets status 'approved', the date, Krish's words and the heading as evidence, and adds a dated line to CHANGES.md. python3 growth.py --self-test checks the shape.",
+ "rulings": {
+  "D1": {
+   "title": "Invite-led at scale: testers and every shared edition invite others; fan channels open",
+   "recommendation": "Approve once the rail gate opens. Until a match has 4 of 6 AI Pundits, posting to fans spends the first impression on a near-empty rail.",
+   "unlocks": ["tiktok", "youtube", "instagram", "x", "reddit"],
+   "requires": [],
+   "status": "pending",
+   "date": "",
+   "words": "",
+   "evidence": ""
+  },
+  "D2": {
+   "title": "Cover every Premier League match each weekend, not one a day",
+   "recommendation": "Approve after one full rehearsal weekend shows the pipeline fills the rail. Ten matches at today's pass rate is ten thin rails. Cost: at the roughly $6 per six-pundit run full-time's AGENTS.md measures, about $60 a ten-match weekend in model spend, before narration.",
+   "unlocks": [],
+   "requires": [],
+   "status": "pending",
+   "date": "",
+   "words": "",
+   "evidence": ""
+  },
+  "D3": {
+   "title": "Sign-up after the first finished show, and the morning recap for beta users",
+   "recommendation": "Approve. Without it there is no user to count and no reason to come back.",
+   "unlocks": [],
+   "requires": [],
+   "status": "pending",
+   "date": "",
+   "words": "",
+   "evidence": ""
+  },
+  "D4": {
+   "title": "Name Full Time under Krish's own name: LinkedIn, Show HN, Product Hunt, press",
+   "recommendation": "Approve with a written boundary that keeps the anonymised Mindmake proof story (full-time NOW.md, never_publish) apart from named B2C marketing.",
+   "unlocks": ["linkedin", "hn", "producthunt", "press"],
+   "requires": [],
+   "status": "pending",
+   "date": "",
+   "words": "",
+   "evidence": ""
+  },
+  "D5": {
+   "title": "Paid creators (up to £600) and one paid test (up to £300)",
+   "recommendation": "Approve only after D7 and once the rail gate holds open for two weekends. Paid reach onto a thin rail buys churn.",
+   "unlocks": ["creator", "ads"],
+   "requires": ["D7"],
+   "status": "pending",
+   "date": "",
+   "words": "",
+   "evidence": ""
+  },
+  "D6": {
+   "title": "FPL \"Beat the AI Pundits\" league, framed as a game, never as forecast performance",
+   "recommendation": "Approve. It needs no product change and reaches millions of managers.",
+   "unlocks": ["fpl"],
+   "requires": [],
+   "status": "pending",
+   "date": "",
+   "words": "",
+   "evidence": ""
+  },
+  "D7": {
+   "title": "Close the PostHog and Google Analytics consent item",
+   "recommendation": "Approve, with counsel's check as full-time docs/11-legal.md requires. It blocks open marketing and any paid test.",
+   "unlocks": [],
+   "requires": [],
+   "status": "pending",
+   "date": "",
+   "words": "",
+   "evidence": ""
+  }
+ }
+}
