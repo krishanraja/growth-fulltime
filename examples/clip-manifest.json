@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "creative_id": "YT_CLASH_SHORT_C01_H01_V1_20261017",
+  "drop_id": "REPLACE_WITH_A_PUBLISHED_DROP_ID",
+  "caption_alignment_verified": false,
+  "segments": [
+    {
+      "source_record": "local/assets/REPLACE_WITH_A_PUBLISHED_DROP_ID/zen/source.json",
+      "start_seconds": 0,
+      "end_seconds": 8,
+      "quote": "REPLACE_WITH_AN_EXACT_PUBLISHED_TRANSCRIPT_QUOTATION"
+    }
+  ]
+}

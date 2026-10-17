@@ -13,6 +13,11 @@ on:
   schedule:
     - cron: '23 * * * *'
   workflow_dispatch:
+    inputs:
+      reporting_access:
+        description: 'Only check Control Center reporting access (read only)'
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency:
@@ -20,6 +25,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   sync:
+    if: github.event_name != 'workflow_dispatch' || !inputs.reporting_access
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,3 +55,17 @@ jobs:
         run: |
           echo "Full Time's rules changed, or the sync failed. Read state/FULLTIME-NOW.md."
           exit 1
+  reporting-access:
+    if: github.event_name == 'workflow_dispatch' && inputs.reporting_access
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Verify an authenticated read without exposing report content
+        env:
+          GROWTH_ENGINE_TOKEN: ${{ secrets.GROWTH_ENGINE_TOKEN }}
+        run: python3 scripts/check-reporting-access.py

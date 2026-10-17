@@ -5,6 +5,20 @@ That lets a job read what only he can see: PostHog, Google Analytics,
 TikTok Studio, YouTube Studio, Instagram's insights and the product inbox.
 The browser is for **reading only**.
 
+Prefer approved read-only Control Center aggregate records when they already
+carry the needed measure. Keep source dates and observation windows. Use the
+browser for gaps those records cannot answer. No browser does not mean no
+data: report verified backend aggregates and mark only the unread measures
+unavailable.
+
+Krish's 17 October execution limits exclude his personal social accounts
+entirely. Verify Full Time's brand identity before reading a signed-in social
+dashboard. Do not inspect personal profiles, DMs, followers or groups to
+source growth work. If only a personal identity is available, skip the
+account. Public audience research does not authorise use of his login.
+Cold outbound email and personal-account drafts are excluded too; see
+`EXECUTION-PLAN.md`.
+
 ## The line you never cross
 
 In a signed-in browser you may open pages, scroll, search, sort and filter,
@@ -48,7 +62,7 @@ file (AGENTS.md, rule 8).
 | TikTok Studio | Analytics for Full Time's account | Followers, views per post, average watch time, shares |
 | YouTube Studio | Analytics for Full Time's channel | Views, watch time, subscribers, traffic sources |
 | Instagram | Insights for Full Time's account | Reach, shares, saves, profile visits, link taps |
-| Reddit | Krish's own profile, public view | Which posts and comments are live or removed |
+| Reddit | Public threads and rules only | Audience arguments and the community's stated rules; no personal-account history |
 
 For the radar, also read in public: post-match threads in the playing clubs'
 subreddits, football TikTok and YouTube Shorts search, FPL communities,

@@ -1,4 +1,14 @@
-# Knowledge
+# Historical source material
+
+This directory preserves the source playbook as planning history. It is not an
+active job list, acquisition calendar or permission to use excluded channels.
+The executable policy is in engine/policy.py; current instructions are AGENTS.md,
+PLAYBOOK.md and EXECUTION-PLAN.md. Personal accounts, cold email and paid work
+remain excluded even if historical source material recommends them.
+
+The active schedule has two jobs in automations.json. The older handover and
+source retain their historical conditions; do not recreate the eight-job setup.
+
 
 Krish gave this engine its operating document on 16 October 2026, with the
 brief to build "the dedicated growth engine for this app, obsessed with
@@ -51,3 +61,9 @@ Each change below is recorded so no session "fixes" it back:
 7. **Fixtures are re-read.** The document's calendar came from public
    fixture lists on 16 October. The Monday report re-reads each week's
    fixtures before any pack relies on them.
+8. **The 17 October channel and cost limits narrow the active work.**
+   `EXECUTION-PLAN.md` excludes Krish's personal social accounts, cold
+   outbound email, paid creators and ads. It targets £0 new marketing cash
+   using the product, brand accounts and explicit opt-ins. The source
+   document's broader channel banks are historical options, including
+   recommendations to use founder profiles or email press and creators.

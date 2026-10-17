@@ -8,8 +8,7 @@ Standard library only. Runs anywhere Python 3.9+ and git run (a Codex
 session, a Cowork session, a Mac, a GitHub Action). Nothing here posts,
 sends, comments, follows, DMs, uploads, boosts or spends. The only writes are
 this engine's own files under local/ (and state/ when a GitHub Action
-publishes it), plus a pack to Control Center once Control Center can keep
-Full Time's packs apart from other ventures' (see `post` below).
+publishes it), private handoff exports. There is no Control Centre writer.
 
     python3 growth.py sync [--publish]
         Read krishanraja/full-time as it is right now: the commit on main,
@@ -40,8 +39,8 @@ Full Time's packs apart from other ventures' (see `post` below).
         names everything wrong.
 
     python3 growth.py post PACK.json
-        Checks, then stores the pack. Until Control Center keeps a venture on
-        each pack, it goes to local/packs/ and is printed in full.
+        Checks and stores locally with durable history and a handoff export.
+        No remote request is made; this is never dashboard delivery.
 
     python3 growth.py read [--days 7] [--kind daily]
         The packs already stored, newest first (for the Monday report).
@@ -64,10 +63,10 @@ An item's "needs" is empty when it can go out today, a ruling id ("D1" to
 "D7") when its channel waits on that ruling, or "RAIL" when it is ready but
 waits for a full rail. A held item is still checked for every copy rule.
 
-Kinds: daily, radar, numbers, partners, conversion, launch, report.
-Environment: GITHUB_TOKEN (optional, raises GitHub's read limit),
-GROWTH_ENGINE_TOKEN (only once Control Center takes Full Time packs),
-CONTROL_CENTER_URL (default https://controlcenter.krishraja.com).
+Kinds: daily, radar, numbers, conversion, report.
+Operations: run, history, creative, experiment, metrics, assets, export.
+Environment: GITHUB_TOKEN optionally raises GitHub's read limit.
+All reports stay local for handoff; no Control Centre writes are implemented.
 """
 import argparse
 import datetime as dt
@@ -80,6 +79,9 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+import math
+from pathlib import Path
+from engine import policy
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = 'krishanraja/full-time'
@@ -89,11 +91,10 @@ TODAY_API = SITE + '/api/public/drops/today'
 FEED = SITE + '/api/public/feed.rss'
 RAW = 'https://raw.githubusercontent.com/' + REPO
 API = 'https://api.github.com/repos/' + REPO
-BASE = os.environ.get('CONTROL_CENTER_URL', 'https://controlcenter.krishraja.com').rstrip('/')
 UA = {'User-Agent': 'growth-fulltime (+https://github.com/krishanraja/growth-fulltime)'}
 LOCAL = os.path.join(HERE, 'local')
 
-KINDS = ('daily', 'radar', 'numbers', 'partners', 'conversion', 'launch', 'report')
+KINDS = ('daily', 'radar', 'numbers', 'conversion', 'report')
 PLATFORMS = ('invite', 'whatsapp', 'email', 'tiktok', 'youtube', 'instagram', 'x', 'reddit',
              'linkedin', 'hn', 'producthunt', 'press', 'creator', 'ads', 'fpl', 'site', 'other')
 
@@ -402,7 +403,7 @@ def read_feed():
 
 
 def load_rulings():
-    return json.load(open(os.path.join(HERE, 'rulings.json')))['rulings']
+    return json.loads(Path(HERE, 'rulings.json').read_text())['rulings']
 
 
 def rulings_state(roadmap, rulings=None):
@@ -431,7 +432,10 @@ def load_state(published_only=False):
     for d in dirs:
         f = os.path.join(d, 'fulltime.json')
         if os.path.exists(f):
-            return json.load(open(f))
+            state = json.loads(Path(f).read_text())
+            if not published_only:
+                state['brand_identities'] = policy.load_identities(LOCAL)
+            return state
     return None
 
 
@@ -495,8 +499,9 @@ def sync(publish=False, quiet=False):
             print(f'no change since {prev.get("synced_at")} (full-time {sha[:10]})')
         return prev
     os.makedirs(d, exist_ok=True)
-    json.dump(state, open(os.path.join(d, 'fulltime.json'), 'w'), indent=1)
-    open(os.path.join(d, 'FULLTIME-NOW.md'), 'w').write(now_md(state))
+    from engine.records import atomic_json
+    atomic_json(os.path.join(d, 'fulltime.json'), state)
+    Path(d, 'FULLTIME-NOW.md').write_text(now_md(state))
     if not quiet:
         print(now_md(state))
     return state
@@ -610,7 +615,11 @@ def score_problems(text, rail):
 def problems(item, state=None):
     """Every rule this one draft breaks, in plain words."""
     state = state or {}
-    out = []
+    string_fields = ('text', 'platform', 'needs', 'creative_id', 'target_name', 'target_url', 'account_scope',
+                     'identity_ref', 'contact_basis', 'consent_ref', 'sender', 'distribution')
+    if any(k in item and not isinstance(item[k], str) for k in string_fields):
+        return ['draft text, channel, references and gate fields must be strings']
+    out = policy.errors(item, state)
     full = item.get('text') or ''
     platform = (item.get('platform') or '').lower()
     needs = (item.get('needs') or '').strip()
@@ -618,8 +627,9 @@ def problems(item, state=None):
         return ['it has no text']
     if platform not in PLATFORMS:
         out.append(f'platform "{platform}" is not one of {", ".join(PLATFORMS)}')
-    if needs and needs != 'RAIL' and not re.fullmatch(r'D[1-7]', needs):
-        out.append(f'needs "{needs}" must be empty, "RAIL" or a ruling id D1 to D7')
+    if needs and needs not in policy.HOLDS:
+        out.append(f'needs "{needs}" must be a documented hold code')
+    pending = policy.holds(item)
     cid = item.get('creative_id')
     if cid:
         m = CREATIVE_ID.match(cid)
@@ -628,7 +638,7 @@ def problems(item, state=None):
         elif platform in PREFIX and m.group(1) != PREFIX[platform] and not (platform == 'whatsapp' and m.group(1) == 'INV'):
             out.append(f'creative_id starts {m.group(1)} but the platform is {platform} ({PREFIX[platform]})')
     for rid, in_force in gates_for(platform, state.get('rulings')):
-        if not in_force and needs != rid:
+        if not in_force and rid not in pending:
             out.append(f'{platform} waits on ruling {rid} (PLAYBOOK.md, "Rulings"): mark it "needs": "{rid}" until '
                        f'Krish rules and full-time records it')
     if EM_DASH.search(full):
@@ -696,28 +706,43 @@ def problems(item, state=None):
             out.append(f'the link {url} carries "{q["utm_content"]}", not a creative id')
         elif cid and q['utm_content'] != cid:
             out.append(f'the link {url} is tracked as {q["utm_content"]} but the draft is {cid}')
-        if needs != 'RAIL' and not re.fullmatch(r'D[1-7]', needs) and platform not in INTERNAL:
-            out += link_problems(url, state.get('rail'))
+        if platform not in INTERNAL:
+            parts = urllib.parse.urlsplit(url)
+            if parts.path in ('', '/') and not all(dict(urllib.parse.parse_qsl(parts.query)).get(k) for k in ('drop', 'pundit')):
+                out.append('a show destination must name its exact drop and AI Pundit')
+            link_errors = link_problems(url, state.get('rail'))
+            out += [e for e in link_errors if 'RAIL' not in pending or 'made a show (push only' not in e]
     out += score_problems(text, state.get('rail'))
     return out
 
 
 def check_pack(pack, state=None):
-    errs = []
+    if not isinstance(pack, dict):
+        return ['a pack must be a JSON object']
+    errs = policy.pack_errors(pack)
     if pack.get('kind') not in KINDS:
         errs.append(f'kind must be one of {", ".join(KINDS)}')
-    if pack.get('venture', 'fulltime') != 'fulltime':
+    if pack.get('venture') != 'fulltime':
         errs.append('venture must be "fulltime"')
     if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(pack.get('pack_date') or '')):
         errs.append('pack_date must be YYYY-MM-DD')
+    else:
+        try:
+            dt.date.fromisoformat(pack['pack_date'])
+        except ValueError:
+            errs.append('pack_date is not a calendar date')
     if not re.fullmatch(r'[0-9a-f]{7,40}', str(pack.get('fulltime_sha') or '')):
         errs.append('fulltime_sha is missing: run python3 growth.py sync and copy the commit it read')
+    if not isinstance(pack.get('headline', ''), str):
+        return errs + ['headline must be text']
     head = (pack.get('headline') or '').strip()
     if not head:
         errs.append('headline is empty')
     elif EM_DASH.search(head):
         errs.append('headline has an em dash')
     items = pack.get('items') or []
+    if not isinstance(items, list) or any(not isinstance(x, dict) for x in items):
+        return errs + ['items must be a list of draft objects']
     if len(items) > 40:
         errs.append('more than 40 drafts in one pack')
     for i, item in enumerate(items, 1):
@@ -729,13 +754,23 @@ def check_pack(pack, state=None):
             errs.append('a numbers pack needs "numbers": one row per place read')
         else:
             for r in rows:
+                if not isinstance(r, dict):
+                    errs.append('every numbers row must be an object')
+                    continue
                 if not r.get('platform') or not r.get('note'):
                     errs.append('every numbers row needs a platform and a note saying where it was read')
                 for k, v in r.items():
-                    if k not in ('platform', 'note') and v is not None and not isinstance(v, (int, float)):
+                    if k not in ('platform', 'note') and v is not None and (type(v) not in (int, float) or not math.isfinite(v) or v < 0):
                         errs.append(f'numbers row {r.get("platform")}: {k} must be a number read today, or null')
     elif pack.get('numbers'):
         errs.append('numbers belong on a pack of kind numbers only')
+    if pack.get('metrics'):
+        from engine.measurements import validate
+        try:
+            for observation in pack['metrics']:
+                validate(observation)
+        except (ValueError, TypeError, KeyError) as error:
+            errs.append(f'invalid aggregate observations: {error}')
     return errs
 
 
@@ -776,41 +811,20 @@ def freshness(pack, state, head_fn, fetch_fn):
 # ---------------------------------------------------------------------------
 # Storing a pack.
 # ---------------------------------------------------------------------------
-TOKEN_FILE = os.path.expanduser('~/.config/growth-makeyourmindup/token')
-
-
-def token():
-    t = os.environ.get('GROWTH_ENGINE_TOKEN', '').strip()
-    if not t and os.path.exists(TOKEN_FILE):
-        t = open(TOKEN_FILE).read().strip()
-    return t
-
-
 def control_center_takes_fulltime():
-    """True only when Control Center says it keeps packs per venture and knows fulltime."""
-    t = token()
-    if not t:
-        return False, 'no Control Center key on this machine'
-    try:
-        req = urllib.request.Request(BASE + '/api/growth/packs?days=1', headers={**UA, 'Authorization': f'Bearer {t}'})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            body = json.loads(r.read() or b'{}')
-    except (urllib.error.URLError, ValueError) as e:
-        return False, f'Control Center did not answer ({getattr(e, "code", e)})'
-    if 'fulltime' in (body.get('ventures') or []):
-        return True, 'Control Center keeps Full Time packs apart'
-    return False, 'Control Center does not keep packs per venture yet (README.md, "Control Center")'
+    """Reporting integration is a handoff. Never contact or write Control Centre."""
+    return False, 'Control Centre is brief-only; local checkpoints are not dashboard delivery'
 
 
 def render_md(pack):
     items = pack.get('items') or []
-    ready = sum(1 for it in items if not it.get('needs'))
+    ready = sum(1 for it in items if not policy.holds(it))
     out = [f'# {pack["headline"]}', '',
            f'{pack["kind"]}, {pack["pack_date"]}, full-time `{pack["fulltime_sha"][:10]}`. '
            f'{ready} ready, {len(items) - ready} held.', '']
     for i, it in enumerate(items, 1):
-        held = it.get('needs')
-        tag = (' (HELD UNTIL THE RAIL FILLS)' if held == 'RAIL' else f' (WAITS ON RULING {held})') if held else ''
+        held = policy.holds(it)
+        tag = (' (HELD: ' + ', '.join(held) + ')') if held else ''
         out += [f'## {i}. {it.get("platform")}' + (f' `{it["creative_id"]}`' if it.get('creative_id') else '') + tag, '']
         for k in ('target_name', 'target_url', 'why'):
             if it.get(k):
@@ -822,35 +836,42 @@ def render_md(pack):
 
 
 def store_pack(pack):
-    takes, why = control_center_takes_fulltime()
-    if takes:
-        req = urllib.request.Request(BASE + '/api/growth/packs', data=json.dumps({**pack, 'venture': 'fulltime'}).encode(),
-                                     method='POST', headers={**UA, 'Authorization': f'Bearer {token()}', 'Content-Type': 'application/json'})
-        with urllib.request.urlopen(req, timeout=60) as r:
-            out = json.loads(r.read() or b'{}')
-        if out.get('ok') and (out.get('pack') or {}).get('venture') == 'fulltime':
-            print(f'stored in Control Center: {pack["kind"]} {pack["pack_date"]} {BASE}/#/growth?section=packs')
-            return
-        why = 'Control Center answered without keeping the venture'
+    from engine.records import History, atomic_json
+    from engine.reporting import envelope
+    errors = check_pack(pack, load_state())
+    if errors:
+        raise ValueError('pack refused before storage: ' + '; '.join(errors))
+    receipt = History(os.path.join(LOCAL, 'engine')).checkpoint(pack)
+    why = control_center_takes_fulltime()[1]
     d = os.path.join(LOCAL, 'packs')
     os.makedirs(d, exist_ok=True)
     name = f'{pack["pack_date"]}-{pack["kind"]}'
-    json.dump(pack, open(os.path.join(d, name + '.json'), 'w'), indent=1)
-    open(os.path.join(d, name + '.md'), 'w').write(render_md(pack))
+    atomic_json(os.path.join(d, name + '.json'), pack)
+    atomic_json(os.path.join(LOCAL, 'outbox', name + '.json'), envelope(pack, receipt))
+    Path(d, name + '.md').write_text(render_md(pack))
     print(f'stored on this machine: local/packs/{name}.md ({why}). The pack in full:\n')
     print(render_md(pack))
+    return receipt
 
 
 def read_packs(days, kind):
     d = os.path.join(LOCAL, 'packs')
-    since = (dt.date.today() - dt.timedelta(days=days)).isoformat()
+    from zoneinfo import ZoneInfo
+    since = (dt.datetime.now(ZoneInfo('Europe/London')).date() - dt.timedelta(days=days)).isoformat()
     out = []
     for f in sorted(os.listdir(d) if os.path.isdir(d) else [], reverse=True):
         if f.endswith('.json') and f[:10] >= since:
-            p = json.load(open(os.path.join(d, f)))
+            p = json.loads(Path(d, f).read_text())
             if not kind or p.get('kind') == kind:
                 out.append(p)
-    return out
+    from engine.records import History
+    saved = History(os.path.join(LOCAL, 'engine')).read()
+    by_key = {(p['pack_date'], p['kind']): p for p in out}
+    for record in saved['packs'].values():
+        latest = next(r['pack'] for r in record['revisions'] if r['digest'] == record['latest_digest'])
+        if latest['pack_date'] >= since and (not kind or latest['kind'] == kind):
+            by_key[(latest['pack_date'], latest['kind'])] = latest
+    return sorted(by_key.values(), key=lambda p: (p['pack_date'], p['kind']), reverse=True)
 
 
 # ---------------------------------------------------------------------------
@@ -883,7 +904,7 @@ def doctor():
              'read the changed sections in local/state/FULLTIME-NOW.md, then update RULES and RULES_BASIS in growth.py')
     else:
         line(False, 'a sync on this machine', 'run python3 growth.py sync')
-    autos = json.load(open(os.path.join(HERE, 'automations.json')))['automations']
+    autos = json.loads(Path(HERE, 'automations.json').read_text())['automations']
     line(all(os.path.exists(os.path.join(HERE, a['job'])) for a in autos),
          f'automations.json ({len(autos)} automations, every job file present)', 'a job file named in automations.json is missing')
     try:
@@ -891,6 +912,15 @@ def doctor():
         line(True, 'local/ is writable (packs and lists stay on this machine)')
     except OSError as e:
         line(False, 'local/ is writable', str(e))
+    from engine.records import History
+    import shutil
+    try:
+        History(os.path.join(LOCAL, 'engine')).read()
+        line(True, 'private history validates (existing pack revision checksums included)')
+    except ValueError:
+        line(False, 'private history validates', 'restore a validated backup with growth.py history --restore before continuing')
+    line(bool(shutil.which('ffmpeg') and shutil.which('ffprobe')), 'FFmpeg and FFprobe are available',
+         'install the free local FFmpeg package for rendering')
     _, why = control_center_takes_fulltime()
     print(f'note      packs: {why}; until then they are saved in local/packs/ and printed in full')
     print('\nready to run' if ok else '\nnot ready: fix the lines above, then run doctor again')
@@ -911,8 +941,12 @@ def self_test():
              'score': [1, 1], 'pundits': ['zen'], 'fill': 1},
             {'drop': drop_full, 'date': '2026-10-18', 'home': 'Crystal Palace', 'away': 'Nottingham Forest',
              'score': [3, 1], 'pundits': ['zen', 'gaffer', 'stats', 'doomer', 'banter'], 'fill': 5}]
-    on = {'D1': {'in_force': True}, 'D4': {'in_force': True}, 'D5': {'in_force': True}, 'D6': {'in_force': True}}
-    st = {'rail': rail, 'rulings': on}
+    on = {'D1': {'in_force': True}, 'D4': {'in_force': True}, 'D5': {'in_force': True}, 'D6': {'in_force': True}, 'D7': {'in_force': True}}
+    brand_identities = {p: {'verified': True, 'platform': p, 'account_scope': 'brand',
+                            'source_url': 'https://' + {'youtube':'youtube.com','x':'x.com'}.get(p,p+'.com') + '/example-fixture',
+                            'verified_at': dt.datetime.now(dt.timezone.utc).isoformat()}
+                        for p in policy.BRAND_CHANNELS}
+    st = {'rail': rail, 'rulings': on, 'brand_identities': brand_identities}
     cid = 'TT_CLASH_CLIP_C01_H02_V1_20261019'
     link = tracked(f'https://fulltime.fm/?drop={drop_full}&pundit=doomer', cid)
     t('a tracked link is built from the creative id', link ==
@@ -924,11 +958,16 @@ def self_test():
     t('a bare domain gets a path', tracked('https://fulltime.fm', 'INV_CLASH_INVITE_C01_H01_V1_20261019').startswith('https://fulltime.fm/?utm_source='))
     good = {'pack_date': '2026-10-19', 'kind': 'daily', 'venture': 'fulltime', 'fulltime_sha': '319d324920',
             'headline': 'Monday pack', 'items': [{'platform': 'tiktok', 'creative_id': cid,
+                                                  'account_scope': 'brand', 'identity_ref': 'tiktok', 'holds': ['RELEASE'],
                                                   'text': f'The Doomer and The Romantic heard the same match. One AI Pundit is not happy. {link}'}]}
     t('a clean pack passes', check_pack(good, st) == [])
 
     def errs(text, platform='tiktok', needs='', cid_=None, state=None):
         item = {'platform': platform, 'text': text, 'needs': needs}
+        if platform in policy.BRAND_CHANNELS:
+            item.update(account_scope='brand', identity_ref=platform, holds=['RELEASE', 'CHANNEL', 'CONSENT'])
+        if platform == 'whatsapp':
+            item['distribution'] = 'listener_initiated'
         if cid_:
             item['creative_id'] = cid_
         return check_pack({**good, 'items': [item]}, st if state is None else state)
@@ -974,7 +1013,7 @@ def self_test():
     t('a mismatched creative id is refused', bad(link, 'tracked as', cid_='TT_CLASH_CLIP_C01_H02_V2_20261019'))
     t('a bad creative id is refused', bad('AI Pundit', 'creative_id', cid_='clip-1'))
     t('a creative id for another platform is refused', bad('AI Pundit', 'platform is tiktok', cid_='YT_CLASH_SHORT_C01_H01_V1_20261019'))
-    thin = tracked(f'https://fulltime.fm/?drop={drop_thin}', 'WA_TRIBE_INVITE_C02_H01_V1_20261019')
+    thin = tracked(f'https://fulltime.fm/?drop={drop_thin}&pundit=zen', 'WA_TRIBE_INVITE_C02_H01_V1_20261019')
     t('a push to a thin rail is refused', bad(f'Leeds v Man Utd, AI Pundit takes: {thin}', '1 of 6', platform='whatsapp', cid_='WA_TRIBE_INVITE_C02_H01_V1_20261019'))
     t('a held push to a thin rail passes', not errs(f'Hear it: {thin}', platform='whatsapp', needs='RAIL', cid_='WA_TRIBE_INVITE_C02_H01_V1_20261019'))
     bare = tracked('https://fulltime.fm/', 'WA_TRIBE_INVITE_C02_H01_V1_20261019')
@@ -1062,16 +1101,16 @@ def self_test():
     rulings = load_rulings()
     t('rulings.json names D1 to D7', sorted(rulings) == [f'D{i}' for i in range(1, 8)])
     t('every gated platform is a platform', all(p in PLATFORMS for r in rulings.values() for p in r.get('unlocks', [])))
-    changes = open(os.path.join(HERE, 'CHANGES.md')).read()
+    changes = Path(HERE, 'CHANGES.md').read_text()
     for rid, r in rulings.items():
         t(f'{rid} is pending, approved or declined', r.get('status') in ('pending', 'approved', 'declined'))
         if r.get('status') == 'approved':
             t(f'{rid} approved names its decision-log heading', bool(r.get('evidence')))
             t(f'{rid} approved has Krish\'s words in CHANGES.md', rid in changes)
-    agents = open(os.path.join(HERE, 'AGENTS.md')).read()
-    autos = json.load(open(os.path.join(HERE, 'automations.json')))['automations']
+    agents = Path(HERE, 'AGENTS.md').read_text()
+    autos = json.loads(Path(HERE, 'automations.json').read_text())['automations']
     for f in sorted(os.listdir(os.path.join(HERE, 'jobs'))):
-        body = open(os.path.join(HERE, 'jobs', f)).read()
+        body = Path(HERE, 'jobs', f).read_text()
         m = re.search(r'Kind `(\w+)`', body)
         t(f'jobs/{f} names a kind', bool(m) and m.group(1) in KINDS or f == 'sync.md')
         t(f'jobs/{f} is on the schedule in AGENTS.md', f'jobs/{f}' in agents)
@@ -1084,12 +1123,15 @@ def self_test():
     for f in ('PLAYBOOK.md', 'BROWSER.md', 'CHANGES.md', 'rulings.json', 'knowledge/README.md',
               'knowledge/full-time-1000-users-playbook.md'):
         t(f'{f} exists', os.path.exists(os.path.join(HERE, f)))
-    ignored = open(os.path.join(HERE, '.gitignore')).read()
+    ignored = Path(HERE, '.gitignore').read_text()
     t('local/ is never committed (the repository is public)', re.search(r'^/?local/?$', ignored, re.M) is not None)
     print(f'growth-fulltime self-test passed: {n} checks')
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] in ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export'):
+        from engine.cli import main as operations_main
+        return operations_main(sys.argv[1:], sys.modules[__name__])
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--self-test', action='store_true')
     sub = ap.add_subparsers(dest='cmd')
@@ -1134,7 +1176,7 @@ def main():
             sys.exit(str(e))
         return
     if a.cmd in ('check', 'post'):
-        pack = json.load(open(a.file))
+        pack = json.loads(Path(a.file).read_text())
         st = load_state()
         errs = check_pack(pack, st)
         try:
@@ -1145,7 +1187,7 @@ def main():
             print('Not ready:\n  ' + '\n  '.join(errs))
             sys.exit(1)
         items = pack.get('items') or []
-        held = sum(1 for it in items if it.get('needs'))
+        held = sum(1 for it in items if policy.holds(it))
         if a.cmd == 'check':
             print(f'ready: {len(items)} drafts ({len(items) - held} to go today, {held} held), written against full-time {pack["fulltime_sha"][:10]}')
             return
