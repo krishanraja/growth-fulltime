@@ -5,6 +5,14 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-17: execution plan and product build briefs, with the channel and
+  cost limits carried into AGENTS, the playbook, browser rules and README.
+  Krish: "Okay can you line up the execution plan? Just bear in mind that
+  this cannot use my personal social media accounts and no cold outbound
+  email. This needs to be as low cost and close to free as possible."
+  The active plan targets £0 incremental marketing cash, uses Full Time's
+  product and brand identity, and defers paid and founder-account channels.
+  No product ruling or schedule is activated by the plan.
 - 2026-10-16: a handover for the setup session (`HANDOVER-2026-10-16.md`),
   which `AGENTS.md` now tells every run to read after itself. Krish: "just
   save all of this in to the repo so the next codex session can go from here

@@ -13,8 +13,10 @@ Read, in this order, before any job:
    it left for you (the sync's reading beats it wherever they differ);
 2. `local/state/FULLTIME-NOW.md`, written by the sync you run first (rule 2);
 3. `PLAYBOOK.md`: the operating system, applied to Full Time;
-4. `BROWSER.md`: what you may and may never do in Krish's signed-in browser;
-5. the job's own file in `jobs/`.
+4. `EXECUTION-PLAN.md`: the current channel limits, budget, work order and
+   activation conditions; these narrow older job and playbook instructions;
+5. `BROWSER.md`: what you may and may never do in the signed-in browser;
+6. the job's own file in `jobs/`.
 
 If nobody named a job, run the one today's schedule (below) says. The source
 document behind the playbook is in `knowledge/`. Read it when a job needs
@@ -48,6 +50,29 @@ inbox. Never put any other address of Krish's in anything.
 2026, where a user finished at least one show and left a way to reach them.
 Under it sits the December release bar. The first constraint is the rail: no
 push goes out until a match has at least 4 of the 6 AI Pundits.
+
+## Current execution limits
+
+Krish, 2026-10-17: "this cannot use my personal social media accounts and no
+cold outbound email"; "as low cost and close to free as possible".
+
+Use Full Time's product and branded channels only. Never use Krish's personal
+profiles, followers, posts, comments, DMs or WhatsApp groups as a growth
+channel. Listener forwarding is voluntary and starts in the product. Email
+is for inbound replies or recipients whose explicit opt-in covers the
+message, from the product inbox. No cold press or creator email.
+
+Target £0 incremental marketing cash. No paid creators, ads, prizes, new
+subscriptions or paid media generation. Existing model, hosting and agent
+usage is still a cost; record it and avoid redundant runs. Paid production
+runs require their own authorisation.
+
+`EXECUTION-PLAN.md` is the active work order. Do not draft excluded channels,
+even as held items. Older personal invites, founder launch kits, cold
+pitches and paid creator work are inactive. Public brand promotion still
+waits for the product's release boundary and rulings. This planning request
+does not approve a ruling or activate schedules. Complete E07's consolidated
+schedule change before using the older eight-task setup below.
 
 ## The rules that never bend
 

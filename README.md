@@ -4,10 +4,16 @@ The growth engine for [Full Time](https://fulltime.fm): one real Premier
 League match, six complete shows, each made by a different AI Pundit. It
 drafts what gets Full Time into fans' hands at a cost close to zero: the
 match-morning clips and their native editions, the WhatsApp lines fans
-forward, personal invites, replies, creator notes, the launch kit, product
-fixes for the share loop, the numbers and a weekly decision. It runs as
-scheduled Codex or Cowork sessions. Krish reads each pack, sends and posts by
-hand, and keeps or kills jobs from the Monday report.
+forward, opt-in beta invitations, product fixes for the share loop, branded
+creative, the numbers and a weekly decision. Krish performs external actions
+by hand and keeps or kills work from the Monday report.
+
+**Current execution plan:** [`EXECUTION-PLAN.md`](./EXECUTION-PLAN.md), with
+ordered work, owners, dependencies and completion checks. No personal social
+accounts, no cold outbound email, and a £0 incremental marketing cash target.
+Start with product readiness and invited listeners; branded YouTube follows
+the release conditions. [Product build briefs](./briefs/GROWTH-FOUNDATIONS.md)
+are ready for a session on full-time.
 
 **Goal:** 1,000 users by Sunday 8 November 2026 (a user finished a show and
 left a way to reach them), and the evidence for Full Time's December release
@@ -59,6 +65,11 @@ sync checks the heading is there.
 
 ## Setting it up (Krish, once)
 
+The eight-job setup below is the existing inventory. E07 in the execution
+plan replaces it with a morning batch and a weekly review, updating the
+manifest and setup instructions together before activation. The execution
+plan does not create or enable scheduled tasks.
+
 1. **Connect this repository** in Codex (cloud or the desktop app) or Cowork,
    with network access on. Runs need to reach github.com,
    raw.githubusercontent.com, fulltime.fm and the channels. Use the desktop
@@ -107,6 +118,8 @@ describes, with `fulltime` added to the ventures.
 AGENTS.md         the brief every run reads first
 HANDOVER-*.md     where the last interactive session stopped (newest first)
 PLAYBOOK.md       the operating system, applied to Full Time
+EXECUTION-PLAN.md current limits, ordered work and completion checks
+briefs/           product work for a separate full-time build session
 rulings.json      the seven decisions the playbook needs, and what each opens
 BROWSER.md        read-only rules for the signed-in browser
 jobs/             one file per job; automations.json schedules them

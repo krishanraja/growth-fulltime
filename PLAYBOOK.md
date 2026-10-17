@@ -7,6 +7,17 @@ engine runs it: where Full Time's canon limits it, which rulings it waits on,
 and what each job does with it. `knowledge/README.md` lists every place the
 engine departs from the document and why.
 
+**Current execution plan, 17 October 2026:** read
+[`EXECUTION-PLAN.md`](./EXECUTION-PLAN.md) before using the channel banks or
+calendar below. Krish excludes his personal social accounts and all cold
+outbound email, and asks for cost as close to free as possible. Only Full
+Time's product, branded channels, voluntary listener sharing and messages
+covered by explicit opt-in are in the active plan. Personal-account launch
+work, cold press/creator pitches, paid creators and ads are inactive,
+including held drafts. The older banks describe options, not permission to
+execute them. Public marketing still waits for Full Time's release bar and
+recorded channel decisions.
+
 **Order of authority, highest first:**
 1. The full-time repository's canon and the live site, as
    `python3 growth.py sync` reads them today.
@@ -40,10 +51,11 @@ Krish, 16 October 2026: "obsessed with getting this into market".
   of them trying a second AI Pundit, 40% "very disappointed" if it went
   away, and the consent item closed. Reaching 1,000 the right way is the
   evidence for that bar.
-- **Minimal spend.** Agents never spend. Paid creators (up to £600) and one
-  paid test (up to £300) are the only cash in the plan, both waiting on
-  rulings D5 and D7. Model spend for more shows is a full-time decision,
-  quoted with its arithmetic by the session that runs it.
+- **Minimal spend.** Target £0 incremental marketing cash. Paid creators
+  and ads are outside the active execution plan. Agents never spend. Reuse
+  approved audio and existing tools; record hosting, model and agent usage.
+  Model spend for more shows is a separate full-time decision, quoted with
+  its arithmetic by the session that runs it.
 
 ## The rail gate: the first constraint
 

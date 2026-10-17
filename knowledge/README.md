@@ -51,3 +51,9 @@ Each change below is recorded so no session "fixes" it back:
 7. **Fixtures are re-read.** The document's calendar came from public
    fixture lists on 16 October. The Monday report re-reads each week's
    fixtures before any pack relies on them.
+8. **The 17 October channel and cost limits narrow the active work.**
+   `EXECUTION-PLAN.md` excludes Krish's personal social accounts, cold
+   outbound email, paid creators and ads. It targets £0 new marketing cash
+   using the product, brand accounts and explicit opt-ins. The source
+   document's broader channel banks are historical options, including
+   recommendations to use founder profiles or email press and creators.
