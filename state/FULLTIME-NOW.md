@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `319d324920` and from fulltime.fm on 2026-10-16T15:50:37+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `702c84d242` and from fulltime.fm on 2026-10-17T01:21:11+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -14,6 +14,12 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 | Crystal Palace 3-1 Nottingham Forest | 2026-10-11 | 1 of 6 | The Reporter |
 | Manchester City 5-3 Sunderland | 2026-09-20 | 1 of 6 | The Romantic |
 | Tottenham 2-3 Aston Villa | 2026-09-19 | 1 of 6 | The Gaffer |
+
+## Canon changed since the last sync
+
+Read these again before drafting anything:
+
+- changed: `NOW.md`
 
 ## Rulings the playbook needs
 
@@ -57,15 +63,7 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 ## Recent commits on main
 
-- `319d324920` 2026-10-16 Merge pull request #80 from krishanraja/claude/eager-fermi-1nbzji
-- `b22f0d4c29` 2026-10-16 Record the December bar's numbers as confirmed
-- `035ca3dc10` 2026-10-16 Give the docs a vision, a pilot beta and a December bar
-- `c509e62ed2` 2026-10-16 Merge pull request #78 from krishanraja/harness/canon-sync
-- `04e164e769` 2026-10-15 docs(canon): sync the canon block to v2026.10.15.2
-- `b47e89ebd1` 2026-10-15 docs(steward): 2026-10-15 stamp head at a453ebd, roll eight bullets older than 30 days
-- `a453ebd175` 2026-10-15 Merge pull request #79 from krishanraja/claude/wizardly-ptolemy-saezyu
-- `df2c20c706` 2026-10-15 Bump sharp to 0.35.5 to clear the production audit
-- `7b71ccbff1` 2026-10-15 Call the docs steward from krishanraja/ai-harness
+- `702c84d242` 2026-10-16 docs(steward): 2026-10-16 stamp head at 319d324
 
 ## Work in flight (open pull requests)
 

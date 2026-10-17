@@ -1,8 +1,8 @@
 {
  "repo": "krishanraja/full-time",
- "sha": "319d324920b7a4b7839e203b48be8378f80ef934",
- "synced_at": "2026-10-16T15:50:37+00:00",
- "previous_sha": null,
+ "sha": "702c84d242071b0e0c347a6b87668e210ed2d897",
+ "synced_at": "2026-10-17T01:21:11+00:00",
+ "previous_sha": "319d324920b7a4b7839e203b48be8378f80ef934",
  "canon_from_index": true,
  "canon": {
   "docs/22-vision-and-beta.md": "8b7290f6c0a3d646",
@@ -12,7 +12,7 @@
   "docs/07-marketing.md": "e5e183e7188600fe",
   "docs/01-brand.md": "d1f3f6a548defbc4",
   "docs/product-state.json": "21eccb64cae77d44",
-  "NOW.md": "f5900eeadabca501",
+  "NOW.md": "e90539cb0205d914",
   "docs/19-release-state.md": "34041a668b216d8b",
   "docs/09-growth.md": "69fbad02fd6d2f24",
   "docs/11-legal.md": "3b05aac034b7a302",
@@ -32,54 +32,16 @@
   "docs/product-state.json claims": "7cedc8282c3b45eb"
  },
  "rules_ok": true,
- "changed_since_last_sync": [],
+ "changed_since_last_sync": [
+  "NOW.md"
+ ],
  "canon_added": [],
  "canon_removed": [],
  "commits": [
   {
-   "sha": "319d324920",
-   "date": "2026-10-16T15:13:18Z",
-   "subject": "Merge pull request #80 from krishanraja/claude/eager-fermi-1nbzji"
-  },
-  {
-   "sha": "b22f0d4c29",
-   "date": "2026-10-16T15:11:12Z",
-   "subject": "Record the December bar's numbers as confirmed"
-  },
-  {
-   "sha": "035ca3dc10",
-   "date": "2026-10-16T15:06:37Z",
-   "subject": "Give the docs a vision, a pilot beta and a December bar"
-  },
-  {
-   "sha": "c509e62ed2",
-   "date": "2026-10-16T07:47:27Z",
-   "subject": "Merge pull request #78 from krishanraja/harness/canon-sync"
-  },
-  {
-   "sha": "04e164e769",
-   "date": "2026-10-15T23:15:47Z",
-   "subject": "docs(canon): sync the canon block to v2026.10.15.2"
-  },
-  {
-   "sha": "b47e89ebd1",
-   "date": "2026-10-15T23:07:10Z",
-   "subject": "docs(steward): 2026-10-15 stamp head at a453ebd, roll eight bullets older than 30 days"
-  },
-  {
-   "sha": "a453ebd175",
-   "date": "2026-10-15T14:36:34Z",
-   "subject": "Merge pull request #79 from krishanraja/claude/wizardly-ptolemy-saezyu"
-  },
-  {
-   "sha": "df2c20c706",
-   "date": "2026-10-15T14:35:14Z",
-   "subject": "Bump sharp to 0.35.5 to clear the production audit"
-  },
-  {
-   "sha": "7b71ccbff1",
-   "date": "2026-10-15T11:58:58Z",
-   "subject": "Call the docs steward from krishanraja/ai-harness"
+   "sha": "702c84d242",
+   "date": "2026-10-16T22:54:28Z",
+   "subject": "docs(steward): 2026-10-16 stamp head at 319d324"
   }
  ],
  "open_pulls": [],
