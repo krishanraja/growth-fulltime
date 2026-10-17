@@ -5,6 +5,14 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-17: Control Centre is the unified reporting and action destination.
+  Krish: "Control Centre is ultimately where the unified dashboard is going
+  to be: where you report back on progress and recommendations to improve in
+  the format that it requires." He also asks to be told when its UI cannot
+  make recommendations actionable. E00 now proves access and native delivery;
+  the private Control Center integration brief is pull request #470. Existing
+  aggregate reads come before browser fallbacks, and local checkpoints do
+  not count as dashboard delivery.
 - 2026-10-17: execution plan and product build briefs, with the channel and
   cost limits carried into AGENTS, the playbook, browser rules and README.
   Krish: "Okay can you line up the execution plan? Just bear in mind that

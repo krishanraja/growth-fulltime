@@ -101,6 +101,12 @@ Check the machine at any time with `python3 growth.py doctor`.
 
 ## Control Center
 
+Control Center is the unified dashboard for progress and recommendations.
+The [integration brief and UI gaps](https://github.com/krishanraja/control-center/pull/470)
+define the reporting work before activation (E00 in the execution plan).
+Reuse its existing aggregate source records. Local packs are checkpoints
+while delivery is held, and do not count as a report reaching the dashboard.
+
 Packs don't go to Control Center yet. Control Center's `growth_packs` table
 keeps one pack per `(pack_date, kind)`, with no venture, so a Full Time
 `daily` pack would replace another venture's `daily` pack for the same day.

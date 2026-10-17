@@ -1,8 +1,8 @@
 {
- "_about": "The eight scheduled tasks this engine runs as, in one place. A Codex or Cowork session asked to \"create the automations\" builds them from this file (AGENTS.md, \"When Krish says: create the automations\"); the README table is the same list for reading. Times are London (Europe/London). Full Time publishes from a 04:45 UTC run, so the morning jobs start after it in both summer and winter time, and the day's pack is ready before 07:30, when fans wake up after a match.",
+ "_about": "The existing eight-job inventory. EXECUTION-PLAN.md E07 replaces this schedule before the next activation, and E00 verifies Control Center reporting access and delivery first. A planning edit does not create or enable tasks. The README table is the same inventory for reading. Times are London (Europe/London).",
  "timezone": "Europe/London",
  "run_in": "this local project (not a new worktree), so every run shares local/ (the sync, the packs, the creative record and the lists)",
- "access": "network on (github.com, raw.githubusercontent.com, fulltime.fm and the channels); the signed-in browser when available",
+ "access": "network on (github.com, raw.githubusercontent.com, fulltime.fm, Control Center and the channels); approved read-only Control Center aggregate sources first; a Full Time branded signed-in browser when available; no personal social accounts",
  "model": "default",
  "automations": [
   {

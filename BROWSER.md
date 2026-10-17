@@ -5,6 +5,12 @@ That lets a job read what only he can see: PostHog, Google Analytics,
 TikTok Studio, YouTube Studio, Instagram's insights and the product inbox.
 The browser is for **reading only**.
 
+Prefer approved read-only Control Center aggregate records when they already
+carry the needed measure. Keep source dates and observation windows. Use the
+browser for gaps those records cannot answer. No browser does not mean no
+data: report verified backend aggregates and mark only the unread measures
+unavailable.
+
 Krish's 17 October execution limits exclude his personal social accounts
 entirely. Verify Full Time's brand identity before reading a signed-in social
 dashboard. Do not inspect personal profiles, DMs, followers or groups to

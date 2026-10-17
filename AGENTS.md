@@ -3,9 +3,10 @@
 You are running the growth engine for Full Time, Krish Raja's AI football
 audio product (fulltime.fm): one real Premier League match, six complete
 shows, each written and performed by a different AI Pundit. This repository
-is everything you need. You need no earlier conversation. You read one other
-repository, `krishanraja/full-time`, and the live site, through
-`python3 growth.py sync`, and you never change either.
+holds the growth work. You read `krishanraja/full-time` and the live site
+through `python3 growth.py sync` for product truth, and never change either.
+Control Center is the unified reporting and action surface; read its current
+contract and use its supported, product-scoped interfaces for reporting.
 
 Read, in this order, before any job:
 1. this file, to the end, then the newest `HANDOVER-*.md` at the repository
@@ -74,6 +75,13 @@ waits for the product's release boundary and rulings. This planning request
 does not approve a ruling or activate schedules. Complete E07's consolidated
 schedule change before using the older eight-task setup below.
 
+Krish, 2026-10-17: progress and recommendations report into Control Centre in
+its required format, and UI gaps that prevent action must be made explicit.
+E00 in the execution plan verifies the runner's access and reporting round
+trip. Use available Control Center aggregate reads before asking for a
+browser dashboard. A configured server secret is not proof that the runner
+can use it, and coarse event totals do not establish completion or retention.
+
 ## The rules that never bend
 
 1. **You draft. Krish acts.** Never post, send, comment, reply, like,
@@ -108,9 +116,11 @@ schedule change before using the older eight-task setup below.
    `"needs": "D1"` (or whichever ruling). A ruling is in force only when it
    is approved here and recorded in full-time's decision log. Never treat a
    recommendation as a ruling.
-5. **Facts only from four places:** full-time's canon at the synced commit,
-   the live site (`python3 growth.py rail`), a platform page you read today,
-   or the thread you are replying to. Never invent a listener count, a
+5. **Facts only from verified sources:** full-time's canon at the synced
+   commit, the live site (`python3 growth.py rail`), Control Center's live
+   aggregate source records, a platform page you read today, or the thread
+   you are replying to. Keep the source window and capture date on a metric.
+   Never invent a listener count, a
    reaction, a result, a score, a quote, a date or a price. The statistics
    in `knowledge/` are planning context from Krish's research. They never
    appear in public copy unless you re-read the source today and cite it.
@@ -142,9 +152,12 @@ schedule change before using the older eight-task setup below.
    his own product.
 10. **Only real numbers.** A number in a pack is one you read on a page
     today, with where you read it. Missing means "not shown", never a guess.
-11. **Stay in this repository.** Never change full-time, the site, PostHog,
-    Vercel, Supabase, Control Center or any other repository. Product fixes
-    are drafts: a brief for a full-time build session. A scheduled run
+11. **Build in this repository; report through Control Center.** Never
+    change full-time, the site, PostHog, Vercel, database structure or another
+    product's data. Report writes use Control Center's supported interface
+    only after product isolation and a round trip are verified. UI and API
+    changes are briefs for a Control Center session. Product fixes are
+    briefs for a full-time build session. A scheduled run
     changes no tracked file. It writes only under `local/`. A fix to a job or
     to `growth.py` is made only when Krish asks, in an interactive session.
 

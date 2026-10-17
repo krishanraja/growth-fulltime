@@ -46,23 +46,31 @@ plan does not assume an existing audience, a conversion rate or viral growth.
 ## Delivery order and owners
 
 Owners below are execution roles: the growth session works in this
-repository; a full-time build session works in the product repository; Krish
-owns product decisions and external actions. Product briefs are collected in
+repository; full-time and Control Center sessions implement their own product
+and reporting changes; Krish owns product decisions and external actions.
+Product briefs are collected in
 [the build brief](briefs/GROWTH-FOUNDATIONS.md).
+
+Control Center is the unified dashboard for progress, recommendations and
+human actions. The [reporting integration brief](https://github.com/krishanraja/control-center/pull/470)
+records the verified source access, required native formats and UI gaps.
+Existing Control Center aggregates should be reused. Local files are private
+checkpoints and backups; saving one does not mean the report was delivered.
 
 | ID | Priority and work | Owner | Depends on | Completion evidence |
 |---|---|---|---|---|
+| E00 | Verify runtime access and the Control Center reporting contract | Growth and Control Center sessions | Secure runner binding and scoped source access | An authenticated, product-isolated report is read back and usable on the existing dashboard; missing access and UI gaps are explicit |
 | E01 | Diagnose the thin rail from stored verdicts and identify the smallest supported fix | Full-time build session | Stored verdict access | Cause and fix recorded; a fresh eligible match has at least four published AI Pundits and playable assets |
 | E02 | Verify the source of consenting beta testers and the contact-capture and consent decisions | Krish, with a product brief | Existing consent records or inbound requests | Eligible source and aggregate count recorded; D3/D7 status and any recruitment boundary recorded in full-time |
 | E03 | Define and verify the measurement queries and event context | Growth session prepares contract; full-time session implements | Appropriate analytics access and consent handling | A controlled journey is reconciled from visit through real playback, completion, comparison and opted-in return |
 | E04 | Build the exact-edition share preview, share action and optional way back | Full-time build session | E03; D3 for the return feature | Recipient opens the intended match and AI Pundit; crawler preview names both; saved preference is preserved |
-| E05 | Keep a private execution ledger and experiment history | Growth session | E03 definitions | Reruns retain results, publication status and decisions without duplicate records; reports read all stored packs |
+| E05 | Keep canonical execution history in Control Center with private recovery checkpoints | Growth session | E00 and E03 definitions | Reruns retain results, publication status and decisions without duplicate records; reports read the canonical history |
 | E06 | Render one reusable two-pundit clip template | Growth session | Two published editions of the same match | Local MP4, captions, thumbnail and source timestamps; no new generated voice or footage |
 | E07 | Consolidate agent jobs into a morning batch and a weekly review | Growth session | E05; current channel limits | Jobs, schedule manifest and docs agree; one proved run; usage recorded; inactive channels create no recurring work |
-| E08 | Run the invited beta and read the seven-day cohorts | Krish acts; growth session analyses aggregates | E01-E05 and eligible invite source | Thirty distinct testers finish; return, comparison and feedback reported with denominators |
+| E08 | Run the invited beta and read the seven-day cohorts | Krish acts; growth session analyses aggregates | E00-E05 and eligible invite source | Thirty distinct testers finish; return, comparison and feedback reported with denominators |
 | E09 | Test Full Time's branded YouTube channel | Krish publishes; growth session prepares and measures | E06, E08, full release bar and channel rulings | One format tested through a complete observation window; results linked to publication URLs and completed listens |
 
-E01 and E03 can be prepared alongside each other. E04 must not ship tracking
+E00, E01 and E03 can be prepared alongside each other. E04 must not ship tracking
 without its consent handling. E06 can use existing approved material for a
 private rendering test, but no promotion goes out while the rail is HOLD.
 
@@ -71,7 +79,8 @@ private rendering test, but no promotion goes out while the rail is HOLD.
 These are work windows, not promised product release dates. A failed exit
 check keeps the dependent work held.
 
-1. **Day one:** prepare E01's diagnosis brief; establish whether an existing
+1. **Day one:** verify E00's source reads and report destination; prepare
+   E01's diagnosis brief; establish whether an existing
    beta opt-in audience or inbound queue exists; specify E03's queries and
    controlled test. Name the owner, next action and evidence needed for each
    blocker. Do not pay to rerun the pipeline to investigate it.
@@ -169,11 +178,12 @@ product briefs. They are planned work, not commands that already exist.
   minutes, status and actual publication URL. Statuses are drafted, held,
   ready, published or skipped; a pack stored by `post` is not a publication.
   Record reasons and results without names or addresses of private people.
-- **Durable history:** use the existing persistent project and ignored
-  `local/` directory first. Test restart recovery and document a private
-  backup. Do not provision a database. Fix local saving on a successful
-  Control Center write, or give reports a unified reader, before enabling
-  remote storage. Use stable IDs and versions so reruns are idempotent.
+- **Durable history:** Control Center is the canonical progress record.
+  Keep private checkpoints and backups in the existing persistent project,
+  under ignored `local/`. Test restart recovery and a unified report reader.
+  Do not provision another database. Resolve local saving on a successful
+  Control Center write so delivery does not lose recovery history. Use stable
+  IDs and versions so reruns are idempotent.
 - **Asset renderer:** use local FFmpeg, existing audio and deterministic
   artwork. Check timestamps and transcripts, captions, aspect ratio, audio,
   AI disclosure and the tracked destination. Reuse renders; no image or
@@ -192,8 +202,9 @@ product briefs. They are planned work, not commands that already exist.
 
 ## Daily operation and weekly decisions
 
-The proposed morning batch produces at most three prioritised actions and
-one short scorecard. Keep Krish's execution within twenty minutes a day and
+The proposed morning batch reports at most three prioritised actions and
+one short scorecard through Control Center's native surfaces. Keep Krish's
+execution within twenty minutes a day and
 the Monday review within thirty minutes. On a HOLD morning, lead with the
 changed blocker and avoid regenerating an identical bank of held copy.
 
