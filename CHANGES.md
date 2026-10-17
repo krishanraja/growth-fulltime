@@ -5,6 +5,13 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-17: verify existing access before requesting new credentials.
+  Krish: "You should have full access to Vercel and all my projects.
+  GROWTH_ENGINE_TOKEN is also in the github secrets". All eighteen Vercel
+  projects are visible. The existing sync workflow now has a manual,
+  read-only reporting check using that Actions secret. It skips sync writes
+  and keeps credentials and report content out of logs. Authenticated reading
+  does not waive the product-isolation requirement for report delivery.
 - 2026-10-17: Control Centre is the unified reporting and action destination.
   Krish: "Control Centre is ultimately where the unified dashboard is going
   to be: where you report back on progress and recommendations to improve in

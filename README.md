@@ -118,6 +118,25 @@ send, and switches to Control Center by itself once it includes `fulltime`.
 The change Control Center needs is the one `growth-heartside`'s README
 describes, with `fulltime` added to the ventures.
 
+### Verify the existing GitHub secret
+
+The existing sync workflow has a manual read-only mode:
+
+```bash
+gh workflow run sync.yml --repo KrishanRaja/growth-fulltime \
+  --ref <reviewed-branch-or-main> -f reporting_access=true
+```
+
+This mode skips the sync job and uses `secrets.GROWTH_ENGINE_TOKEN` only
+inside the reporting check. It makes one authenticated GET to Control
+Center, refuses redirects and prints only status and contract checks. It
+never prints a credential or pack content and never writes a report.
+An HTTP 200 verifies authenticated reading; safe Full Time delivery still
+requires E00's product-isolation and field-preservation round trip.
+The GitHub app may be unable to list secret names even when Actions can use
+the existing secret. Do not ask for its value or rotate it to work around
+that permission limit. The manual check creates no recurring job.
+
 ## Layout
 
 ```

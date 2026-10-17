@@ -81,6 +81,10 @@ E00 in the execution plan verifies the runner's access and reporting round
 trip. Use available Control Center aggregate reads before asking for a
 browser dashboard. A configured server secret is not proof that the runner
 can use it, and coarse event totals do not establish completion or retention.
+Krish confirmed that the existing `GROWTH_ENGINE_TOKEN` is also in GitHub
+secrets. Use the manual read-only Actions check documented in `README.md`
+before requesting a new binding. A denied secrets-list request does not
+prove a secret is absent; Actions can use it without revealing its value.
 
 ## The rules that never bend
 

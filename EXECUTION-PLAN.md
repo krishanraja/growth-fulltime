@@ -34,7 +34,7 @@ They apply to held drafts as well as ready items.
 
 ## Starting position
 
-The 17 October sync read full-time at `702c84d242071b0e0c347a6b87668e210ed2d897`.
+The latest 17 October sync read full-time at `210dc080fbdbf8d9a1bd888d2812dceda075bb44`.
 The live rail had three matches with one AI Pundit each, so the push gate was
 HOLD. All seven rulings were pending. Re-read with `python3 growth.py sync`
 before using this position to make a decision.
@@ -59,7 +59,7 @@ checkpoints and backups; saving one does not mean the report was delivered.
 
 | ID | Priority and work | Owner | Depends on | Completion evidence |
 |---|---|---|---|---|
-| E00 | Verify runtime access and the Control Center reporting contract | Growth and Control Center sessions | Secure runner binding and scoped source access | An authenticated, product-isolated report is read back and usable on the existing dashboard; missing access and UI gaps are explicit |
+| E00 | Verify runtime access and the Control Center reporting contract | Growth and Control Center sessions | Existing-secret execution path and scoped source access | An authenticated, product-isolated report is read back and usable on the existing dashboard; missing access and UI gaps are explicit |
 | E01 | Diagnose the thin rail from stored verdicts and identify the smallest supported fix | Full-time build session | Stored verdict access | Cause and fix recorded; a fresh eligible match has at least four published AI Pundits and playable assets |
 | E02 | Verify the source of consenting beta testers and the contact-capture and consent decisions | Krish, with a product brief | Existing consent records or inbound requests | Eligible source and aggregate count recorded; D3/D7 status and any recruitment boundary recorded in full-time |
 | E03 | Define and verify the measurement queries and event context | Growth session prepares contract; full-time session implements | Appropriate analytics access and consent handling | A controlled journey is reconciled from visit through real playback, completion, comparison and opted-in return |
@@ -73,6 +73,20 @@ checkpoints and backups; saving one does not mean the report was delivered.
 E00, E01 and E03 can be prepared alongside each other. E04 must not ship tracking
 without its consent handling. E06 can use existing approved material for a
 private rendering test, but no promotion goes out while the rail is HOLD.
+
+Vercel project access was rechecked across all eighteen projects on 17
+October. Krish confirmed the reporting token also exists in GitHub secrets;
+the existing sync workflow's manual reporting check verifies that execution
+path without exporting its value. An external runtime does not inherit an
+Actions secret automatically. Use the supported Actions path before asking
+for another binding, and keep authentication separate from the safe report
+delivery test.
+
+The [authenticated Actions check](https://github.com/krishanraja/growth-fulltime/actions/runs/39020906185)
+passed on 17 October at 09:23 UTC: the existing secret was available and the
+pack API returned HTTP 200 with its expected shape. No Full Time namespace
+was advertised and no write was attempted. Authentication is verified for
+that execution path; E00 remains open for safe report delivery.
 
 ## First three working days
 

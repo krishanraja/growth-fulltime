@@ -13,6 +13,17 @@ prompt or paying for a run. At the 17 October reading the latest drop was
 Identify the actual refusal or operational failure for each missing AI
 Pundit. Do not infer causes from the public rail.
 
+Access check on 17 October:
+[the existing free preflight workflow](https://github.com/krishanraja/full-time/actions/runs/39021034413)
+passed for coverage date 16 October at source `210dc080fb`. Its configured
+backend could read release state, selected voices and the day's drop. This
+is a usable read-only path through existing credentials, but it does not
+return stored editorial verdicts or spend. Provide a scoped aggregate read
+for that diagnosis through the existing backend and report it to Control
+Center. Do not copy a service-role key into the public growth repository.
+The preflight's ready flag is a pipeline precondition; it does not replace
+the current beta, release or four-of-six promotion gates.
+
 Propose the smallest supported fix and verify it with the cheapest available
 replay or check. Preserve evidence and publication thresholds. Any new paid
 run needs its own authorised budget. Exit evidence is a fresh eligible match
