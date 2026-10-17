@@ -15,7 +15,7 @@ RATIOS = {'play_rate': ('unique_players', 'unique_visitors'),
           'second_pundit_rate': ('returners_playing_second_pundit', 'returners_7d'),
           'very_disappointed_rate': ('very_disappointed', 'survey_respondents')}
 FIELDS = {'metric', 'value', 'source', 'query_ref', 'window_start', 'window_end',
-          'observed_at', 'status', 'note', 'cohort_end', 'follow_up_through'}
+          'observed_at', 'status', 'note', 'cohort_start', 'cohort_end', 'follow_up_through'}
 
 
 def date(value):
@@ -51,8 +51,10 @@ def validate(observation):
     if value is not None and observation['metric'] in COUNTS and int(value) != value:
         raise ValueError('counts must be whole numbers')
     if observation['metric'] in ('mature_completers', 'returners_7d', 'returners_playing_second_pundit') and status == 'measured':
-        if not observation.get('cohort_end') or not observation.get('follow_up_through'):
+        if not all(observation.get(k) for k in ('cohort_start', 'cohort_end', 'follow_up_through')):
             raise ValueError('retention requires cohort and follow-up dates')
+        if date(observation['cohort_start']) > date(observation['cohort_end']):
+            raise ValueError('invalid cohort start/end interval')
         if date(observation['cohort_end']) + dt.timedelta(days=7) > date(observation['follow_up_through']):
             raise ValueError('retention cohort has not completed its seven-day window')
         if date(observation['follow_up_through']) > captured.date():
@@ -98,8 +100,8 @@ def scorecard(rows, window_start, window_end, as_of=None):
     for name, (num, den) in RATIOS.items():
         n, d = result[num], result[den]
         usable = n['status'] == d['status'] == 'measured' and d['value'] > 0
-        if usable and (n.get('source'), n.get('cohort_end'), n.get('follow_up_through')) != (
-                d.get('source'), d.get('cohort_end'), d.get('follow_up_through')):
+        if usable and (n.get('source'), n.get('cohort_start'), n.get('cohort_end'), n.get('follow_up_through')) != (
+                d.get('source'), d.get('cohort_start'), d.get('cohort_end'), d.get('follow_up_through')):
             usable = False
         if usable and n['value'] > d['value']:
             raise ValueError(f'{name}: numerator exceeds denominator; reconcile the aggregate query')

@@ -248,9 +248,16 @@ class MeasurementTests(unittest.TestCase):
 
     def test_mature_retention_has_a_real_followup_window(self):
         day = dt.datetime.now(dt.timezone.utc).date()
-        cohort = {'cohort_end':str(day-dt.timedelta(days=8)),'follow_up_through':str(day)}
+        cohort = {'cohort_start':str(day-dt.timedelta(days=14)), 'cohort_end':str(day-dt.timedelta(days=8)),'follow_up_through':str(day)}
         result = self.score([observation('returners_7d',4,**cohort),observation('mature_completers',10,**cohort)])
         self.assertEqual(result['return_rate_7d']['value'],0.4)
+
+    def test_different_cohort_starts_cannot_share_a_denominator(self):
+        day=dt.datetime.now(dt.timezone.utc).date()
+        common={'cohort_end':str(day-dt.timedelta(days=8)),'follow_up_through':str(day)}
+        rows=[observation('returners_7d',4,cohort_start=str(day-dt.timedelta(days=14)),**common),
+              observation('mature_completers',10,cohort_start=str(day-dt.timedelta(days=30)),**common)]
+        self.assertIsNone(self.score(rows)['return_rate_7d']['value'])
 
     def test_stale_counts_do_not_make_current_rates(self):
         old = dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=4)

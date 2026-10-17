@@ -20,7 +20,10 @@ query means missing. Daily or rolling uniques are never added into a week.
 Duplicate metric/window rows within one export are refused. A subsequent
 capture updates the reading while preserving source history.
 
-For retention measures, include cohort_end and follow_up_through. Every member
+For retention measures, include cohort_start, cohort_end and follow_up_through.
+The cohort interval identifies first completions; the observation window and
+follow-up interval identify when the mature reading was taken. Numerators and
+denominators must refer to the same complete cohort interval. Every member
 of the reported cohort must have a full seven-day opportunity to return.
 Immature cohorts are refused as measured retention. Supply gaps belong beside
 the cohort, not in a guessed explanation of its behaviour.
