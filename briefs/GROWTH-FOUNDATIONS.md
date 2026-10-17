@@ -84,3 +84,20 @@ stop future messages. Preserve playback, the evidence gates and AI
 disclosure. Update shipped-state documentation only after implementation and
 live readback. No personalisation, daily-service or public-release promise
 is added by this brief.
+
+## Scoped source export and share-image quality
+
+The engine now accepts only versioned aggregate exports described in
+`MEASUREMENT.md`. Extend an existing authenticated product read path for
+editorial verdicts, publication history, recorded spend and listener cohorts.
+Keep raw identities and service credentials in the product. The preflight
+proof does not expose those records. Give each aggregate its executed query
+reference, exact window and observation time; use null when unavailable.
+
+Visual QA of the published Reporter share image on 17 October found missing
+glyphs in its text. Reproduce using the latest edition's share_image_url;
+check the share-card renderer's installed/bundled font and fallback handling.
+The growth renderer uses a deterministic match card from verified fixture data
+and retains ASSETS until caption timing is reviewed. Repair the product's
+per-edition crawler preview and test the actual generated image, not only its
+HTTP response or dimensions. No production image was modified by this session.

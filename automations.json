@@ -1,57 +1,20 @@
 {
- "_about": "The existing eight-job inventory. EXECUTION-PLAN.md E07 replaces this schedule before the next activation, and E00 verifies Control Center reporting access and delivery first. A planning edit does not create or enable tasks. The README table is the same inventory for reading. Times are London (Europe/London).",
- "timezone": "Europe/London",
- "run_in": "this local project (not a new worktree), so every run shares local/ (the sync, the packs, the creative record and the lists)",
- "access": "network on (github.com, raw.githubusercontent.com, fulltime.fm, Control Center and the channels); approved read-only Control Center aggregate sources first; a Full Time branded signed-in browser when available; no personal social accounts",
- "model": "default",
- "automations": [
-  {
-   "name": "Full Time growth: sync",
-   "schedule": "RRULE:FREQ=DAILY;BYHOUR=6;BYMINUTE=0",
-   "job": "jobs/sync.md",
-   "prompt": "Run jobs/sync.md as AGENTS.md says."
-  },
-  {
-   "name": "Full Time growth: numbers",
-   "schedule": "RRULE:FREQ=DAILY;BYHOUR=6;BYMINUTE=15",
-   "job": "jobs/numbers.md",
-   "prompt": "Run jobs/numbers.md as AGENTS.md says."
-  },
-  {
-   "name": "Full Time growth: radar",
-   "schedule": "RRULE:FREQ=DAILY;BYHOUR=6;BYMINUTE=30",
-   "job": "jobs/radar.md",
-   "prompt": "Run jobs/radar.md as AGENTS.md says."
-  },
-  {
-   "name": "Full Time growth: match morning",
-   "schedule": "RRULE:FREQ=DAILY;BYHOUR=6;BYMINUTE=45",
-   "job": "jobs/match-morning.md",
-   "prompt": "Run jobs/match-morning.md as AGENTS.md says."
-  },
-  {
-   "name": "Full Time growth: report",
-   "schedule": "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=8;BYMINUTE=0",
-   "job": "jobs/report.md",
-   "prompt": "Run jobs/report.md as AGENTS.md says."
-  },
-  {
-   "name": "Full Time growth: creators",
-   "schedule": "RRULE:FREQ=WEEKLY;BYDAY=TU;BYHOUR=8;BYMINUTE=0",
-   "job": "jobs/creators.md",
-   "prompt": "Run jobs/creators.md as AGENTS.md says."
-  },
-  {
-   "name": "Full Time growth: product",
-   "schedule": "RRULE:FREQ=WEEKLY;BYDAY=WE;BYHOUR=8;BYMINUTE=0",
-   "job": "jobs/product.md",
-   "prompt": "Run jobs/product.md as AGENTS.md says."
-  },
-  {
-   "name": "Full Time growth: launch",
-   "schedule": "RRULE:FREQ=WEEKLY;BYDAY=TH;BYHOUR=8;BYMINUTE=0",
-   "job": "jobs/launch.md",
-   "prompt": "Run jobs/launch.md as AGENTS.md says."
-  }
- ]
+  "schema_version": 2,
+  "timezone": "Europe/London",
+  "run_in": "existing persistent growth-fulltime project; verify local history, never silently replace it",
+  "model": "default; deterministic CLI first, bounded research only",
+  "automations": [
+    {
+      "name": "Full Time growth: morning batch",
+      "schedule": "RRULE:FREQ=DAILY;BYHOUR=6;BYMINUTE=15",
+      "job": "jobs/morning.md",
+      "prompt": "Run jobs/morning.md in the existing persistent growth-fulltime project, following AGENTS.md and the current handover. Use the deterministic morning command first. Keep all external product and Control Centre changes as briefs."
+    },
+    {
+      "name": "Full Time growth: weekly review",
+      "schedule": "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=8;BYMINUTE=0",
+      "job": "jobs/weekly.md",
+      "prompt": "Run jobs/weekly.md in the existing persistent growth-fulltime project, following AGENTS.md and the current handover. Read the whole-window scorecard and durable experiment history. Keep all external product and Control Centre changes as briefs."
+    }
+  ]
 }

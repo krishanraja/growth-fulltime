@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `702c84d242` and from fulltime.fm on 2026-10-17T01:21:11+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `210dc080fb` and from fulltime.fm on 2026-10-17T10:12:23+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -19,7 +19,7 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 Read these again before drafting anything:
 
-- changed: `NOW.md`
+- changed: `AGENTS.md`
 
 ## Rulings the playbook needs
 
@@ -63,7 +63,7 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `702c84d242` 2026-10-16 docs(steward): 2026-10-16 stamp head at 319d324
+- `210dc080fb` 2026-10-17 docs(harness): maintain repository administration (#81)
 
 ## Work in flight (open pull requests)
 

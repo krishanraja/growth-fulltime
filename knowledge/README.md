@@ -1,4 +1,14 @@
-# Knowledge
+# Historical source material
+
+This directory preserves the source playbook as planning history. It is not an
+active job list, acquisition calendar or permission to use excluded channels.
+The executable policy is in engine/policy.py; current instructions are AGENTS.md,
+PLAYBOOK.md and EXECUTION-PLAN.md. Personal accounts, cold email and paid work
+remain excluded even if historical source material recommends them.
+
+The active schedule has two jobs in automations.json. The older handover and
+source retain their historical conditions; do not recreate the eight-job setup.
+
 
 Krish gave this engine its operating document on 16 October 2026, with the
 brief to build "the dedicated growth engine for this app, obsessed with

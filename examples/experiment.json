@@ -1,0 +1,11 @@
+{
+  "id": "exact-edition-share-v1",
+  "hypothesis": "A preview naming the match and AI Pundit improves completed listens from eligible shares.",
+  "audience": "Consenting beta testers after the product and recruitment gates pass",
+  "changed_variable": "Exact-edition preview title",
+  "primary_metric": "finish_rate",
+  "guardrails": ["No increase in playback failures", "No wrong-edition links", "No additional marketing cash"],
+  "duration_days": 7,
+  "min_sample": 30,
+  "stopping_rule": "Review after seven complete days and thirty eligible observations; otherwise report inconclusive."
+}

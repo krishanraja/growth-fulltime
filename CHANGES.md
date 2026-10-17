@@ -5,6 +5,13 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-17: completed the growth-side engine and made Control Centre a brief-only handoff.
+  Ruling (Krish, 2026-10-17): "you are not to do any actual work in control-center, only pass me a brief once you have completed your work".
+  Ruling (Krish, 2026-10-17): "Complete this all to 100% without coming back to me again."
+  Enforced exclusions in code, removed remote report writes and the old eight-job
+  setup, added durable history/recovery, aggregate measurement, experiment rules,
+  local rendering, two consolidated jobs and a complete handoff contract. Product
+  and release dependencies remain explicit; no product ruling was approved.
 - 2026-10-17: verify existing access before requesting new credentials.
   Krish: "You should have full access to Vercel and all my projects.
   GROWTH_ENGINE_TOKEN is also in the github secrets". All eighteen Vercel
