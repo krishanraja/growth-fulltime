@@ -66,6 +66,9 @@ Centre brief. No implementation work in Control Centre.
     copied draft is never proof of dashboard delivery or publication.
 11. All implementation stays here. Product and Control Centre changes are
     handoffs. No Control Centre writes or automatic switch to its writer.
+    Scheduled executions write only ignored local/ files. Changes to engine
+    code, tracked briefs, instructions or schedules belong to an interactive
+    implementation session.
 
 ## Commands and private history
 
