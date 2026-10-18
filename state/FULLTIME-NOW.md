@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `97018c4e4f` and from fulltime.fm on 2026-10-18T14:39:22+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `6b409c7ba8` and from fulltime.fm on 2026-10-18T23:19:41+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -19,8 +19,7 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 Read these again before drafting anything:
 
-- changed: `AGENTS.md`
-- changed: `docs/22-vision-and-beta.md`
+- changed: `NOW.md`
 
 ## Rulings the playbook needs
 
@@ -64,10 +63,8 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `97018c4e4f` 2026-10-18 Merge pull request #82 from krishanraja/harness/canon-sync
-- `532a713395` 2026-10-18 docs: set North Star dates to agent speed
-- `387e92ce34` 2026-10-18 docs: add the North Star and anchor every session to it
+- `6b409c7ba8` 2026-10-18 docs(steward): 2026-10-18 stamp head, record North Star and canon sync
 
 ## Work in flight (open pull requests)
 
-- none
+- #83 Sync the canon block (`harness/canon-sync`, updated 2026-10-18)
