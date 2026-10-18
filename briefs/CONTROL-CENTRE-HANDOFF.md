@@ -1,3 +1,5 @@
+> **Superseded on 2026-10-18** by [`docs/CONTROL-CENTER-BRIEF.md`](../docs/CONTROL-CENTER-BRIEF.md): Control Center now runs one protocol for every growth engine. Kept for its history.
+
 # Control Centre implementation handoff
 
 The growth-fulltime implementation is complete in its own repository. This is
