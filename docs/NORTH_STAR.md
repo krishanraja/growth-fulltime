@@ -4,7 +4,7 @@ Status: Current
 Owner: Krish Raja
 Last verified: 2026-10-18
 
-> By the start of the 2027/28 season, most new Full Time listeners arrive because a fan shared an AI Pundit's take, not because anyone was invited. This engine knows which takes travel and makes more of them.
+> By 31 January 2027, most new Full Time listeners arrive because a fan shared an AI Pundit's take, not because anyone was invited. This engine knows which takes travel and makes more of them.
 
 Set by Krish on 18 October 2026. It is not reached yet. It is what every session in this repository works toward.
 
