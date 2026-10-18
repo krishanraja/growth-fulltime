@@ -1,6 +1,6 @@
 {
   "canon": {
-    "AGENTS.md": "556f511b5f2da502",
+    "AGENTS.md": "cbd9a9696133dd6c",
     "NOW.md": "e90539cb0205d914",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "d1f3f6a548defbc4",
@@ -10,14 +10,33 @@
     "docs/12-roadmap.md": "f70e7df818dfe63a",
     "docs/19-release-state.md": "34041a668b216d8b",
     "docs/21-go-to-market-agent.md": "6f0328fbfd58bf1a",
-    "docs/22-vision-and-beta.md": "8b7290f6c0a3d646",
+    "docs/22-vision-and-beta.md": "d12a9746f02d9fd9",
     "docs/product-state.json": "21eccb64cae77d44"
   },
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [],
-  "commits": [],
+  "changed_since_last_sync": [
+    "AGENTS.md",
+    "docs/22-vision-and-beta.md"
+  ],
+  "commits": [
+    {
+      "date": "2026-10-18T14:20:52Z",
+      "sha": "97018c4e4f",
+      "subject": "Merge pull request #82 from krishanraja/harness/canon-sync"
+    },
+    {
+      "date": "2026-10-18T13:51:30Z",
+      "sha": "532a713395",
+      "subject": "docs: set North Star dates to agent speed"
+    },
+    {
+      "date": "2026-10-18T11:30:04Z",
+      "sha": "387e92ce34",
+      "subject": "docs: add the North Star and anchor every session to it"
+    }
+  ],
   "decisions": [
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
     "2026-09-27 - Premier League only, one match, no scroll",
@@ -34,14 +53,7 @@
     }
   ],
   "notes": [],
-  "open_pulls": [
-    {
-      "branch": "harness/canon-sync",
-      "number": 82,
-      "title": "Sync the canon block",
-      "updated": "2026-10-17T22:38:50Z"
-    }
-  ],
+  "open_pulls": [],
   "previous_sha": "210dc080fbdbf8d9a1bd888d2812dceda075bb44",
   "push": {
     "open": false,
@@ -143,6 +155,6 @@
       "status": "pending"
     }
   },
-  "sha": "210dc080fbdbf8d9a1bd888d2812dceda075bb44",
-  "synced_at": "2026-10-18T01:09:22+00:00"
+  "sha": "97018c4e4fe3b72faa0dd3b8c93eb7dbe264d52e",
+  "synced_at": "2026-10-18T14:39:22+00:00"
 }
