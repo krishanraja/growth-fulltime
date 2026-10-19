@@ -1,0 +1,47 @@
+# The Control Center growth engine loop on a clean runner (docs/CONTROL-CENTER-BRIEF.md).
+#
+# Control Center wakes this repository every morning around 06:10 London with
+# a repository_dispatch of type cc-growth-directive, whose payload carries only
+# { directive_id, engine_id }. The loop journals a started attempt, pulls the
+# directive, runs the self-test and repository verification, reads the public
+# sources the hourly sync reads, reports with a digest readback, reads Krish's
+# decisions and journals the end. It never sends, posts, spends or publishes,
+# and it uploads nothing: private history lives only in the persistent
+# workspace, so the objectives measured there report as missing here.
+name: control center loop
+on:
+  repository_dispatch:
+    types: [cc-growth-directive]
+  workflow_dispatch:
+    inputs:
+      synthetic:
+        description: 'Report in synthetic mode (stored and read back, never counted)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: control-center-loop
+  cancel-in-progress: false
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Run the protocol loop
+        env:
+          CONTROL_CENTER_ENGINE_TOKEN: ${{ secrets.CONTROL_CENTER_ENGINE_TOKEN }}
+          CONTROL_CENTER_URL: ${{ vars.CONTROL_CENTER_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CC_DIRECTIVE_ID: ${{ github.event.client_payload.directive_id }}
+          CC_DISPATCH_ENGINE_ID: ${{ github.event.client_payload.engine_id }}
+          CC_SYNTHETIC: ${{ inputs.synthetic && '1' || '' }}
+        run: |
+          if [ -n "$CC_SYNTHETIC" ]; then
+            python3 growth.py cc dispatch --synthetic
+          else
+            python3 growth.py cc dispatch
+          fi

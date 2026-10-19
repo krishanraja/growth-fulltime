@@ -84,10 +84,10 @@ regenerate promotional banks. The weekly run reads the same durable history,
 uses a whole seven-day window and prepares native weekly-review findings,
 kill_list and double_down without touching human decision fields.
 
-Control Centre receives a handoff contract, not writes from this session.
-Its implementation must use existing Growth, Board and Home surfaces. Packs
-and outbox files are private checkpoints until a separate implementation
-verifies a complete product-isolated round trip.
+Control Center receives each run's protocol report (`growth.py cc`) and
+nothing else from this engine: Growth > Engines shows it, and walled asks
+reach Krish's one list on Home. Packs and outbox files stay private local
+checkpoints; packs are never written to Control Center.
 
 Target zero incremental marketing cash. Record observed model/audio calls,
 external spend and human minutes separately; missing usage is not zero.

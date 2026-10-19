@@ -1,15 +1,15 @@
-"""Read-only check using the existing Actions secret; never log credentials or packs."""
+"""Read-only check of the legacy packs read using the existing Actions secret; never log
+credentials or packs. The growth engine protocol loop is growth.py cc (engine/control_center.py)."""
 
 import json
 import os
+from pathlib import Path
 import sys
 import urllib.error
 import urllib.request
 
-
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from engine.control_center import opener  # the one Control Center transport: no redirects
 
 
 def main():
@@ -26,7 +26,7 @@ def main():
         method='GET',
     )
     try:
-        with urllib.request.build_opener(NoRedirect).open(request, timeout=25) as response:
+        with opener().open(request, timeout=25) as response:
             result['http_status'] = response.status
             payload = response.read(1_048_577)
         if len(payload) > 1_048_576:

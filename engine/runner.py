@@ -12,6 +12,19 @@ from .measurements import scorecard, validate_export
 from .records import History, atomic_json, fingerprint, now
 
 
+def constraints(gate, measures, state):
+    """The current constraints in priority order, as (key, instruction). The
+    morning batch and the clean-runner loop share this list, capped at three."""
+    blockers = []
+    if not gate['open']:
+        blockers.append(('rail', 'Read the stored editorial verdicts for the newest drop; fix the refusal in a full-time session before another paid run.'))
+    if measures['unique_completers']['status'] != 'measured':
+        blockers.append(('measurement', 'Implement the aggregate completion and mature return queries in the existing source path; counts remain unknown.'))
+    if not policy.release_open(state):
+        blockers.append(('release', 'Public acquisition stays held until Krish makes the product release decision and a full-time session records it in its decision log.'))
+    return blockers[:3]
+
+
 def run(growth, mode, offline=False, observation_file=None, run_date=None):
     started = time.monotonic()
     today = dt.datetime.now(ZoneInfo('Europe/London')).date()
@@ -38,14 +51,8 @@ def run(growth, mode, offline=False, observation_file=None, run_date=None):
     rail = state.get('rail')
     gate = growth.push_gate(rail)
     source = 'full-time ' + state['sha'][:10] + ', read ' + state['synced_at']
-    blockers = []
-    if not gate['open']:
-        blockers.append(('rail', 'Read the stored editorial verdicts for the newest drop; fix the refusal in a full-time session before another paid run.'))
-    if measures['unique_completers']['status'] != 'measured':
-        blockers.append(('measurement', 'Implement the aggregate completion and mature return queries in the existing source path; counts remain unknown.'))
-    blockers.append(('reporting', 'Use the completed Control Centre handoff brief to implement product-isolated reporting and the existing dashboard views.'))
     items = [{'item_id': 'fulltime-' + key, 'platform': 'other', 'why': key,
-              'text': text, 'estimated_minutes': 5} for key, text in blockers[:3]]
+              'text': text, 'estimated_minutes': 5} for key, text in constraints(gate, measures, state)]
     capture = now()
     run_key = f'fulltime:{today}:{mode}'
     usage = {'marketing_cash_gbp': 0, 'model_calls': 0, 'audio_generation_calls': 0,
@@ -68,7 +75,7 @@ def run(growth, mode, offline=False, observation_file=None, run_date=None):
                                   'rail': gate['why'],
                                   'measurement': 'Completed and reachable listeners remain unknown.' if measures['reachable_completers']['status'] != 'measured'
                                   else 'Use the sourced scorecard and its complete observation window.',
-                                  'delivery': 'Local handoff only; nothing was written to Control Centre.'},
+                                  'delivery': 'Packs stay local; the run report reaches Control Center only through growth.py cc.'},
                      'kill_list': ['Keep personal social accounts, cold email and paid acquisition excluded.'],
                      'double_down': [item['text'] for item in items]}
     run_digest = fingerprint({'source_sha': state['sha'], 'rail': rail,

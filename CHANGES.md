@@ -5,6 +5,16 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-19: adopted the Control Center growth engine protocol.
+  Ruling (Krish, 2026-10-19): "make each engine adopt its brief now".
+  This supersedes the 17 October brief-only rule for run reports only: the
+  engine now journals attempts, pulls its directive, reports with a digest
+  readback and reads decisions through `growth.py cc`, at the end of both
+  workspace tasks and on Control Center's daily `cc-growth-directive`
+  dispatch (`.github/workflows/control-center.yml`). Packs stay local. The
+  third morning action is now the release decision, since the reporting
+  integration it named is done. Nothing sends, posts, spends or publishes,
+  and an approval is recorded, never executed.
 - 2026-10-17: completed the growth-side engine and made Control Centre a brief-only handoff.
   Ruling (Krish, 2026-10-17): "you are not to do any actual work in control-center, only pass me a brief once you have completed your work".
   Ruling (Krish, 2026-10-17): "Complete this all to 100% without coming back to me again."
