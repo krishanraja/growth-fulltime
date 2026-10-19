@@ -1,12 +1,12 @@
 {
   "canon": {
     "AGENTS.md": "cbd9a9696133dd6c",
-    "NOW.md": "91e15816e87d0b9a",
+    "NOW.md": "78a1ba506da73d74",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "d1f3f6a548defbc4",
     "docs/07-marketing.md": "e5e183e7188600fe",
     "docs/09-growth.md": "69fbad02fd6d2f24",
-    "docs/11-legal.md": "3b05aac034b7a302",
+    "docs/11-legal.md": "77d172de3a4cc0e0",
     "docs/12-roadmap.md": "f70e7df818dfe63a",
     "docs/19-release-state.md": "34041a668b216d8b",
     "docs/21-go-to-market-agent.md": "6f0328fbfd58bf1a",
@@ -17,13 +17,14 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "NOW.md"
+    "NOW.md",
+    "docs/11-legal.md"
   ],
   "commits": [
     {
-      "date": "2026-10-18T22:29:18Z",
-      "sha": "6b409c7ba8",
-      "subject": "docs(steward): 2026-10-18 stamp head, record North Star and canon sync"
+      "date": "2026-10-19T04:13:57Z",
+      "sha": "784cbcb2dc",
+      "subject": "Name Mindmaker LLC and Mindmaker Ltd in a footer note, terms and privacy (#84)"
     }
   ],
   "decisions": [
@@ -50,7 +51,7 @@
       "updated": "2026-10-18T22:35:34Z"
     }
   ],
-  "previous_sha": "97018c4e4fe3b72faa0dd3b8c93eb7dbe264d52e",
+  "previous_sha": "6b409c7ba8c5fa2d4e69b5361ab8673842a6c4e2",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -151,6 +152,6 @@
       "status": "pending"
     }
   },
-  "sha": "6b409c7ba8c5fa2d4e69b5361ab8673842a6c4e2",
-  "synced_at": "2026-10-18T23:19:41+00:00"
+  "sha": "784cbcb2dca30656f1daaa41e581b364f3c66807",
+  "synced_at": "2026-10-19T06:19:52+00:00"
 }
