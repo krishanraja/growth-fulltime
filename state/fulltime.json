@@ -1,6 +1,6 @@
 {
   "canon": {
-    "AGENTS.md": "cbd9a9696133dd6c",
+    "AGENTS.md": "8c663357fadef2de",
     "NOW.md": "78a1ba506da73d74",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "d1f3f6a548defbc4",
@@ -17,14 +17,23 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "NOW.md",
-    "docs/11-legal.md"
+    "AGENTS.md"
   ],
   "commits": [
     {
-      "date": "2026-10-19T04:13:57Z",
-      "sha": "784cbcb2dc",
-      "subject": "Name Mindmaker LLC and Mindmaker Ltd in a footer note, terms and privacy (#84)"
+      "date": "2026-10-19T12:40:32Z",
+      "sha": "9e4d053776",
+      "subject": "Fix live evidence intake: FotMob 404 fallback and Drive 403 diagnostics (#86)"
+    },
+    {
+      "date": "2026-10-19T08:05:14Z",
+      "sha": "7660d3130d",
+      "subject": "Add scheduled Premier League evidence intake to GitHub Actions (#85)"
+    },
+    {
+      "date": "2026-10-19T08:05:06Z",
+      "sha": "93787a76ae",
+      "subject": "docs(canon): sync the canon block to v2026.10.17.1 (#83)"
     }
   ],
   "decisions": [
@@ -45,13 +54,13 @@
   "notes": [],
   "open_pulls": [
     {
-      "branch": "harness/canon-sync",
-      "number": 83,
-      "title": "Sync the canon block",
-      "updated": "2026-10-18T22:35:34Z"
+      "branch": "fix/pl-evidence-reliability",
+      "number": 87,
+      "title": "Use authenticated match evidence and guard incomplete intake",
+      "updated": "2026-10-19T13:34:11Z"
     }
   ],
-  "previous_sha": "6b409c7ba8c5fa2d4e69b5361ab8673842a6c4e2",
+  "previous_sha": "784cbcb2dca30656f1daaa41e581b364f3c66807",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -152,6 +161,6 @@
       "status": "pending"
     }
   },
-  "sha": "784cbcb2dca30656f1daaa41e581b364f3c66807",
-  "synced_at": "2026-10-19T06:19:52+00:00"
+  "sha": "9e4d0537760cff512dfa59281fc4c6b7fd718e64",
+  "synced_at": "2026-10-19T13:36:22+00:00"
 }

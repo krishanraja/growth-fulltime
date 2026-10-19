@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `784cbcb2dc` and from fulltime.fm on 2026-10-19T06:19:52+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `9e4d053776` and from fulltime.fm on 2026-10-19T13:36:22+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -19,8 +19,7 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 Read these again before drafting anything:
 
-- changed: `NOW.md`
-- changed: `docs/11-legal.md`
+- changed: `AGENTS.md`
 
 ## Rulings the playbook needs
 
@@ -64,8 +63,10 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `784cbcb2dc` 2026-10-19 Name Mindmaker LLC and Mindmaker Ltd in a footer note, terms and privacy (#84)
+- `9e4d053776` 2026-10-19 Fix live evidence intake: FotMob 404 fallback and Drive 403 diagnostics (#86)
+- `7660d3130d` 2026-10-19 Add scheduled Premier League evidence intake to GitHub Actions (#85)
+- `93787a76ae` 2026-10-19 docs(canon): sync the canon block to v2026.10.17.1 (#83)
 
 ## Work in flight (open pull requests)
 
-- #83 Sync the canon block (`harness/canon-sync`, updated 2026-10-18)
+- #87 Use authenticated match evidence and guard incomplete intake (`fix/pl-evidence-reliability`, updated 2026-10-19)
