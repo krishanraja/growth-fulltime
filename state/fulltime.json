@@ -16,24 +16,12 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [
-    "AGENTS.md"
-  ],
+  "changed_since_last_sync": [],
   "commits": [
     {
-      "date": "2026-10-19T12:40:32Z",
-      "sha": "9e4d053776",
-      "subject": "Fix live evidence intake: FotMob 404 fallback and Drive 403 diagnostics (#86)"
-    },
-    {
-      "date": "2026-10-19T08:05:14Z",
-      "sha": "7660d3130d",
-      "subject": "Add scheduled Premier League evidence intake to GitHub Actions (#85)"
-    },
-    {
-      "date": "2026-10-19T08:05:06Z",
-      "sha": "93787a76ae",
-      "subject": "docs(canon): sync the canon block to v2026.10.17.1 (#83)"
+      "date": "2026-10-19T13:54:42Z",
+      "sha": "5aa7788fea",
+      "subject": "Use authenticated match evidence and guard incomplete intake"
     }
   ],
   "decisions": [
@@ -52,15 +40,8 @@
     }
   ],
   "notes": [],
-  "open_pulls": [
-    {
-      "branch": "fix/pl-evidence-reliability",
-      "number": 87,
-      "title": "Use authenticated match evidence and guard incomplete intake",
-      "updated": "2026-10-19T13:34:11Z"
-    }
-  ],
-  "previous_sha": "784cbcb2dca30656f1daaa41e581b364f3c66807",
+  "open_pulls": [],
+  "previous_sha": "9e4d0537760cff512dfa59281fc4c6b7fd718e64",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -161,6 +142,6 @@
       "status": "pending"
     }
   },
-  "sha": "9e4d0537760cff512dfa59281fc4c6b7fd718e64",
-  "synced_at": "2026-10-19T13:36:22+00:00"
+  "sha": "5aa7788fea40a6326050b96ba7fe2f91d2428792",
+  "synced_at": "2026-10-19T19:59:29+00:00"
 }

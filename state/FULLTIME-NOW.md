@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `9e4d053776` and from fulltime.fm on 2026-10-19T13:36:22+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `5aa7788fea` and from fulltime.fm on 2026-10-19T19:59:29+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -14,12 +14,6 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 | Crystal Palace 3-1 Nottingham Forest | 2026-10-11 | 1 of 6 | The Reporter |
 | Manchester City 5-3 Sunderland | 2026-09-20 | 1 of 6 | The Romantic |
 | Tottenham 2-3 Aston Villa | 2026-09-19 | 1 of 6 | The Gaffer |
-
-## Canon changed since the last sync
-
-Read these again before drafting anything:
-
-- changed: `AGENTS.md`
 
 ## Rulings the playbook needs
 
@@ -63,10 +57,8 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `9e4d053776` 2026-10-19 Fix live evidence intake: FotMob 404 fallback and Drive 403 diagnostics (#86)
-- `7660d3130d` 2026-10-19 Add scheduled Premier League evidence intake to GitHub Actions (#85)
-- `93787a76ae` 2026-10-19 docs(canon): sync the canon block to v2026.10.17.1 (#83)
+- `5aa7788fea` 2026-10-19 Use authenticated match evidence and guard incomplete intake
 
 ## Work in flight (open pull requests)
 
-- #87 Use authenticated match evidence and guard incomplete intake (`fix/pl-evidence-reliability`, updated 2026-10-19)
+- none
