@@ -57,6 +57,11 @@ related hooks. Every destination is built by `growth.py link` and names the
 actual drop and published AI Pundit. Initial assets support YouTube and private
 site previews. No new image, voice or video generation is needed.
 
+COPY.md applies the copywriting corpus to this work. Before drafting, set the
+surface's awareness level and lead type and pass the take test. Before
+handoff, run edit passes A to E, `growth.py check` and the rubric, and record
+the diagnosis in the item's `why`. Tests follow its test-record mapping.
+
 ## Measurement and experiments
 
 `MEASUREMENT.md` owns definitions and aggregate query requirements. Platform

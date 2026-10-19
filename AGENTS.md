@@ -25,7 +25,8 @@ or write its app data by any other route.
    `HANDOVER-*.md`.
 2. Read `local/state/FULLTIME-NOW.md`. Read any changed canon before drafting.
    A STOP means the checker must be reconciled with product truth first.
-3. Read `PLAYBOOK.md`, `EXECUTION-PLAN.md`, `BROWSER.md`, then the job file.
+3. Read `PLAYBOOK.md`, `EXECUTION-PLAN.md`, `BROWSER.md`, `COPY.md` (before
+   any drafting or review of copy), then the job file.
 4. Run the requested job. Only `jobs/morning.md` and `jobs/weekly.md` are active.
 
 ## Owner instructions

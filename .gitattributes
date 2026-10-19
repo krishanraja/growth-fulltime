@@ -1,0 +1,4 @@
+# Preserved sources are kept byte for byte (knowledge/sources.json).
+# No line-ending or other conversion may touch them.
+knowledge/copywriting-offers-demand-corpus.md -text
+knowledge/copywriting-offers-demand-corpus-summary.md -text

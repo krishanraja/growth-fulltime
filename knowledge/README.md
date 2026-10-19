@@ -1,6 +1,7 @@
 # Historical source material
 
-This directory preserves the source playbook as planning history. It is not an
+This directory preserves source documents: the playbook as planning history
+and, since 19 October 2026, the copywriting corpus as working knowledge. It is not an
 active job list, acquisition calendar or permission to use excluded channels.
 The executable policy is in engine/policy.py; current instructions are AGENTS.md,
 PLAYBOOK.md and EXECUTION-PLAN.md. Personal accounts, cold email and paid work
@@ -17,6 +18,9 @@ getting this into market".
 | File | What it is |
 |---|---|
 | `full-time-1000-users-playbook.md` | "Full Time: The 1,000 Free Users in 30 Days Playbook", as Krish gave it, with its numbered references. |
+| `copywriting-offers-demand-corpus.md` | "The Copywriting, Offers and Demand Corpus" version 1.0, as Krish gave it on 19 October 2026 (upload `copywriting-offer-corpus.md`). |
+| `copywriting-offers-demand-corpus-summary.md` | Its short summary, as given (upload `The_Copywriting_Offers_and_Demand_Corpus.md`). |
+| `sources.json` | Size, SHA-256, original filename and received date for each preserved corpus file. |
 
 This is the source. **`PLAYBOOK.md` (repository root) is how this engine
 runs it.** Each job in `jobs/` names the part it uses. When a job and the
@@ -67,3 +71,20 @@ Each change below is recorded so no session "fixes" it back:
    using the product, brand accounts and explicit opt-ins. The source
    document's broader channel banks are historical options, including
    recommendations to use founder profiles or email press and creators.
+
+## The copywriting corpus
+
+Krish, 19 October 2026: "all of these growth engines need to be imbued with
+this knowledge". The corpus synthesises fourteen copywriting books and
+Hormozi's `$100M` trilogy. Its two files are kept byte for byte: never edit,
+reformat or "fix" them, including their em dashes. `scripts/verify_repository.py`
+and `tests/test_knowledge.py` check every byte against `sources.json`, and
+`.gitattributes` stops line-ending conversion.
+
+**`COPY.md` (repository root) is how this engine applies it**: awareness and
+lead by surface, the take test, the Value Equation for a free listen, the
+Core Four on permitted channels, allowed proof, edit passes, the rubric and
+the test record. Its numbered list "Where this engine's rules change the
+corpus" records every override (no paid lane, no cold outbound, no invented
+proof or urgency, agents draft and Krish acts, gates still hold) so no session
+"fixes" it back.
