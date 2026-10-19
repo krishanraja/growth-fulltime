@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "note": "Preserved source documents. Each file is kept byte for byte as received; scripts/verify_repository.py checks its size and SHA-256. Never edit, reformat or re-save these files. COPY.md is how this engine applies them.",
+  "sources": [
+    {
+      "path": "knowledge/copywriting-offers-demand-corpus.md",
+      "original_filename": "copywriting-offer-corpus.md",
+      "title": "The Copywriting, Offers and Demand Corpus",
+      "version": "1.0",
+      "received": "2026-10-19",
+      "received_from": "Krish",
+      "instruction": "all of these growth engines need to be imbued with this knowledge",
+      "bytes": 68132,
+      "sha256": "04fddb23da2cb210470f60b57a6d78b56d37c3f84316217e0e493caa6b9856d9",
+      "applied_by": "COPY.md"
+    },
+    {
+      "path": "knowledge/copywriting-offers-demand-corpus-summary.md",
+      "original_filename": "The_Copywriting_Offers_and_Demand_Corpus.md",
+      "title": "The Copywriting, Offers and Demand Corpus (summary)",
+      "received": "2026-10-19",
+      "received_from": "Krish",
+      "instruction": "all of these growth engines need to be imbued with this knowledge",
+      "bytes": 476,
+      "sha256": "2de846209031c79c7d635509da1d64516cfd055f6dad5b60274ef3cdcf926e87",
+      "applied_by": "COPY.md"
+    }
+  ]
+}

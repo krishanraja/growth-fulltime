@@ -5,6 +5,14 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-19: the copywriting, offers and demand corpus is now working knowledge.
+  Krish: "all of these growth engines need to be imbued with this knowledge".
+  Both files are preserved byte for byte in `knowledge/` and registered in
+  `knowledge/sources.json`; repository verification and a unit test check
+  their size and SHA-256. `COPY.md` applies the corpus to this engine and
+  lists where its rules override it. PLAYBOOK.md, both job files and AGENTS.md
+  now point drafting and review at it. No schedule, automation, contract,
+  policy gate or Control Center behaviour changed.
 - 2026-10-19: adopted the Control Center growth engine protocol.
   Ruling (Krish, 2026-10-19): "make each engine adopt its brief now".
   This supersedes the 17 October brief-only rule for run reports only: the

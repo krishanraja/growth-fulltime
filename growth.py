@@ -1133,8 +1133,9 @@ def self_test():
     flow = Path(HERE, '.github', 'workflows', 'control-center.yml').read_text()
     t('the dispatch workflow wakes on cc-growth-directive with read-only contents',
       'types: [cc-growth-directive]' in flow and 'contents: read' in flow and 'upload-artifact' not in flow)
-    for f in ('PLAYBOOK.md', 'BROWSER.md', 'CHANGES.md', 'rulings.json', 'knowledge/README.md',
-              'knowledge/full-time-1000-users-playbook.md'):
+    for f in ('PLAYBOOK.md', 'BROWSER.md', 'CHANGES.md', 'COPY.md', 'rulings.json', 'knowledge/README.md',
+              'knowledge/full-time-1000-users-playbook.md', 'knowledge/sources.json',
+              'knowledge/copywriting-offers-demand-corpus.md', 'knowledge/copywriting-offers-demand-corpus-summary.md'):
         t(f'{f} exists', os.path.exists(os.path.join(HERE, f)))
     ignored = Path(HERE, '.gitignore').read_text()
     t('local/ is never committed (the repository is public)', re.search(r'^/?local/?$', ignored, re.M) is not None)
