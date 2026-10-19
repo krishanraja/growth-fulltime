@@ -2,11 +2,11 @@
 
 Full Time's growth engine: enforce the owner's channel limits, read live
 product truth, keep creative and experiment history, reuse approved media and
-prepare honest reports for a separate Control Centre integration.
+report honestly to Control Center through its growth engine protocol.
 
 No personal social accounts, cold outbound email, paid acquisition or paid
 media generation. All implementation belongs here. Full-time and Control
-Centre changes are handoff briefs. Nothing here sends or publishes marketing.
+Center changes are handoff briefs. Nothing here sends or publishes marketing.
 
 ## Run
 
@@ -89,21 +89,83 @@ needs review. Existing renders are reused. Nothing is uploaded.
 
 `automations.json` owns these two tasks. Reuse this persistent project and its
 private history. Scheduled commands use --require-existing-history. Never silently reset the ledger if a scheduled execution
-cannot access it. The separate hourly GitHub sync only keeps public source
-state current. Schedule status and task IDs are recorded in the final handover.
+cannot access it. Each task ends with the Control Center loop below. The
+separate hourly GitHub sync only keeps public source state current. Schedule
+status and task IDs are recorded in the final handover.
 
-## Reporting and handoff
+## The Control Center loop
 
-Control Centre is the future unified dashboard. The completed brief is
-[briefs/CONTROL-CENTRE-HANDOFF.md](briefs/CONTROL-CENTRE-HANDOFF.md), with the
-[versioned report schema](contracts/reporting-v2.schema.json). Full-time work
-is in [briefs/GROWTH-FOUNDATIONS.md](briefs/GROWTH-FOUNDATIONS.md).
+Control Center is the reporting surface ([brief](docs/CONTROL-CENTER-BRIEF.md),
+[protocol](docs/control-center/ENGINE-PROTOCOL.md)). This engine is slug
+`fulltime`, engine_id `growth-fulltime`, product_slug `full-time`. One client
+(engine/control_center.py) has two entry points:
 
-`export` writes local/handoff/reporting-bundle.json with report IDs, revisions,
-held reasons, item identities, source commits, aggregate observations, scorecards,
-usage and native weekly-review data. It never contacts Control Centre. No
-capability response automatically enables writing. A future integrator must
-verify a full product-isolated, field-preserving round trip on the existing UI.
+```bash
+python3 growth.py cc morning --require-existing-history   # end of the 06:15 task
+python3 growth.py cc weekly --require-existing-history    # end of the Monday task
+python3 growth.py cc dispatch                             # GitHub Actions, on Control Center's wake-up
+```
+
+Add `--synthetic` to report in synthetic mode (stored and read back, never
+counted on his numbers or list). Each run, in order:
+
+1. `POST attempts` with `status: started`, before reading any source.
+2. `GET directive`: today's push. It is data, never permission to act.
+3. The engine's own work. In the workspace that is `run morning` or `run
+   weekly` over private history. On a clean runner it is the self-test,
+   repository verification, a sync of the public sources (falling back to the
+   committed `state/` snapshot) and the committed rulings.
+4. `POST reports` with `Idempotency-Key: <run_id>`, then `GET reports/<run_id>`
+   and compare `payload_sha256`. The client reads before it writes: a rerun
+   the same day whose payload changed takes the next suffix (`:r2` to `:r9`).
+   A 409 is read back, never retried blindly.
+5. `GET decisions?since=<last read>`. A yes counts only when its digest equals
+   the current payload. Even then nothing is sent or posted from here; a ruling
+   is recorded by an interactive session in rulings.json and full-time's log.
+6. `POST attempts` with exactly one terminal state, `succeeded`, `failed` with
+   a lower_snake code (for example `unauthorized`, `report_conflict`,
+   `history_unavailable`, `checks_failed`) or `unknown`.
+
+The report maps the engine's own outputs:
+
+| Engine output | Protocol report |
+|---|---|
+| `fulltime:YYYY-MM-DD:<kind>` (daily, report, dispatch) | `run_id` |
+| Ready actions, at most three | `proposals[]`, wall `none`; a creative that passed every gate is wall `post` with `exact_payload` and `channel` |
+| Held drafts and closed gates | `holds[]`, one per code (RAIL, RELEASE, CHANNEL, CONSENT, DATA, D1 to D7) |
+| The release decision and pending rulings D1, D2, D3 and D7 | wall `strategy` proposals. D4, D5 and D6 unlock only channels the owner excluded, so they are holds, not asks |
+| The weekly kill list | wall `strategy` proposals |
+| Human-confirmed publication receipts | `events[]` `creative_published` with the permalink |
+| `attributed_new_completers`, `marketing_cash_gbp` | `objectives[]` over the seven complete London days ending yesterday |
+
+Objectives: `attributed_new_completers` is measured only from an approved
+aggregate export; until the collector exists it is `missing` with that reason.
+`marketing_cash_gbp` comes from an approved usage aggregate or, failing that,
+the engine ledger's recorded runs (a measured 0, since the engine has no spend
+path). On the clean runner both are `missing`: private history is not there.
+
+The bearer is read at run time from `CONTROL_CENTER_ENGINE_TOKEN`, or from
+`local/control-center/token` in the persistent workspace (create it with mode
+600; `local/` is ignored and never committed). It is never printed, logged or
+written. `CONTROL_CENTER_URL` defaults to https://controlcenter.krishraja.com
+and must be an https origin. Without a bearer `cc` prints `missing_token` and
+exits 2 having done nothing. The client uses HTTPS only, follows no redirects
+and times out after 20 seconds. The last summary is in
+`local/control-center/last.json`. The Actions workflow
+(.github/workflows/control-center.yml) has read-only contents permission,
+one concurrency group, a ten-minute timeout and no artifacts.
+
+## Reporting history
+
+The earlier brief, [briefs/CONTROL-CENTRE-HANDOFF.md](briefs/CONTROL-CENTRE-HANDOFF.md),
+and its [version 2 schema](contracts/reporting-v2.schema.json) are superseded by
+the protocol. Full-time work is in [briefs/GROWTH-FOUNDATIONS.md](briefs/GROWTH-FOUNDATIONS.md).
+
+`export` still writes local/handoff/reporting-bundle.json with report IDs,
+revisions, held reasons, item identities, source commits, aggregate
+observations, scorecards, usage and native weekly-review data. It is a private
+local backup, not the hand-off, and never contacts Control Center. Packs are
+never written to Control Center.
 
 Existing access proof: all eighteen Vercel projects were visible; the existing
 GitHub Actions GROWTH_ENGINE_TOKEN authenticated a pack GET with HTTP 200 in
@@ -117,10 +179,14 @@ as a read-only diagnostic; it is not invoked by the operational engine.
 ```bash
 python3 growth.py --self-test
 python3 -m unittest discover -s tests -v
+python3 scripts/verify_repository.py
 ```
 
 Tests include actual local FFmpeg rendering, policy and release gates,
 whole-window measurement, immutable experiment definitions, rerun preservation,
-concurrent writers, damaged-history recovery and lossless reporting receipts.
+concurrent writers, damaged-history recovery, lossless reporting receipts, and
+the Control Center client against an in-process stand-in on 127.0.0.1: the
+worked-example digest, schema-valid reports, attempts, replay, readback, 409
+and 401 handling, and that the bearer never appears in any output.
 See the newest HANDOVER file for completion evidence and remaining external
 product/reporting dependencies.

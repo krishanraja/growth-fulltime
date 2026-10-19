@@ -1,3 +1,5 @@
+> **Status, 2026-10-19: adopted.** `python3 growth.py cc` runs the protocol loop at the end of both workspace tasks and on every `cc-growth-directive` dispatch (`.github/workflows/control-center.yml`); see README, "The Control Center loop".
+
 # Control Center brief: growth-fulltime
 
 Written 2026-10-18 by Control Center. This brief **supersedes `briefs/CONTROL-CENTRE-HANDOFF.md`** as the reporting contract. Krish ruled that every growth engine reports through one protocol (ADR-038 in Control Center). Your reporting v2 bundle becomes a protocol report. Product isolation of packs remains a Control Center follow-up for media review only.

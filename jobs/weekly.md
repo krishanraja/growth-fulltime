@@ -12,6 +12,11 @@ Read AGENTS.md, the current handover, EXECUTION-PLAN.md and MEASUREMENT.md.
 4. Make one constraint call and one keep/change/stop recommendation. Native
    review findings, kill_list and double_down are prepared locally; human
    decision fields are never written. Keep human work within thirty minutes.
-5. Run `python3 growth.py export` for the private handoff bundle. Identify
-   changed external dependencies in the existing briefs. Do no work in Control
-   Centre or full-time and do not turn a ready flag into permission to promote.
+5. End with `python3 growth.py cc weekly --require-existing-history`. It
+   repeats step 1's command inside the Control Center loop (a repeat keeps
+   the same identities), reports with a digest readback and reads Krish's
+   decisions. The kill list goes to Krish as strategy proposals and the
+   double-down items as actions. `python3 growth.py export` remains a private local backup, not the
+   hand-off. Identify changed external dependencies in the existing briefs. Do
+   no implementation in Control Center or full-time and do not turn a ready
+   flag or an approval into permission to promote.

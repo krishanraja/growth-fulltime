@@ -1,4 +1,4 @@
-"""Commands for deterministic local execution and reviewable handoff exports."""
+"""Commands for deterministic local execution, private exports and the Control Center loop."""
 import argparse
 import json
 from pathlib import Path
@@ -28,9 +28,22 @@ def main(argv, growth):
     assets = commands.add_parser('assets')
     assets.add_argument('operation', choices=['fetch', 'render'])
     assets.add_argument('file', nargs='?'); assets.add_argument('--drop'); assets.add_argument('--pundit')
+    cc = commands.add_parser('cc', help='run the Control Center protocol loop')
+    cc.add_argument('target', choices=['morning', 'weekly', 'dispatch'])
+    cc.add_argument('--offline', action='store_true')
+    cc.add_argument('--require-existing-history', action='store_true')
+    cc.add_argument('--observations')
+    cc.add_argument('--synthetic', action='store_true')
     args = parser.parse_args(argv)
     journal = History(Path(growth.LOCAL) / 'engine')
     try:
+        if args.command == 'cc':
+            from .control_center import main as loop
+            summary, code = loop(args, growth)
+            print(json.dumps(summary, indent=2, allow_nan=False))
+            if code:
+                raise SystemExit(code)
+            return
         if args.command == 'run':
             if args.require_existing_history and not journal.path.exists():
                 raise ValueError('persistent history is unavailable; refusing to start a fresh scheduled ledger')

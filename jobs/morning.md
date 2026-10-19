@@ -15,5 +15,12 @@ Read AGENTS.md, the current handover, live source state and EXECUTION-PLAN.md.
    research would change the current test; do no broad recurring research.
 5. Check and save drafts locally. Record actual publication URLs only after
    a human action. Keep daily human work within twenty minutes.
-6. Return a concise checkpoint and any changed dependency. Control Centre
-   receives a final implementation brief, never writes from this job.
+6. End with `python3 growth.py cc morning --require-existing-history`. It
+   journals a started attempt, pulls Control Center's directive, repeats the
+   morning batch (a repeat keeps the same identities), reports with a digest
+   readback, reads Krish's decisions and journals the end. A creative saved
+   in step 5 that passed every gate is proposed behind the post wall with
+   its exact words; a held one goes in as a hold with its code. Nothing is
+   sent or posted. Without a bearer it exits with `missing_token`: say that
+   reporting was unavailable; step 2 already saved the run locally.
+7. Return a concise checkpoint, the attempt status and any changed dependency.

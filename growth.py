@@ -8,7 +8,8 @@ Standard library only. Runs anywhere Python 3.9+ and git run (a Codex
 session, a Cowork session, a Mac, a GitHub Action). Nothing here posts,
 sends, comments, follows, DMs, uploads, boosts or spends. The only writes are
 this engine's own files under local/ (and state/ when a GitHub Action
-publishes it), private handoff exports. There is no Control Centre writer.
+publishes it), private exports, and the run's own attempts and reports to
+Control Center through its growth engine protocol (growth.py cc).
 
     python3 growth.py sync [--publish]
         Read krishanraja/full-time as it is right now: the commit on main,
@@ -64,9 +65,10 @@ An item's "needs" is empty when it can go out today, a ruling id ("D1" to
 waits for a full rail. A held item is still checked for every copy rule.
 
 Kinds: daily, radar, numbers, conversion, report.
-Operations: run, history, creative, experiment, metrics, assets, export.
-Environment: GITHUB_TOKEN optionally raises GitHub's read limit.
-All reports stay local for handoff; no Control Centre writes are implemented.
+Operations: run, history, creative, experiment, metrics, assets, export, cc.
+Environment: GITHUB_TOKEN optionally raises GitHub's read limit;
+CONTROL_CENTER_ENGINE_TOKEN (or local/control-center/token) and
+CONTROL_CENTER_URL are read only by growth.py cc. Packs stay local.
 """
 import argparse
 import datetime as dt
@@ -812,8 +814,9 @@ def freshness(pack, state, head_fn, fetch_fn):
 # Storing a pack.
 # ---------------------------------------------------------------------------
 def control_center_takes_fulltime():
-    """Reporting integration is a handoff. Never contact or write Control Centre."""
-    return False, 'Control Centre is brief-only; local checkpoints are not dashboard delivery'
+    """Packs are never written to Control Center. Run reports go only through
+    the growth engine protocol (growth.py cc, engine/control_center.py)."""
+    return False, 'packs stay local; run reports reach Control Center only through growth.py cc'
 
 
 def render_md(pack):
@@ -922,7 +925,10 @@ def doctor():
     line(bool(shutil.which('ffmpeg') and shutil.which('ffprobe')), 'FFmpeg and FFprobe are available',
          'install the free local FFmpeg package for rendering')
     _, why = control_center_takes_fulltime()
-    print(f'note      packs: {why}; until then they are saved in local/packs/ and printed in full')
+    print(f'note      packs: {why}; they are saved in local/packs/ and printed in full')
+    bearer = bool(os.environ.get('CONTROL_CENTER_ENGINE_TOKEN', '').strip()) or Path(LOCAL, 'control-center', 'token').is_file()
+    print('note      Control Center bearer: ' + ('available to growth.py cc' if bearer else
+          'not found; set CONTROL_CENTER_ENGINE_TOKEN or write local/control-center/token (never commit it)'))
     print('\nready to run' if ok else '\nnot ready: fix the lines above, then run doctor again')
     return 0 if ok else 1
 
@@ -1120,6 +1126,13 @@ def self_test():
         t(f'automation "{au["name"]}" has a schedule rule', au['schedule'].startswith('RRULE:FREQ='))
         t(f'automation "{au["name"]}" never asks to post', not re.search(r'\b(post|publish|send|upload|boost)\b', au['prompt'], re.I))
     t('every job file has an automation', {a['job'] for a in autos} == {f'jobs/{f}' for f in os.listdir(os.path.join(HERE, 'jobs'))})
+    t('every automation ends with the Control Center loop', all('python3 growth.py cc ' in au['prompt'] for au in autos))
+    from engine import reporting as protocol
+    example = json.loads(Path(HERE, 'docs', 'control-center', 'engine-report.example.json').read_text())
+    t('the protocol digest reproduces the worked example', protocol.seal(example)['payload_sha256'] == example['payload_sha256'])
+    flow = Path(HERE, '.github', 'workflows', 'control-center.yml').read_text()
+    t('the dispatch workflow wakes on cc-growth-directive with read-only contents',
+      'types: [cc-growth-directive]' in flow and 'contents: read' in flow and 'upload-artifact' not in flow)
     for f in ('PLAYBOOK.md', 'BROWSER.md', 'CHANGES.md', 'rulings.json', 'knowledge/README.md',
               'knowledge/full-time-1000-users-playbook.md'):
         t(f'{f} exists', os.path.exists(os.path.join(HERE, f)))
@@ -1129,7 +1142,7 @@ def self_test():
 
 
 def main():
-    if len(sys.argv) > 1 and sys.argv[1] in ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export'):
+    if len(sys.argv) > 1 and sys.argv[1] in ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export', 'cc'):
         from engine.cli import main as operations_main
         return operations_main(sys.argv[1:], sys.modules[__name__])
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])

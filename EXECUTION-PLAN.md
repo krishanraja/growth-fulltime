@@ -26,7 +26,7 @@ are retired from execution.
 | Creative history | Stable IDs, versions, actual human publication receipts and current-version publication status | Reruns and changed copy preserve historical proof without claiming new copy is published |
 | Experiments | Immutable definitions, seven-day minimum, sample rules, negative results and inconclusive outcomes | Underpowered results cannot scale |
 | Recovery | Atomic locked writes, revision checksums, backups and validated restoration | Concurrent writers, damaged primary and tampered backup tests |
-| Reports | Lossless version 2 envelopes, native weekly-review output and private export bundle | Product/ID/revision/field-preserving receipt checks; no network writer |
+| Reports | Control Center protocol reports from `growth.py cc` (attempts, directive, report with digest readback, decisions); the version 2 envelope and export stay as private local backups | Worked-example digest, strict schema, stand-in attempts, replay, readback, 409 and 401 tests; the bearer never appears in output |
 | Rendering | Published-audio fetch, local deterministic match-card template, one/two editions, captions, thumbnail and source receipt | Actual FFmpeg tests and a real published-edition private preview |
 | Orchestration | One morning batch and one Monday review; at most three actions, deterministic commands first | Complete live held runs and repeated-run checks |
 
@@ -38,7 +38,7 @@ newest HANDOVER file for exact completion evidence and schedule status.
 | Priority | Owner | Handoff and exit evidence |
 |---|---|---|
 | P0 | full-time | briefs/GROWTH-FOUNDATIONS.md: read stored verdicts for the newest drop; fix the smallest supported refusal; verify a fresh match with at least four published AI Pundits |
-| P0 | Control Centre | briefs/CONTROL-CENTRE-HANDOFF.md: product-isolated report storage, preserved fields and a complete authenticated write/readback visible on the existing UI |
+| P1 | Control Center | docs/CONTROL-CENTER-BRIEF.md: product isolation of packs for media review only; run reports already go through the protocol |
 | P1 | full-time and existing collectors | MEASUREMENT.md: controlled visit, actual play, completion, comparison, reachable consent and mature return queries; source-scoped aggregates only |
 | P1 | full-time | Exact-edition sharing/metadata, readable share-image fonts, recipient behaviour and optional permitted way back |
 | P1 | Product owner | Verify an eligible opt-in/inbound tester pool, product inbox coverage and an actual brand identity; record product decisions in their source of truth |
@@ -66,6 +66,7 @@ the same match, published audio, AI disclosure, one reachable mobile path and
 actual publication evidence. Read completed listens and mature return alongside
 attention, costs and human minutes before adding formats or channels.
 
-The private bundle from `growth.py export` is the handoff payload. It is not
-proof of dashboard delivery. Only a separate implementation with a verified
-product-isolated round trip may change that status.
+Each task ends with `growth.py cc`, and Control Center's daily wake-up runs
+the same loop on a clean runner. Delivery means an accepted report whose
+read-back digest matches. The private bundle from `growth.py export` is a
+local backup, not the hand-off and not proof of delivery.

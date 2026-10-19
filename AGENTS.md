@@ -13,9 +13,11 @@ This repository's North Star is [`docs/NORTH_STAR.md`](docs/NORTH_STAR.md): an a
 
 Build and maintain the engine in this repository. Read Full Time's product
 repository and live site for facts. Give Krish a brief for product changes.
-Control Centre is the eventual reporting surface; give Krish its implementation
-brief only after the growth-side work is complete. Do not edit its repository,
-create or update its pull requests, migrate its database or write its app data.
+Control Center is the reporting surface. This engine reports to it only
+through the growth engine protocol (docs/CONTROL-CENTER-BRIEF.md and
+docs/control-center/ENGINE-PROTOCOL.md) with `python3 growth.py cc`. Do not
+edit its repository, create or update its pull requests, migrate its database
+or write its app data by any other route.
 
 ## Read before a job
 
@@ -47,6 +49,13 @@ Centre brief. No implementation work in Control Centre.
 - Do not ask again for a reporting token: the existing GitHub Actions secret
   was verified. It does not grant permission to implement Control Centre.
 
+Krish, 19 October 2026: "make each engine adopt its brief now". Every run
+journals its attempt, pulls Control Center's directive, reports and reads his
+decisions. His approval binds only the exact payload it was made on, and even
+then nothing here sends, posts, spends or publishes. The bearer is
+`CONTROL_CENTER_ENGINE_TOKEN` (an Actions secret) or the ignored file
+`local/control-center/token`; never print, copy or commit it.
+
 ## The rules
 
 1. Draft and analyse. Never send, post, upload, comment, like, follow, DM,
@@ -75,18 +84,24 @@ Centre brief. No implementation work in Control Centre.
    Actual same-match playback, not the switch-intent event, proves comparison.
 10. Save private checkpoints before export. A local pack, successful GET or
     copied draft is never proof of dashboard delivery or publication.
-11. All implementation stays here. Product and Control Centre changes are
-    handoffs. No Control Centre writes or automatic switch to its writer.
-    Scheduled executions write only ignored local/ files. Changes to engine
-    code, tracked briefs, instructions or schedules belong to an interactive
-    implementation session.
+    Delivery is an accepted protocol report whose read-back payload_sha256
+    matches the one sent.
+11. All implementation stays here. Product and Control Center changes are
+    handoffs. The only Control Center writes are this engine's own protocol
+    attempts and reports from `growth.py cc`: never packs, never another
+    route, never a blind retry after a 409. Scheduled executions write ignored
+    local/ files and those protocol calls. Changes to engine code, tracked
+    briefs, instructions or schedules belong to an interactive implementation
+    session.
 
 ## Commands and private history
 
 `growth.py` handles sync, canon, rail, tracked links, pack checking and local
 storage. `post` is a compatibility name for saving locally; it makes no remote
 request. New operations are documented in README: `run`, `history`, `creative`,
-`experiment`, `metrics`, `assets`, `export`.
+`experiment`, `metrics`, `assets`, `export`, and `cc`, the Control Center loop
+(engine/control_center.py, the one transport; engine/reporting.py builds and
+checks the report).
 
 A draft uses an exact creative ID, account scope, source commit and all held
 reasons in `holds`. Brand work without identity proof has CHANNEL; acquisition
@@ -100,22 +115,31 @@ from a validated backup; never silently reset it.
 
 ## Consolidated schedule (Europe/London)
 
-| Job | Time | File | Command |
+| Job | Time | File | Ends with |
 |---|---|---|---|
-| Morning batch | Daily 06:15 | jobs/morning.md | python3 growth.py run morning |
-| Weekly review | Monday 08:00 | jobs/weekly.md | python3 growth.py run weekly |
+| Morning batch | Daily 06:15 | jobs/morning.md | python3 growth.py cc morning --require-existing-history |
+| Weekly review | Monday 08:00 | jobs/weekly.md | python3 growth.py cc weekly --require-existing-history |
 
 `automations.json` is the sole task manifest. Use one persistent project so
 private history survives. Hosted tasks must verify the existing workspace
 before running; never silently start a fresh ledger. No duplicate eight-job
 setup. The hourly GitHub source-sync workflow is infrastructure, not an agent
-job. A morning HOLD run produces at most three useful actions and no repeated
-bank of promotional copy. Krish's budget is twenty minutes daily, thirty weekly.
+job. So is `.github/workflows/control-center.yml`, which runs
+`python3 growth.py cc dispatch` on a clean runner when Control Center wakes
+the repository (about 06:10 London): the self-test, repository verification,
+the public sources, the committed rulings and contracts. It cannot see private
+history, so the objectives measured only in the workspace report as missing
+with that reason. A morning HOLD run produces at most three useful actions and
+no repeated bank of promotional copy. Krish's budget is twenty minutes daily,
+thirty weekly.
 
 ## Verification and handoff
 
 Run `python3 growth.py --self-test` and `python3 -m unittest discover -s tests -v`.
 The checks cover policy exclusions, gates, missing data, mature cohorts, repeated
-runs, publication preservation, locking, recovery, report field preservation
-and real FFmpeg rendering. Finish with a fresh live held run and exported
+runs, publication preservation, locking, recovery, report field preservation,
+real FFmpeg rendering, and the Control Center client against a local stand-in
+(the worked-example digest, schema-valid reports, attempts, replay, readback,
+409 and 401 handling, and that the bearer never appears in output). Also run
+`python3 scripts/verify_repository.py`. Finish with a fresh live held run and exported
 handoff bundle. Record changes in CHANGES and leave a current handover.
