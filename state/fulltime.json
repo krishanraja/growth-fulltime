@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "8c663357fadef2de",
-    "NOW.md": "78a1ba506da73d74",
+    "NOW.md": "d15ab4821e957222",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "d1f3f6a548defbc4",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -16,12 +16,14 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [],
+  "changed_since_last_sync": [
+    "NOW.md"
+  ],
   "commits": [
     {
-      "date": "2026-10-19T13:54:42Z",
-      "sha": "5aa7788fea",
-      "subject": "Use authenticated match evidence and guard incomplete intake"
+      "date": "2026-10-19T23:48:45Z",
+      "sha": "9bc25aaab6",
+      "subject": "docs(steward): 2026-10-19 record evidence intake, stamp head"
     }
   ],
   "decisions": [
@@ -41,7 +43,7 @@
   ],
   "notes": [],
   "open_pulls": [],
-  "previous_sha": "9e4d0537760cff512dfa59281fc4c6b7fd718e64",
+  "previous_sha": "5aa7788fea40a6326050b96ba7fe2f91d2428792",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -142,6 +144,6 @@
       "status": "pending"
     }
   },
-  "sha": "5aa7788fea40a6326050b96ba7fe2f91d2428792",
-  "synced_at": "2026-10-19T19:59:29+00:00"
+  "sha": "9bc25aaab6a59debf6565ef0f4fec783336821a4",
+  "synced_at": "2026-10-20T04:59:00+00:00"
 }
