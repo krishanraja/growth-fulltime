@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "8c663357fadef2de",
-    "NOW.md": "d15ab4821e957222",
+    "NOW.md": "d0b1c426fb0314cd",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "d1f3f6a548defbc4",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -16,8 +16,31 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [],
-  "commits": [],
+  "changed_since_last_sync": [
+    "NOW.md"
+  ],
+  "commits": [
+    {
+      "date": "2026-10-20T10:30:57Z",
+      "sha": "c8d4437d75",
+      "subject": "Record verified production evidence activation and live readbacks (#91)"
+    },
+    {
+      "date": "2026-10-20T10:25:34Z",
+      "sha": "21b37d70bf",
+      "subject": "Withhold conflicting observations without licensing dependent calculations (#90)"
+    },
+    {
+      "date": "2026-10-20T10:18:02Z",
+      "sha": "0285483e6c",
+      "subject": "Activate evidence intake with secure setup and live product readback (#89)"
+    },
+    {
+      "date": "2026-10-20T10:12:52Z",
+      "sha": "2414ac7654",
+      "subject": "Make evidence intake replayable and connect a validated product adapter (#88)"
+    }
+  ],
   "decisions": [
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
     "2026-09-27 - Premier League only, one match, no scroll",
@@ -36,10 +59,10 @@
   "notes": [],
   "open_pulls": [
     {
-      "branch": "fix/evidence-consumer-reliability",
-      "number": 88,
-      "title": "Make evidence intake replayable and connect a validated product adapter",
-      "updated": "2026-10-20T09:42:44Z"
+      "branch": "fix/single-pundit-recovery",
+      "number": 92,
+      "title": "Recover one reviewed pundit edition without regenerating its evidence or prose",
+      "updated": "2026-10-20T14:42:52Z"
     }
   ],
   "previous_sha": "9bc25aaab6a59debf6565ef0f4fec783336821a4",
@@ -143,6 +166,6 @@
       "status": "pending"
     }
   },
-  "sha": "9bc25aaab6a59debf6565ef0f4fec783336821a4",
-  "synced_at": "2026-10-20T10:08:46+00:00"
+  "sha": "c8d4437d758384e1f4ba14b224eaaac189c7d906",
+  "synced_at": "2026-10-20T15:09:57+00:00"
 }

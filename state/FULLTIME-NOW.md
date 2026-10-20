@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `9bc25aaab6` and from fulltime.fm on 2026-10-20T10:08:46+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `c8d4437d75` and from fulltime.fm on 2026-10-20T15:09:57+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -14,6 +14,12 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 | Crystal Palace 3-1 Nottingham Forest | 2026-10-11 | 1 of 6 | The Reporter |
 | Manchester City 5-3 Sunderland | 2026-09-20 | 1 of 6 | The Romantic |
 | Tottenham 2-3 Aston Villa | 2026-09-19 | 1 of 6 | The Gaffer |
+
+## Canon changed since the last sync
+
+Read these again before drafting anything:
+
+- changed: `NOW.md`
 
 ## Rulings the playbook needs
 
@@ -57,8 +63,11 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 ## Recent commits on main
 
-- none since the last sync
+- `c8d4437d75` 2026-10-20 Record verified production evidence activation and live readbacks (#91)
+- `21b37d70bf` 2026-10-20 Withhold conflicting observations without licensing dependent calculations (#90)
+- `0285483e6c` 2026-10-20 Activate evidence intake with secure setup and live product readback (#89)
+- `2414ac7654` 2026-10-20 Make evidence intake replayable and connect a validated product adapter (#88)
 
 ## Work in flight (open pull requests)
 
-- #88 Make evidence intake replayable and connect a validated product adapter (`fix/evidence-consumer-reliability`, updated 2026-10-20)
+- #92 Recover one reviewed pundit edition without regenerating its evidence or prose (`fix/single-pundit-recovery`, updated 2026-10-20)
