@@ -16,16 +16,8 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [
-    "NOW.md"
-  ],
-  "commits": [
-    {
-      "date": "2026-10-19T23:48:45Z",
-      "sha": "9bc25aaab6",
-      "subject": "docs(steward): 2026-10-19 record evidence intake, stamp head"
-    }
-  ],
+  "changed_since_last_sync": [],
+  "commits": [],
   "decisions": [
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
     "2026-09-27 - Premier League only, one match, no scroll",
@@ -42,8 +34,15 @@
     }
   ],
   "notes": [],
-  "open_pulls": [],
-  "previous_sha": "5aa7788fea40a6326050b96ba7fe2f91d2428792",
+  "open_pulls": [
+    {
+      "branch": "fix/evidence-consumer-reliability",
+      "number": 88,
+      "title": "Make evidence intake replayable and connect a validated product adapter",
+      "updated": "2026-10-20T09:42:44Z"
+    }
+  ],
+  "previous_sha": "9bc25aaab6a59debf6565ef0f4fec783336821a4",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -145,5 +144,5 @@
     }
   },
   "sha": "9bc25aaab6a59debf6565ef0f4fec783336821a4",
-  "synced_at": "2026-10-20T04:59:00+00:00"
+  "synced_at": "2026-10-20T10:08:46+00:00"
 }
