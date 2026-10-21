@@ -3,7 +3,7 @@
     "AGENTS.md": "8c663357fadef2de",
     "NOW.md": "d0cc292b5bf54313",
     "docs/00-product.md": "7948356c0178f0dd",
-    "docs/01-brand.md": "d1f3f6a548defbc4",
+    "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
     "docs/09-growth.md": "69fbad02fd6d2f24",
     "docs/11-legal.md": "77d172de3a4cc0e0",
@@ -17,13 +17,28 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "NOW.md"
+    "docs/01-brand.md"
   ],
   "commits": [
     {
-      "date": "2026-10-20T23:14:40Z",
-      "sha": "526ee92a08",
-      "subject": "docs(steward): 2026-10-20 record evidence intake activation, stamp head"
+      "date": "2026-10-21T13:18:28Z",
+      "sha": "f3391c04c7",
+      "subject": "Merge pull request #94 from krishanraja/claude/admiring-knuth-ls8u9k"
+    },
+    {
+      "date": "2026-10-21T13:07:33Z",
+      "sha": "c499a0ab6b",
+      "subject": "Add a true-size favicon set, a 1200x630 social card and the /answers hub"
+    },
+    {
+      "date": "2026-10-21T10:16:35Z",
+      "sha": "322fd116c7",
+      "subject": "Align Reporter audio duration with its approved concise format (#93)"
+    },
+    {
+      "date": "2026-10-21T10:07:51Z",
+      "sha": "864a8fa071",
+      "subject": "Enable concise Reporter editions and recover approved audio safely (#92)"
     }
   ],
   "decisions": [
@@ -36,26 +51,38 @@
   ],
   "feed": [
     {
+      "date": "Wed, 21 Oct 2026 10:20:05 GMT",
+      "link": "https://fulltime.fm/?drop=519f3f12-1f7d-411a-9021-9f128ffd8496&pundit=zen",
+      "title": "Tottenham found the target, not complete control"
+    },
+    {
       "date": "Mon, 12 Oct 2026 04:51:41 GMT",
       "link": "https://fulltime.fm/?drop=4e640fad-e3ea-400e-9e1f-e8481ff9a182&pundit=zen",
       "title": "A comfortable result, an uncomfortable process"
     }
   ],
   "notes": [],
-  "open_pulls": [
-    {
-      "branch": "fix/single-pundit-recovery",
-      "number": 92,
-      "title": "Recover one reviewed pundit edition without regenerating its evidence or prose",
-      "updated": "2026-10-20T14:42:52Z"
-    }
-  ],
-  "previous_sha": "c8d4437d758384e1f4ba14b224eaaac189c7d906",
+  "open_pulls": [],
+  "previous_sha": "526ee92a08d1b853c2838b0d91bd53916b0a3a8a",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
   },
   "rail": [
+    {
+      "away": "Coventry",
+      "date": "2026-10-19",
+      "drop": "519f3f12-1f7d-411a-9021-9f128ffd8496",
+      "fill": 1,
+      "home": "Tottenham",
+      "pundits": [
+        "zen"
+      ],
+      "score": [
+        3,
+        1
+      ]
+    },
     {
       "away": "Nottingham Forest",
       "date": "2026-10-11",
@@ -151,6 +178,6 @@
       "status": "pending"
     }
   },
-  "sha": "526ee92a08d1b853c2838b0d91bd53916b0a3a8a",
-  "synced_at": "2026-10-21T01:40:24+00:00"
+  "sha": "f3391c04c7fc6ca7deea741d7109805d63bca06f",
+  "synced_at": "2026-10-21T13:53:56+00:00"
 }
