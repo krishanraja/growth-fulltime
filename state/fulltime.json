@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "8c663357fadef2de",
-    "NOW.md": "d0b1c426fb0314cd",
+    "NOW.md": "d0cc292b5bf54313",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "d1f3f6a548defbc4",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -21,24 +21,9 @@
   ],
   "commits": [
     {
-      "date": "2026-10-20T10:30:57Z",
-      "sha": "c8d4437d75",
-      "subject": "Record verified production evidence activation and live readbacks (#91)"
-    },
-    {
-      "date": "2026-10-20T10:25:34Z",
-      "sha": "21b37d70bf",
-      "subject": "Withhold conflicting observations without licensing dependent calculations (#90)"
-    },
-    {
-      "date": "2026-10-20T10:18:02Z",
-      "sha": "0285483e6c",
-      "subject": "Activate evidence intake with secure setup and live product readback (#89)"
-    },
-    {
-      "date": "2026-10-20T10:12:52Z",
-      "sha": "2414ac7654",
-      "subject": "Make evidence intake replayable and connect a validated product adapter (#88)"
+      "date": "2026-10-20T23:14:40Z",
+      "sha": "526ee92a08",
+      "subject": "docs(steward): 2026-10-20 record evidence intake activation, stamp head"
     }
   ],
   "decisions": [
@@ -65,7 +50,7 @@
       "updated": "2026-10-20T14:42:52Z"
     }
   ],
-  "previous_sha": "9bc25aaab6a59debf6565ef0f4fec783336821a4",
+  "previous_sha": "c8d4437d758384e1f4ba14b224eaaac189c7d906",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -166,6 +151,6 @@
       "status": "pending"
     }
   },
-  "sha": "c8d4437d758384e1f4ba14b224eaaac189c7d906",
-  "synced_at": "2026-10-20T15:09:57+00:00"
+  "sha": "526ee92a08d1b853c2838b0d91bd53916b0a3a8a",
+  "synced_at": "2026-10-21T01:40:24+00:00"
 }

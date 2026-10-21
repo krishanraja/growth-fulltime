@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `c8d4437d75` and from fulltime.fm on 2026-10-20T15:09:57+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `526ee92a08` and from fulltime.fm on 2026-10-21T01:40:24+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -63,10 +63,7 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `c8d4437d75` 2026-10-20 Record verified production evidence activation and live readbacks (#91)
-- `21b37d70bf` 2026-10-20 Withhold conflicting observations without licensing dependent calculations (#90)
-- `0285483e6c` 2026-10-20 Activate evidence intake with secure setup and live product readback (#89)
-- `2414ac7654` 2026-10-20 Make evidence intake replayable and connect a validated product adapter (#88)
+- `526ee92a08` 2026-10-20 docs(steward): 2026-10-20 record evidence intake activation, stamp head
 
 ## Work in flight (open pull requests)
 
