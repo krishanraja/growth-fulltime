@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `f3391c04c7` and from fulltime.fm on 2026-10-21T13:53:56+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `4b214fc19f` and from fulltime.fm on 2026-10-22T01:35:20+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -20,7 +20,7 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 Read these again before drafting anything:
 
-- changed: `docs/01-brand.md`
+- changed: `NOW.md`
 
 ## Rulings the playbook needs
 
@@ -65,10 +65,7 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `f3391c04c7` 2026-10-21 Merge pull request #94 from krishanraja/claude/admiring-knuth-ls8u9k
-- `c499a0ab6b` 2026-10-21 Add a true-size favicon set, a 1200x630 social card and the /answers hub
-- `322fd116c7` 2026-10-21 Align Reporter audio duration with its approved concise format (#93)
-- `864a8fa071` 2026-10-21 Enable concise Reporter editions and recover approved audio safely (#92)
+- `4b214fc19f` 2026-10-21 docs(steward): 2026-10-21 record answer hub and concise Reporter recovery, stamp head
 
 ## Work in flight (open pull requests)
 
