@@ -48,6 +48,7 @@ or write its app data by any other route.
    A STOP means the checker must be reconciled with product truth first.
 3. Read `PLAYBOOK.md`, `EXECUTION-PLAN.md`, `BROWSER.md`, `COPY.md` (before
    any drafting or review of copy), then the job file.
+   Read `docs/LISTENING-STANDARD.md` before selecting or reviewing audio. A technical audio pass is not a human listening verdict.
 4. Run the requested job. Only `jobs/morning.md` and `jobs/weekly.md` are active.
 
 ## Owner instructions
