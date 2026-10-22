@@ -16,6 +16,7 @@ Read AGENTS.md, the current handover, live source state and EXECUTION-PLAN.md.
    Draft per COPY.md: set awareness and lead for the surface and pass the
    take test before writing; run edit passes A to E and score the rubric
    before saving, with the diagnosis in `why`.
+   Apply [the listening standard](../docs/LISTENING-STANDARD.md) to source audio and the exact destination edition. Missing full-length listening evidence stays a creative-review hold; an audition is not a public-release approval.
 5. Check and save drafts locally. Record actual publication URLs only after
    a human action. Keep daily human work within twenty minutes.
 6. End with `python3 growth.py cc morning --require-existing-history`. It

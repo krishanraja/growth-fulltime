@@ -11,6 +11,7 @@ Read AGENTS.md, the current handover, EXECUTION-PLAN.md and MEASUREMENT.md.
    minutes. Underpowered tests remain inconclusive. Do not infer publication.
    Read results through COPY.md's test record: which take, lead and proof
    travelled, and the weakest persuasion link in what did not.
+   Apply [the listening standard](../docs/LISTENING-STANDARD.md): separate source-performance problems from hook or distribution problems, and retain the human listening verdict with the exact audio version.
 4. Make one constraint call and one keep/change/stop recommendation. Native
    review findings, kill_list and double_down are prepared locally; human
    decision fields are never written. Keep human work within thirty minutes.

@@ -1,5 +1,7 @@
 # Copy doctrine: how this engine applies the corpus
 
+Before selecting a take or reviewing a clip, apply [Listening quality before growth production](docs/LISTENING-STANDARD.md). A caption cannot rescue dull source audio. Keep human listening approval separate from technical checks and preserve the exact published performance in the listening destination.
+
 The source is [The Copywriting, Offers and Demand Corpus](knowledge/copywriting-offers-demand-corpus.md),
 kept byte for byte ([manifest](knowledge/sources.json)). This file is how Full
 Time's engine uses it: read it before drafting or reviewing any pack item.
