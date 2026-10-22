@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `859d98b785` and from fulltime.fm on 2026-10-22T13:52:29+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `859d98b785` and from fulltime.fm on 2026-10-22T22:24:47+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -59,15 +59,8 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 ## Recent commits on main
 
-- `859d98b785` 2026-10-22 Merge pull request #95 from krishanraja/improve/listening-standard
-- `23810d3246` 2026-10-22 Record full Reporter listening approval and controlled existing-audio release contract
-- `743cddda7c` 2026-10-22 Stage the exact founder-approved recording without generation or publication credentials
-- `17dde7af17` 2026-10-22 Route existing recording inspection through the registered manual workflow
-- `5b6c1a7fd4` 2026-10-22 Respect concise Reporter duration and prepare existing-audio publication inspection
-- `a22228655d` 2026-10-22 Add a review-only path with a reserved budget and no request retries
-- `9bb6696a9a` 2026-10-22 Complete the synthetic alias regression fixture
-- `df5c42aaf4` 2026-10-22 Improve spoken Reporter writing and calibrate its listening pace
+- none since the last sync
 
 ## Work in flight (open pull requests)
 
-- none
+- #96 Maintain the repository operating guide from the brain (`harness/repository-administration-e0054ead260d`, updated 2026-10-22)

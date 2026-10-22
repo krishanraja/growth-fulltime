@@ -17,48 +17,7 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [],
-  "commits": [
-    {
-      "date": "2026-10-22T12:39:03Z",
-      "sha": "859d98b785",
-      "subject": "Merge pull request #95 from krishanraja/improve/listening-standard"
-    },
-    {
-      "date": "2026-10-22T12:37:33Z",
-      "sha": "23810d3246",
-      "subject": "Record full Reporter listening approval and controlled existing-audio release contract"
-    },
-    {
-      "date": "2026-10-22T12:35:25Z",
-      "sha": "743cddda7c",
-      "subject": "Stage the exact founder-approved recording without generation or publication credentials"
-    },
-    {
-      "date": "2026-10-22T12:30:56Z",
-      "sha": "17dde7af17",
-      "subject": "Route existing recording inspection through the registered manual workflow"
-    },
-    {
-      "date": "2026-10-22T12:30:38Z",
-      "sha": "5b6c1a7fd4",
-      "subject": "Respect concise Reporter duration and prepare existing-audio publication inspection"
-    },
-    {
-      "date": "2026-10-22T11:31:54Z",
-      "sha": "a22228655d",
-      "subject": "Add a review-only path with a reserved budget and no request retries"
-    },
-    {
-      "date": "2026-10-22T11:23:00Z",
-      "sha": "9bb6696a9a",
-      "subject": "Complete the synthetic alias regression fixture"
-    },
-    {
-      "date": "2026-10-22T11:14:37Z",
-      "sha": "df5c42aaf4",
-      "subject": "Improve spoken Reporter writing and calibrate its listening pace"
-    }
-  ],
+  "commits": [],
   "decisions": [
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
     "2026-09-27 - Premier League only, one match, no scroll",
@@ -80,8 +39,15 @@
     }
   ],
   "notes": [],
-  "open_pulls": [],
-  "previous_sha": "4b214fc19f9a425e54353d3bc8ef85b6588989c7",
+  "open_pulls": [
+    {
+      "branch": "harness/repository-administration-e0054ead260d",
+      "number": 96,
+      "title": "Maintain the repository operating guide from the brain",
+      "updated": "2026-10-22T22:20:16Z"
+    }
+  ],
+  "previous_sha": "859d98b78516304f7529f7cfa4bceb4d81a74e8b",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -197,5 +163,5 @@
     }
   },
   "sha": "859d98b78516304f7529f7cfa4bceb4d81a74e8b",
-  "synced_at": "2026-10-22T13:52:29+00:00"
+  "synced_at": "2026-10-22T22:24:47+00:00"
 }
