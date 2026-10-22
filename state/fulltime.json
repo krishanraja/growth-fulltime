@@ -16,14 +16,47 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [
-    "NOW.md"
-  ],
+  "changed_since_last_sync": [],
   "commits": [
     {
-      "date": "2026-10-21T23:27:46Z",
-      "sha": "4b214fc19f",
-      "subject": "docs(steward): 2026-10-21 record answer hub and concise Reporter recovery, stamp head"
+      "date": "2026-10-22T12:39:03Z",
+      "sha": "859d98b785",
+      "subject": "Merge pull request #95 from krishanraja/improve/listening-standard"
+    },
+    {
+      "date": "2026-10-22T12:37:33Z",
+      "sha": "23810d3246",
+      "subject": "Record full Reporter listening approval and controlled existing-audio release contract"
+    },
+    {
+      "date": "2026-10-22T12:35:25Z",
+      "sha": "743cddda7c",
+      "subject": "Stage the exact founder-approved recording without generation or publication credentials"
+    },
+    {
+      "date": "2026-10-22T12:30:56Z",
+      "sha": "17dde7af17",
+      "subject": "Route existing recording inspection through the registered manual workflow"
+    },
+    {
+      "date": "2026-10-22T12:30:38Z",
+      "sha": "5b6c1a7fd4",
+      "subject": "Respect concise Reporter duration and prepare existing-audio publication inspection"
+    },
+    {
+      "date": "2026-10-22T11:31:54Z",
+      "sha": "a22228655d",
+      "subject": "Add a review-only path with a reserved budget and no request retries"
+    },
+    {
+      "date": "2026-10-22T11:23:00Z",
+      "sha": "9bb6696a9a",
+      "subject": "Complete the synthetic alias regression fixture"
+    },
+    {
+      "date": "2026-10-22T11:14:37Z",
+      "sha": "df5c42aaf4",
+      "subject": "Improve spoken Reporter writing and calibrate its listening pace"
     }
   ],
   "decisions": [
@@ -36,9 +69,9 @@
   ],
   "feed": [
     {
-      "date": "Wed, 21 Oct 2026 10:20:05 GMT",
+      "date": "Thu, 22 Oct 2026 12:40:27 GMT",
       "link": "https://fulltime.fm/?drop=519f3f12-1f7d-411a-9021-9f128ffd8496&pundit=zen",
-      "title": "Tottenham found the target, not complete control"
+      "title": "Take the points. Keep the bigger claims on hold."
     },
     {
       "date": "Mon, 12 Oct 2026 04:51:41 GMT",
@@ -48,7 +81,7 @@
   ],
   "notes": [],
   "open_pulls": [],
-  "previous_sha": "f3391c04c7fc6ca7deea741d7109805d63bca06f",
+  "previous_sha": "4b214fc19f9a425e54353d3bc8ef85b6588989c7",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -163,6 +196,6 @@
       "status": "pending"
     }
   },
-  "sha": "4b214fc19f9a425e54353d3bc8ef85b6588989c7",
-  "synced_at": "2026-10-22T01:35:20+00:00"
+  "sha": "859d98b78516304f7529f7cfa4bceb4d81a74e8b",
+  "synced_at": "2026-10-22T13:52:29+00:00"
 }

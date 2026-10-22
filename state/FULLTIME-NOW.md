@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `4b214fc19f` and from fulltime.fm on 2026-10-22T01:35:20+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `859d98b785` and from fulltime.fm on 2026-10-22T13:52:29+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -15,12 +15,6 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 | Crystal Palace 3-1 Nottingham Forest | 2026-10-11 | 1 of 6 | The Reporter |
 | Manchester City 5-3 Sunderland | 2026-09-20 | 1 of 6 | The Romantic |
 | Tottenham 2-3 Aston Villa | 2026-09-19 | 1 of 6 | The Gaffer |
-
-## Canon changed since the last sync
-
-Read these again before drafting anything:
-
-- changed: `NOW.md`
 
 ## Rulings the playbook needs
 
@@ -45,7 +39,7 @@ Read these again before drafting anything:
 
 ## The Reporter feed
 
-- Wed, 21 Oct 2026: Tottenham found the target, not complete control
+- Thu, 22 Oct 2026: Take the points. Keep the bigger claims on hold.
 - Mon, 12 Oct 2026: A comfortable result, an uncomfortable process
 
 ## The canon, in order
@@ -65,7 +59,14 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `4b214fc19f` 2026-10-21 docs(steward): 2026-10-21 record answer hub and concise Reporter recovery, stamp head
+- `859d98b785` 2026-10-22 Merge pull request #95 from krishanraja/improve/listening-standard
+- `23810d3246` 2026-10-22 Record full Reporter listening approval and controlled existing-audio release contract
+- `743cddda7c` 2026-10-22 Stage the exact founder-approved recording without generation or publication credentials
+- `17dde7af17` 2026-10-22 Route existing recording inspection through the registered manual workflow
+- `5b6c1a7fd4` 2026-10-22 Respect concise Reporter duration and prepare existing-audio publication inspection
+- `a22228655d` 2026-10-22 Add a review-only path with a reserved budget and no request retries
+- `9bb6696a9a` 2026-10-22 Complete the synthetic alias regression fixture
+- `df5c42aaf4` 2026-10-22 Improve spoken Reporter writing and calibrate its listening pace
 
 ## Work in flight (open pull requests)
 
