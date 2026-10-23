@@ -1,7 +1,7 @@
 {
   "canon": {
-    "AGENTS.md": "8c663357fadef2de",
-    "NOW.md": "2ceb0bb01e6f6c0c",
+    "AGENTS.md": "d6c2fd54a49976a2",
+    "NOW.md": "0ffcaa77d30d59a0",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -17,18 +17,24 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
+    "AGENTS.md",
     "NOW.md"
   ],
   "commits": [
     {
-      "date": "2026-10-22T23:28:17Z",
-      "sha": "357a2aa3ce",
-      "subject": "docs(steward): 2026-10-22 record listening standard and Reporter import, stamp head"
+      "date": "2026-10-23T12:45:54Z",
+      "sha": "ccf204b656",
+      "subject": "docs(steward): roll NOW.md bullets older than 30 days into the history log"
     },
     {
-      "date": "2026-10-22T22:53:46Z",
-      "sha": "d9fdfccb42",
-      "subject": "docs(harness): maintain repository administration (#96)"
+      "date": "2026-10-23T12:35:14Z",
+      "sha": "21a87080b3",
+      "subject": "docs: give the North Star a number, a weekly ladder and an urgency rating"
+    },
+    {
+      "date": "2026-10-23T09:44:37Z",
+      "sha": "1a16f7cddd",
+      "subject": "docs(harness): maintain repository administration (#98)"
     }
   ],
   "decisions": [
@@ -60,7 +66,7 @@
       "updated": "2026-10-22T23:35:21Z"
     }
   ],
-  "previous_sha": "859d98b78516304f7529f7cfa4bceb4d81a74e8b",
+  "previous_sha": "357a2aa3ce358cdf6adc91f507d9d162e238cb43",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -175,6 +181,6 @@
       "status": "pending"
     }
   },
-  "sha": "357a2aa3ce358cdf6adc91f507d9d162e238cb43",
-  "synced_at": "2026-10-23T01:35:52+00:00"
+  "sha": "ccf204b65655ad4694ea50e84814d4839d0460b5",
+  "synced_at": "2026-10-23T13:32:45+00:00"
 }
