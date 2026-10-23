@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `859d98b785` and from fulltime.fm on 2026-10-22T22:24:47+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `357a2aa3ce` and from fulltime.fm on 2026-10-23T01:35:52+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -15,6 +15,12 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 | Crystal Palace 3-1 Nottingham Forest | 2026-10-11 | 1 of 6 | The Reporter |
 | Manchester City 5-3 Sunderland | 2026-09-20 | 1 of 6 | The Romantic |
 | Tottenham 2-3 Aston Villa | 2026-09-19 | 1 of 6 | The Gaffer |
+
+## Canon changed since the last sync
+
+Read these again before drafting anything:
+
+- changed: `NOW.md`
 
 ## Rulings the playbook needs
 
@@ -59,8 +65,9 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 ## Recent commits on main
 
-- none since the last sync
+- `357a2aa3ce` 2026-10-22 docs(steward): 2026-10-22 record listening standard and Reporter import, stamp head
+- `d9fdfccb42` 2026-10-22 docs(harness): maintain repository administration (#96)
 
 ## Work in flight (open pull requests)
 
-- #96 Maintain the repository operating guide from the brain (`harness/repository-administration-e0054ead260d`, updated 2026-10-22)
+- #97 Sync the canon block (`harness/canon-sync`, updated 2026-10-22)

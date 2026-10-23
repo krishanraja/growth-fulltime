@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "8c663357fadef2de",
-    "NOW.md": "7ca51258574eb09c",
+    "NOW.md": "2ceb0bb01e6f6c0c",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -16,8 +16,21 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [],
-  "commits": [],
+  "changed_since_last_sync": [
+    "NOW.md"
+  ],
+  "commits": [
+    {
+      "date": "2026-10-22T23:28:17Z",
+      "sha": "357a2aa3ce",
+      "subject": "docs(steward): 2026-10-22 record listening standard and Reporter import, stamp head"
+    },
+    {
+      "date": "2026-10-22T22:53:46Z",
+      "sha": "d9fdfccb42",
+      "subject": "docs(harness): maintain repository administration (#96)"
+    }
+  ],
   "decisions": [
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
     "2026-09-27 - Premier League only, one match, no scroll",
@@ -41,10 +54,10 @@
   "notes": [],
   "open_pulls": [
     {
-      "branch": "harness/repository-administration-e0054ead260d",
-      "number": 96,
-      "title": "Maintain the repository operating guide from the brain",
-      "updated": "2026-10-22T22:20:16Z"
+      "branch": "harness/canon-sync",
+      "number": 97,
+      "title": "Sync the canon block",
+      "updated": "2026-10-22T23:35:21Z"
     }
   ],
   "previous_sha": "859d98b78516304f7529f7cfa4bceb4d81a74e8b",
@@ -162,6 +175,6 @@
       "status": "pending"
     }
   },
-  "sha": "859d98b78516304f7529f7cfa4bceb4d81a74e8b",
-  "synced_at": "2026-10-22T22:24:47+00:00"
+  "sha": "357a2aa3ce358cdf6adc91f507d9d162e238cb43",
+  "synced_at": "2026-10-23T01:35:52+00:00"
 }
