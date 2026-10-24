@@ -16,16 +16,8 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [
-    "NOW.md"
-  ],
-  "commits": [
-    {
-      "date": "2026-10-23T23:14:22Z",
-      "sha": "d05c8d1d74",
-      "subject": "docs(steward): 2026-10-23 stamp head"
-    }
-  ],
+  "changed_since_last_sync": [],
+  "commits": [],
   "decisions": [
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
     "2026-09-27 - Premier League only, one match, no scroll",
@@ -52,10 +44,10 @@
       "branch": "harness/canon-sync",
       "number": 97,
       "title": "Sync the canon block",
-      "updated": "2026-10-23T23:28:53Z"
+      "updated": "2026-10-24T22:43:38Z"
     }
   ],
-  "previous_sha": "ccf204b65655ad4694ea50e84814d4839d0460b5",
+  "previous_sha": "d05c8d1d74d073351ff3e98890acc931aa5fe1fc",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -171,5 +163,5 @@
     }
   },
   "sha": "d05c8d1d74d073351ff3e98890acc931aa5fe1fc",
-  "synced_at": "2026-10-24T00:46:35+00:00"
+  "synced_at": "2026-10-24T23:20:45+00:00"
 }
