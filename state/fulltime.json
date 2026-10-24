@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "d6c2fd54a49976a2",
-    "NOW.md": "0ffcaa77d30d59a0",
+    "NOW.md": "d8b9470cf7128638",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -17,24 +17,13 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "AGENTS.md",
     "NOW.md"
   ],
   "commits": [
     {
-      "date": "2026-10-23T12:45:54Z",
-      "sha": "ccf204b656",
-      "subject": "docs(steward): roll NOW.md bullets older than 30 days into the history log"
-    },
-    {
-      "date": "2026-10-23T12:35:14Z",
-      "sha": "21a87080b3",
-      "subject": "docs: give the North Star a number, a weekly ladder and an urgency rating"
-    },
-    {
-      "date": "2026-10-23T09:44:37Z",
-      "sha": "1a16f7cddd",
-      "subject": "docs(harness): maintain repository administration (#98)"
+      "date": "2026-10-23T23:14:22Z",
+      "sha": "d05c8d1d74",
+      "subject": "docs(steward): 2026-10-23 stamp head"
     }
   ],
   "decisions": [
@@ -63,10 +52,10 @@
       "branch": "harness/canon-sync",
       "number": 97,
       "title": "Sync the canon block",
-      "updated": "2026-10-22T23:35:21Z"
+      "updated": "2026-10-23T23:28:53Z"
     }
   ],
-  "previous_sha": "357a2aa3ce358cdf6adc91f507d9d162e238cb43",
+  "previous_sha": "ccf204b65655ad4694ea50e84814d4839d0460b5",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -181,6 +170,6 @@
       "status": "pending"
     }
   },
-  "sha": "ccf204b65655ad4694ea50e84814d4839d0460b5",
-  "synced_at": "2026-10-23T13:32:45+00:00"
+  "sha": "d05c8d1d74d073351ff3e98890acc931aa5fe1fc",
+  "synced_at": "2026-10-24T00:46:35+00:00"
 }
