@@ -176,6 +176,12 @@ as a read-only diagnostic; it is not invoked by the operational engine.
 
 ## Verify
 
+Character and fictional-ad work starts with the
+[creative system](creative-system/README.md) and `python3 growth.py standards startup`.
+It pins per-character and shared-style versions, preserves private source
+evidence, and holds unreviewed or regressing work. The private baseline is not
+included in this public repository; restore its authorised bundle when absent.
+
 ```bash
 python3 growth.py --self-test
 python3 -m unittest discover -s tests -v

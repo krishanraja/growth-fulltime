@@ -4,6 +4,10 @@ When Krish opens this repository and says "Get going", this is the work. AGENTS.
 
 ## What "Get going" does
 
+For creative-continuity work, first follow the
+[creative system](../creative-system/README.md) and its private current handoff.
+A captured standards baseline does not approve a video or reopen generation.
+
 1. Read AGENTS.md to the end (it records Krish's rulings), then docs/NORTH_STAR.md. Say in one line which part of the North Star this run moves.
 2. Do the first unticked step of **The build** below, completely: to its checks and one pull request. Tick it in that same pull request, with a one-line note of what it changed in the live report. If a step is blocked on something only Krish can do (a secret, a ruling), say exactly what in the pull request and on his list in Control Center, tick nothing, and go on to the next step.
 3. Stop after one step, unless it took under an hour and the next step needs nothing from him.
