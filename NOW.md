@@ -39,7 +39,11 @@ the minimum-four-pundit rail HOLD.
 The product now owns the reusable six-pundit core in `krishanraja/full-time`;
 growth imports and pins a committed export rather than owning duplicate identities.
 Ad performance, sofa cast, visual direction and exact audio locks stay here.
-The baseline implementation is merged in PR #10; the bridge follows in this change.
+The baseline and bridge are merged in PRs #10 and #11. Product PR #99 is merged;
+the active private release pins its exact core from product commit `43c4ae2`.
+The original audio locks and four owner video rejections survive this ownership
+migration; it claims no new creative approval. The current private package was
+exported with exact file hashes and is the continuation source.
 
 Local proof: 131 self-checks, 129 unit/integration tests including 46 creative
 tests, and repository verification passed. Actual session assets remain private.
