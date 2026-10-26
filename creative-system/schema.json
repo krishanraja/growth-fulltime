@@ -226,6 +226,17 @@
           },
           "minItems": 0,
           "maxItems": 12
+        },
+        "product_persona_id": {
+          "type": "string",
+          "enum": [
+            "zen",
+            "gaffer",
+            "stats",
+            "romantic",
+            "doomer",
+            "banter"
+          ]
         }
       },
       "required": [
@@ -355,6 +366,9 @@
         "next_action": {
           "type": "string",
           "minLength": 1
+        },
+        "product_core": {
+          "$ref": "#/$defs/file_ref"
         }
       },
       "required": [

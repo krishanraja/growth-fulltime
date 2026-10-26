@@ -35,7 +35,8 @@ flowchart TD
 
 | Owner | Owns | Does not own |
 |---|---|---|
-| Each character | Worldview, language, individual delivery and performance | Another character's behaviour or the whole scene |
+| Product core in `krishanraja/full-time` | Reusable identity, individual delivery and product policy | Ad scripts, sofa cast, scene and publication decisions |
+| Each growth character variant | Scoped ad exaggeration, casting references and individual performance | A second reusable product identity or another character's behaviour |
 | Shared humour | Joke construction, target clarity and payoff | A uniform delivery for every character |
 | Shared story | Scene causality, interrupted sentence handoffs and reactions | Recasting or changing the locked soundtrack |
 | Shared visual | Faces, lip sync, blocking, eyelines and restraint | Voice identity or a new script |
@@ -65,6 +66,34 @@ silently replace a full-show identity. Product-only characters without graded
 advertising evidence are registered as awaiting evidence and cannot quietly
 receive a copied Romantic, Doomer or Wind-Up performance.
 
+## Product core and the growth bridge
+
+The actual product owns `src/lib/pundit/personality/`: six independent, versioned
+profiles plus shared delivery and policy. Its writer, judges and narrator read
+the same registry, and stored scripts retain the hashes they used. See the
+[product guide](https://github.com/krishanraja/full-time/blob/main/docs/25-personality-system.md).
+
+Export a committed product core with `pnpm run personas:export EXPLICIT_PATH` in
+that repository. Then import its exact file hash here:
+
+```bash
+python3 growth.py standards import-product EXPORTED_CORE.json --sha256 EXACT_FILE_SHA256
+```
+
+Import validates source/profile hashes and stores `product-core/<commit>.json`.
+It does not activate anything. A creative release pins that file and each linked
+character declares `product_persona_id`. Composition includes the shared reusable
+delivery and only the selected identities, followed by their scoped ad variants.
+The fixed pundit and sofa mates are ad-only cast. Product factual licensing and
+long-show pacing do not become instructions for a fictional ad.
+
+A changed core pin must be declared as `product.core` in `plan-change`; it expands
+the review to all linked characters. Growth does not follow a floating `main`.
+General identity improvements go back to the smallest owning product profile;
+scene-only corrections stay here. New exports still need a new pinned release
+and comparison review. This is a versioned learning loop, not automatic prompt
+mutation from every comment or an automatic claim of better humour.
+
 ## Files and records
 
 `schema.json` is the canonical typed record contract. The stdlib validator
@@ -84,6 +113,7 @@ local/creative-system/
   productions/<id>.json            # exact assets, cast and technical status
   reviews/<id>.json                # judgments bound to exact inputs
   promotions/<decision-id>.json    # prior pointer, reviews and owner decision
+  product-core/<commit>.json       # verified immutable product export
   archive-manifest.json            # original-file inventory and hashes
   archive/                        # original media and production sources
   intake/                         # authority, source boundary and honest gaps

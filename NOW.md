@@ -36,7 +36,12 @@ technical success are separate; no new generation, publication or product
 change is authorised by loading a baseline. A fresh product sync still reports
 the minimum-four-pundit rail HOLD.
 
-Local proof: 131 self-checks, 124 unit/integration tests including 41 new creative
+The product now owns the reusable six-pundit core in `krishanraja/full-time`;
+growth imports and pins a committed export rather than owning duplicate identities.
+Ad performance, sofa cast, visual direction and exact audio locks stay here.
+The baseline implementation is merged in PR #10; the bridge follows in this change.
+
+Local proof: 131 self-checks, 129 unit/integration tests including 46 creative
 tests, and repository verification passed. Actual session assets remain private.
 The local operational run refused to proceed because existing growth history
 was absent; no live report was sent or fresh operational ledger created.

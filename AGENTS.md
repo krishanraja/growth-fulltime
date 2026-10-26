@@ -18,6 +18,13 @@ When Krish says "Get going", or opens a session with no more specific task, foll
 
 ## Creative continuity
 
+Reusable pundit identity and delivery are owned by `krishanraja/full-time`,
+`src/lib/pundit/personality/` and `docs/25-personality-system.md`. Growth imports
+an exact committed core with `growth.py standards import-product` and pins it in
+its creative release. Keep ad-only exaggeration, sofa cast, interruptions and
+visual rules here. Never update a product persona by adding a competing growth
+prompt or silently following product `main`.
+
 For character, fictional advert, voice, humour, storyboard or visual work, read
 [`creative-system/README.md`](creative-system/README.md), run
 `python3 growth.py standards startup`, then read the private
