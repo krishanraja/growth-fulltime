@@ -5,6 +5,15 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-26: added the offline creative continuity system.
+  Ruling (Krish, 2026-10-26): "Build the engine, not the session."
+  Separate versioned character and shared-style owners, pinned releases,
+  scoped artifact judgments and regression gates now live behind
+  `growth.py standards`. Actual dialogue, source media and review history stay
+  under ignored `local/creative-system/`; the public schema and tests use no
+  production creative. Technical success cannot override a human rejection.
+  No schedule, channel, generation, product or Control Center authority changed.
+
 - 2026-10-19: the copywriting, offers and demand corpus is now working knowledge.
   Krish: "all of these growth engines need to be imbued with this knowledge".
   Both files are preserved byte for byte in `knowledge/` and registered in

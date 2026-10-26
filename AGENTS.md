@@ -16,6 +16,18 @@ This repository's North Star is [`docs/NORTH_STAR.md`](docs/NORTH_STAR.md): an a
 
 When Krish says "Get going", or opens a session with no more specific task, follow `docs/GET-GOING.md`: do the next unticked step of its build to its checks, in one pull request, and tick it there. Keep that file current as the plan changes. Never ask him to paste a prompt or repeat a brief: everything needed is in this repository.
 
+## Creative continuity
+
+For character, fictional advert, voice, humour, storyboard or visual work, read
+[`creative-system/README.md`](creative-system/README.md), run
+`python3 growth.py standards startup`, then read the private
+`local/creative-system/START-HERE.md` before drafting. Missing private data is a
+restore requirement, not permission to restart from scratch. Use the pinned
+release and selected character modules; record corrections without silently
+promoting them into active rules. Technical media passes do not certify humour,
+natural faces or lip sync. Respect component-scoped approvals and active creative
+rejections. This offline standards command authorises no generation or go-live.
+
 
 ## Autonomy (Ruling, Krish, 2026-10-19)
 

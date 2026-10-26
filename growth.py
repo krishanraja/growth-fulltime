@@ -1143,6 +1143,9 @@ def self_test():
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == 'standards':
+        from engine.creative_system import main as standards_main
+        raise SystemExit(standards_main(sys.argv[2:]))
     if len(sys.argv) > 1 and sys.argv[1] in ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export', 'cc'):
         from engine.cli import main as operations_main
         return operations_main(sys.argv[1:], sys.modules[__name__])

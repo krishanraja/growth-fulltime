@@ -15,7 +15,7 @@ def source_errors(root=ROOT, manifest=SOURCES):
     """Every preserved source must match the size and SHA-256 recorded in its manifest."""
     errors = []
     try:
-        listing = json.loads((Path(root) / manifest).read_text())
+        listing = json.loads((Path(root) / manifest).read_text(encoding='utf-8'))
         entries = listing['sources']
     except (OSError, ValueError, KeyError, TypeError):
         return [manifest + ': missing or unreadable preserved-source manifest']
@@ -50,12 +50,12 @@ def main():
             continue
         if path.suffix == '.json':
             try:
-                json.loads(path.read_text(), parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+                json.loads(path.read_text(encoding='utf-8'), parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
                 json_count += 1
             except (ValueError, OSError):
                 errors.append(name + ': invalid JSON')
         if path.suffix == '.md':
-            for target in re.findall(r'\]\(([^\s)]+)\)', path.read_text()):
+            for target in re.findall(r'\]\(([^\s)]+)\)', path.read_text(encoding='utf-8')):
                 target = target.split('#', 1)[0]
                 if not target or re.match(r'^[a-z]+://', target) or target.startswith('mailto:'):
                     continue
@@ -63,7 +63,7 @@ def main():
                 if not (path.parent / target).exists():
                     errors.append(name + ': missing relative link ' + target)
                 link_count += 1
-    manifest = json.loads((ROOT/'automations.json').read_text())
+    manifest = json.loads((ROOT/'automations.json').read_text(encoding='utf-8'))
     if manifest.get('schema_version') != 2 or manifest.get('timezone') != 'Europe/London' or len(manifest['automations']) != 2:
         errors.append('the schedule must contain exactly the two current London jobs')
     if {x['job'] for x in manifest['automations']} != {'jobs/morning.md','jobs/weekly.md'}:
@@ -72,7 +72,7 @@ def main():
     errors += preserved
     if errors:
         print('\n'.join(errors));sys.exit(1)
-    count = len(json.loads((ROOT / SOURCES).read_text())['sources'])
+    count = len(json.loads((ROOT / SOURCES).read_text(encoding='utf-8'))['sources'])
     print(f'Repository checks passed: {json_count} JSON files, {link_count} relative links, two consolidated jobs, '
           f'{count} preserved sources byte-identical.')
 
