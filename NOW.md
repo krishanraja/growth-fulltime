@@ -36,7 +36,7 @@ technical success are separate; no new generation, publication or product
 change is authorised by loading a baseline. A fresh product sync still reports
 the minimum-four-pundit rail HOLD.
 
-Local proof: 131 self-checks, 121 unit/integration tests including 38 new creative
+Local proof: 131 self-checks, 124 unit/integration tests including 41 new creative
 tests, and repository verification passed. Actual session assets remain private.
 The local operational run refused to proceed because existing growth history
 was absent; no live report was sent or fresh operational ledger created.

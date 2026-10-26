@@ -54,6 +54,11 @@ Composition includes separate sections, not a recursive merge of prompt fields.
 Unknown fields, cross-owner rules, duplicate IDs, missing provenance, changed
 locks and mismatched hashes fail before composition.
 
+Rules can also declare explicit piece IDs and formats. A locked joke belongs to
+its story, and two-panel staging belongs to its format; neither becomes a global
+personality requirement. Scoped rules require explicit composition context.
+The compiler omits rules outside that context before it assembles instructions.
+
 This layer governs the fictional advertising surface. Product personas stay
 owned by the product repository; a scoped advertising performance does not
 silently replace a full-show identity. Product-only characters without graded
@@ -142,7 +147,7 @@ who has edited JSON or certify subjective humour by itself.
 
 ```bash
 python3 growth.py standards startup
-python3 growth.py standards compose --characters character.romantic character.doomer --output local/creative-system/packets/example.json
+python3 growth.py standards compose --piece example --format two_pundit_remote --characters character.romantic character.doomer --output local/creative-system/packets/example.json
 python3 growth.py standards feedback local/creative-system/incoming/correction.json
 python3 growth.py standards plan-change releases/candidate.json --owners character.doomer
 python3 growth.py standards change-gate releases/candidate.json --owners character.doomer --reviews local/creative-system/reviews/comparisons.json

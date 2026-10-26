@@ -75,6 +75,18 @@ def private_output(path):
     return path
 
 
+def applies(rule, context):
+    scope = rule.get('applies_to', {})
+    for field in ('piece_ids', 'formats'):
+        if scope.get(field):
+            key = 'piece_id' if field == 'piece_ids' else 'format'
+            if not context.get(key):
+                raise Invalid('scoped rules require explicit piece and format context')
+            if context[key] not in scope[field]:
+                return False
+    return True
+
+
 def validate(data, definition, schema=None):
     """Validate the explicitly bounded JSON Schema vocabulary in schema.json.
 
@@ -243,19 +255,27 @@ class System:
         write_new(existing, event)
         return {'id': event['id'], 'duplicate': False, 'changes_active_standards': False}
 
-    def compose(self, characters, release_path=None):
+    def compose(self, characters, release_path=None, context=None):
         release, modules, evidence, _ = self.load_release(release_path)
+        context = context or {}
+        if context:
+            validate(context, 'context')
         if not characters or len(set(characters)) != len(characters) or not set(characters).issubset(release['characters']):
             raise Invalid('select distinct registered characters')
         selected = release['shared'] + characters
         # No field merging, precedence guessing or loading sibling personalities.
+        selected_modules = {}
+        for key in selected:
+            selected_modules[key] = copy.deepcopy(modules[key])
+            selected_modules[key]['rules'] = [r for r in modules[key]['rules'] if applies(r, context)]
         packet = {'schema_version': 1, 'release': release['id'], 'release_sha256': digest(release),
                   'status': release['status'], 'purpose': release['purpose'],
-                  'shared': [modules[k] for k in release['shared']],
-                  'characters': [modules[k] for k in characters], 'locks': release['locks'],
+                  'context': context,
+                  'shared': [selected_modules[k] for k in release['shared']],
+                  'characters': [selected_modules[k] for k in characters], 'locks': release['locks'],
                   'limitations': release['limitations'], 'evidence': [], 'pending_feedback': [],
                   'authority': 'Offline drafting only. No generation, spend or publication authority.'}
-        needed = {i for k in selected for r in modules[k]['rules'] for i in r['evidence_ids']}
+        needed = {i for k in selected for r in selected_modules[k]['rules'] for i in r['evidence_ids']}
         packet['evidence'] = [e for e in evidence['items'] if e['id'] in needed]
         packet['pending_feedback'] = [e for e in self.feedback() if e['id'] not in release['addressed_feedback'] and set(e['modules']) & set(selected)]
         packet['packet_sha256'] = digest(packet)
@@ -347,11 +367,11 @@ class System:
                 raise Invalid('production asset hash mismatch')
         selected = release['shared'] + production['characters']
         criteria = {r['id']: r for key in selected for r in modules[key]['rules']
-                    if production['medium'] in r['media'] and r['state'] != 'awaiting_evidence'}
+                    if production['medium'] in r['media'] and r['state'] != 'awaiting_evidence' and applies(r, production['context'])}
         holds, seen = [], set()
         for key in selected:
             for rule in modules[key]['rules']:
-                if production['medium'] in rule['media'] and rule['state'] == 'awaiting_evidence':
+                if production['medium'] in rule['media'] and rule['state'] == 'awaiting_evidence' and applies(rule, production['context']):
                     holds.append(rule['id'] + ': requirement evidence not established')
         asset_digest = digest(production['assets'])
         for review in reviews:
@@ -504,6 +524,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('startup')
     compose = sub.add_parser('compose'); compose.add_argument('--characters', nargs='+', required=True); compose.add_argument('--output', type=Path, required=True)
+    compose.add_argument('--piece'); compose.add_argument('--format', choices=['single_pundit_remote','two_pundit_remote','other'])
     plan = sub.add_parser('plan-change'); plan.add_argument('candidate'); plan.add_argument('--owners', nargs='+', required=True)
     check = sub.add_parser('change-gate'); check.add_argument('candidate'); check.add_argument('--owners', nargs='+', required=True); check.add_argument('--reviews', type=Path, required=True)
     artifact = sub.add_parser('artifact-gate'); artifact.add_argument('production', type=Path); artifact.add_argument('--reviews', type=Path, required=True)
@@ -516,7 +537,8 @@ def main(argv=None):
         if args.command == 'startup':
             result = system.startup()
         elif args.command == 'compose':
-            result = system.compose(args.characters); write_new(private_output(args.output), result)
+            context = {key: value for key, value in [('piece_id', args.piece), ('format', args.format)] if value}
+            result = system.compose(args.characters, context=context); write_new(private_output(args.output), result)
             result = {'packet': str(args.output), 'packet_sha256': result['packet_sha256'], 'characters': args.characters}
         elif args.command == 'plan-change':
             result = system.change_plan(args.candidate, args.owners)

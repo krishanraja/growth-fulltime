@@ -87,7 +87,8 @@ class CreativeSystemTests(unittest.TestCase):
         return {'schema_version':1, 'id':'fixture-output', 'release_path':'releases/one.json',
                 'release_sha256':digest(self.release), 'characters':['character.one'], 'medium':'video',
                 'assets':[{'id':'output','path':'archive/candidate.bin','sha256':file_hash(self.root/'archive/candidate.bin')}],
-                'technical_pass':True, 'addressed_feedback':[], 'external_holds':[]}
+                'technical_pass':True, 'addressed_feedback':[], 'external_holds':[],
+                'context':{'piece_id':'fixture-piece','format':'two_pundit_remote'}}
 
     def artifact_review(self, production, verdict='holds', kind='owner'):
         return {'schema_version':1,'id':'review-1','reviewer_kind':kind,'source_ref':'fixture:review',
@@ -117,6 +118,29 @@ class CreativeSystemTests(unittest.TestCase):
 
     def test_repeated_composition_is_identical(self):
         self.assertEqual(self.system.compose(['character.one']), self.system.compose(['character.one']))
+
+    def test_piece_specific_line_does_not_leak_into_another_ad(self):
+        pin = self.release['modules'][1]; m = read(self.root/pin['path'])
+        m['rules'][0]['applies_to'] = {'piece_ids':['fixture-piece'],'formats':[]}
+        save(self.root/pin['path'],m); pin['sha256'] = file_hash(self.root/pin['path']); self.rewrite_release(self.release)
+        p = self.system.compose(['character.one'],context={'piece_id':'another-piece','format':'two_pundit_remote'})
+        self.assertEqual(p['characters'][0]['rules'],[])
+        p = self.system.compose(['character.one'],context={'piece_id':'fixture-piece','format':'two_pundit_remote'})
+        self.assertEqual(len(p['characters'][0]['rules']),1)
+
+    def test_two_pundit_staging_does_not_leak_into_single_pundit_format(self):
+        pin = self.release['modules'][0]; m = read(self.root/pin['path'])
+        m['rules'][0]['applies_to'] = {'piece_ids':[],'formats':['two_pundit_remote']}
+        save(self.root/pin['path'],m); pin['sha256'] = file_hash(self.root/pin['path']); self.rewrite_release(self.release)
+        p = self.system.compose(['character.one'],context={'piece_id':'fixture-piece','format':'single_pundit_remote'})
+        self.assertEqual(p['shared'][0]['rules'],[])
+
+    def test_missing_context_cannot_guess_a_scoped_rule(self):
+        pin = self.release['modules'][0]; m = read(self.root/pin['path'])
+        m['rules'][0]['applies_to'] = {'piece_ids':['fixture-piece'],'formats':['two_pundit_remote']}
+        save(self.root/pin['path'],m); pin['sha256'] = file_hash(self.root/pin['path']); self.rewrite_release(self.release)
+        with self.assertRaisesRegex(Invalid,'explicit piece'):
+            self.system.compose(['character.one'])
 
     def test_missing_private_baseline_refuses_fallback(self):
         with self.assertRaisesRegex(Invalid,'restore'):
