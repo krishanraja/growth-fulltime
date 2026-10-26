@@ -5,6 +5,11 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-26: connected creative releases to the product-owned personality core.
+  Exact committed exports are verified and imported without activation; linked
+  character variants receive only their selected core identity plus shared
+  reusable speech. A changed product pin expands regression review. Core identity
+  changes belong in the actual product; ad-only execution remains scoped here.
 - 2026-10-26: added the offline creative continuity system.
   Ruling (Krish, 2026-10-26): "Build the engine, not the session."
   Separate versioned character and shared-style owners, pinned releases,

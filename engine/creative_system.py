@@ -18,6 +18,7 @@ SCHEMA = REPO / 'creative-system' / 'schema.json'
 DEFAULT_ROOT = REPO / 'local' / 'creative-system'
 SHA = re.compile(r'^[a-f0-9]{64}$')
 VERSION = re.compile(r'^\d+\.\d+\.\d+$')
+PRODUCT_IDS = {'zen', 'gaffer', 'stats', 'romantic', 'doomer', 'banter'}
 
 
 class Invalid(ValueError):
@@ -73,6 +74,36 @@ def private_output(path):
     if path.is_relative_to(REPO) and not path.is_relative_to(REPO / 'local'):
         raise Invalid('private output cannot be written into the public repository outside local/')
     return path
+
+
+def product_core(value):
+    """Verify the product's complete public export, then derive ad-safe views.
+
+    The export's source revision is pinned by the caller; no API or main-branch
+    fetch occurs during composition. Product-only evidence policy is not copied
+    into the fictional-ad instruction surface.
+    """
+    if value.get('schema_version') != 1 or value.get('source', {}).get('repository') != 'krishanraja/full-time' or not re.fullmatch(r'[a-f0-9]{40}', value.get('source', {}).get('revision', '')):
+        raise Invalid('invalid product personality source')
+    profiles = value.get('profiles', [])
+    if len(profiles) != 6 or {p.get('id') for p in profiles} != PRODUCT_IDS:
+        raise Invalid('product core must contain six unique identities')
+    manifest = value['release']; pins = {p['id']: p for p in manifest['profiles']}
+    if len(pins) != 6 or set(pins) != PRODUCT_IDS:
+        raise Invalid('invalid product personality manifest')
+    common = value['shared']; common_data = common['data']
+    if digest(common_data) != common['sha256'] or manifest['shared']['sha256'] != common['sha256'] or common_data['version'] != common['version']:
+        raise Invalid('product shared direction hash mismatch')
+    if common['delivery'] != common_data['crossSurfaceSpeech'] or common['humour_checks'] != common_data['humourChecks']:
+        raise Invalid('product delivery projection differs from source')
+    for profile in profiles:
+        data = profile['data']; pin = pins[profile['id']]
+        if data['id'] != profile['id'] or data['version'] != profile['version'] or pin['version'] != data['version'] or digest(data) != profile['sha256'] or pin['sha256'] != profile['sha256']:
+            raise Invalid('product character hash mismatch')
+        identity = {key: data['spec'][key] for key in ('name', 'lens', 'humourMechanisms', 'sentenceCadence')}
+        if identity != profile['identity'] or data['voice']['castingTarget'] != profile['voice_target'] or data['voice']['listeningStatus'] != profile['product_listening_status'] or profile['product_automation_equivalent'] is not False:
+            raise Invalid('product character projection differs from source')
+    return value
 
 
 def applies(rule, context):
@@ -162,6 +193,12 @@ class System:
         release = validate(read(safe(self.root, relative)), 'release')
         if pointer and digest(release) != pointer['sha256']:
             raise Invalid('CURRENT release digest mismatch')
+        core = None
+        if release.get('product_core'):
+            core_path = safe(self.root, release['product_core']['path'])
+            if file_hash(core_path) != release['product_core']['sha256']:
+                raise Invalid('pinned product core changed')
+            core = product_core(read(core_path))
         if file_hash(safe(self.root, release['archive']['path'])) != release['archive']['sha256']:
             raise Invalid('source archive manifest integrity failure')
         modules = {}
@@ -185,6 +222,8 @@ class System:
             if module['kind'] == 'shared' and not module['id'].startswith('style.'):
                 raise Invalid('shared ownership mismatch')
             modules[module['id']] = module
+            if module.get('product_persona_id') and core is None:
+                raise Invalid('product-derived character requires a pinned product core')
         for module in modules.values():
             for dep in module['depends_on']:
                 if dep not in modules:
@@ -278,13 +317,42 @@ class System:
         needed = {i for k in selected for r in selected_modules[k]['rules'] for i in r['evidence_ids']}
         packet['evidence'] = [e for e in evidence['items'] if e['id'] in needed]
         packet['pending_feedback'] = [e for e in self.feedback() if e['id'] not in release['addressed_feedback'] and set(e['modules']) & set(selected)]
+        if release.get('product_core'):
+            core = product_core(read(safe(self.root, release['product_core']['path'])))
+            product_ids = {modules[key].get('product_persona_id') for key in characters}
+            packet['product_core'] = {
+                'source': core['source'], 'release': core['release']['id'],
+                'pin_sha256': release['product_core']['sha256'],
+                'shared_delivery': core['shared']['delivery'],
+                'humour_checks': core['shared']['humour_checks'],
+                'characters': [{key: p[key] for key in ('id','version','sha256','identity','voice_target','product_listening_status','product_automation_equivalent')}
+                               for p in core['profiles'] if p['id'] in product_ids],
+                'composition_rule': 'Product owns reusable identity. Local character modules are scoped ad extensions. Locked ad scripts and recordings retain exact approvals; no product evidence policy or voice approval is inferred from satire.'}
         packet['packet_sha256'] = digest(packet)
         return packet
+
+    def import_product_core(self, source, expected_sha256):
+        source = Path(source)
+        if file_hash(source) != expected_sha256:
+            raise Invalid('product export file hash mismatch')
+        value = product_core(read(source))
+        path = 'product-core/' + value['source']['revision'] + '.json'
+        target = safe(self.root, path)
+        if target.exists():
+            if read(target) != value:
+                raise Invalid('product source revision reused with different data')
+        else:
+            write_new(target, value)
+        return {'path': path, 'sha256': file_hash(target), 'source': value['source'],
+                'release': value['release']['id'], 'activated': False,
+                'next': 'Pin this exact file in a new creative release and review the affected personas; import never changes CURRENT.'}
 
     def change_plan(self, candidate_path, declared):
         old, before, _, old_cases = self.load_release()
         new, after, _, new_cases = self.load_release(candidate_path)
         changed = sorted(k for k in set(before) | set(after) if before.get(k) != after.get(k))
+        if old.get('product_core') != new.get('product_core'):
+            changed.append('product.core')
         if set(changed) != set(declared):
             raise Invalid('declared owners differ from actual changed modules')
         for key in set(before) & set(after):
@@ -300,6 +368,8 @@ class System:
         if any(new_map.get(k) != c for k, c in old_map.items()):
             raise Invalid('existing regression cases cannot be removed or altered')
         affected = set(changed)
+        if 'product.core' in affected:
+            affected.update(key for key, module in after.items() if module.get('product_persona_id'))
         progress = True
         while progress:
             previous = set(affected)
@@ -459,6 +529,7 @@ class System:
                 'release_sha256': digest(release), 'modules': len(modules),
                 'archive_files_verified': len(archive['files']), 'limitations': release['limitations'],
                 'pending_feedback': [f['id'] for f in self.feedback() if f['id'] not in release['addressed_feedback']],
+                'product_core': release.get('product_core'),
                 'next': release['next_action'], 'generation_authorized': False,
                 'publication_authorized': False}
 
@@ -529,6 +600,7 @@ def main(argv=None):
     check = sub.add_parser('change-gate'); check.add_argument('candidate'); check.add_argument('--owners', nargs='+', required=True); check.add_argument('--reviews', type=Path, required=True)
     artifact = sub.add_parser('artifact-gate'); artifact.add_argument('production', type=Path); artifact.add_argument('--reviews', type=Path, required=True)
     feedback = sub.add_parser('feedback'); feedback.add_argument('event', type=Path)
+    product = sub.add_parser('import-product'); product.add_argument('file', type=Path); product.add_argument('--sha256', required=True)
     promote = sub.add_parser('promote'); promote.add_argument('candidate'); promote.add_argument('--owners', nargs='+', required=True); promote.add_argument('--reviews', type=Path, required=True); promote.add_argument('--decision', type=Path, required=True)
     export = sub.add_parser('export'); export.add_argument('output', type=Path)
     restore = sub.add_parser('restore'); restore.add_argument('bundle', type=Path); restore.add_argument('destination', type=Path); restore.add_argument('--sha256', required=True)
@@ -548,6 +620,8 @@ def main(argv=None):
             result = system.artifact_gate(read(args.production), read(args.reviews))
         elif args.command == 'feedback':
             result = system.record_feedback(read(args.event))
+        elif args.command == 'import-product':
+            result = system.import_product_core(args.file, args.sha256)
         elif args.command == 'promote':
             result = system.promote(args.candidate, args.owners, read(args.reviews), read(args.decision))
         elif args.command == 'export':

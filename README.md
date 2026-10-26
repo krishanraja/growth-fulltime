@@ -178,6 +178,9 @@ as a read-only diagnostic; it is not invoked by the operational engine.
 
 Character and fictional-ad work starts with the
 [creative system](creative-system/README.md) and `python3 growth.py standards startup`.
+The actual product owns the reusable six-pundit core; this system imports a
+hash-pinned product export and adds scoped ad variants. See the product/growth
+bridge in that guide before changing any shared personality direction.
 It pins per-character and shared-style versions, preserves private source
 evidence, and holds unreviewed or regressing work. The private baseline is not
 included in this public repository; restore its authorised bundle when absent.

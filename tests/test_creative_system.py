@@ -8,7 +8,7 @@ import tempfile
 import unittest
 import zipfile
 
-from engine.creative_system import (Invalid, System, canonical, digest, export_bundle,
+from engine.creative_system import (Invalid, System, canonical, digest, export_bundle, product_core,
                                    file_hash, import_bundle, read, safe, validate, write_new, private_output, REPO)
 
 
@@ -58,6 +58,17 @@ def fixture(root):
     save(root/'releases/one.json', r)
     save(root/'CURRENT.json', {'schema_version':1, 'release':'releases/one.json','sha256':digest(r)})
     return r
+
+
+def core_fixture(revision='a'*40):
+    common = {'id':'full-time.shared','version':'1.0.0','crossSurfaceSpeech':'Synthetic natural delivery','humourChecks':['Synthetic check']}
+    profiles = []
+    for pid in ['zen','gaffer','stats','romantic','doomer','banter']:
+        identity = {'name':pid,'lens':'Synthetic '+pid,'humourMechanisms':['Synthetic mechanism'],'sentenceCadence':'Synthetic cadence'}
+        data = {'id':pid,'version':'1.0.0','spec':identity,'voice':{'castingTarget':'Synthetic casting','listeningStatus':'audition_required'}}
+        profiles.append({'id':pid,'version':'1.0.0','sha256':digest(data),'data':data,'identity':identity,'voice_target':'Synthetic casting','product_listening_status':'audition_required','product_automation_equivalent':False})
+    shared = {'id':common['id'],'version':common['version'],'sha256':digest(common),'data':common,'delivery':common['crossSurfaceSpeech'],'humour_checks':common['humourChecks']}
+    return {'schema_version':1,'source':{'repository':'krishanraja/full-time','revision':revision},'release':{'id':'synthetic-product-core','shared':{'sha256':digest(common)},'profiles':[{k:p[k] for k in ['id','version','sha256']} for p in profiles]},'shared':shared,'profiles':profiles,'scope':'Synthetic exchange'}
 
 
 class CreativeSystemTests(unittest.TestCase):
@@ -118,6 +129,47 @@ class CreativeSystemTests(unittest.TestCase):
 
     def test_repeated_composition_is_identical(self):
         self.assertEqual(self.system.compose(['character.one']), self.system.compose(['character.one']))
+
+    def attach_core(self):
+        value = core_fixture(); source = self.base/'core.json'; save(source,value)
+        imported = self.system.import_product_core(source,file_hash(source))
+        self.release['product_core'] = {k:imported[k] for k in ('path','sha256')}
+        for i,pid in enumerate(['romantic','doomer','banter'],1):
+            pin = self.release['modules'][i]; module = read(self.root/pin['path'])
+            module['product_persona_id'] = pid; save(self.root/pin['path'],module); pin['sha256'] = file_hash(self.root/pin['path'])
+        self.rewrite_release(self.release)
+        return imported
+
+    def test_product_import_is_verified_but_does_not_activate_itself(self):
+        source = self.base/'core.json'; save(source,core_fixture()); before = read(self.root/'CURRENT.json')
+        imported = self.system.import_product_core(source,file_hash(source))
+        self.assertFalse(imported['activated']); self.assertEqual(read(self.root/'CURRENT.json'),before)
+        with self.assertRaisesRegex(Invalid,'file hash'):
+            self.system.import_product_core(source,'0'*64)
+
+    def test_compose_includes_only_the_selected_product_core_identity(self):
+        self.attach_core(); packet = self.system.compose(['character.one'])
+        self.assertEqual([p['id'] for p in packet['product_core']['characters']],['romantic'])
+        self.assertNotIn('doomer',json.dumps(packet['product_core']))
+
+    def test_product_projection_cannot_disagree_with_its_hashed_source(self):
+        value = core_fixture(); value['profiles'][0]['identity'] = {'name':'Unreviewed substitute'}
+        with self.assertRaisesRegex(Invalid,'projection'):product_core(value)
+
+    def test_product_core_file_is_pinned_not_followed_from_main(self):
+        pin = self.attach_core(); path = self.root/pin['path']; path.write_text('{}')
+        with self.assertRaisesRegex(Invalid,'pinned product core'):
+            self.system.compose(['character.one'])
+
+    def test_core_change_requires_declaration_and_affects_linked_characters(self):
+        self.attach_core(); candidate = self.candidate(())
+        source = self.base/'core-next.json'; save(source,core_fixture('b'*40))
+        pin = self.system.import_product_core(source,file_hash(source))
+        candidate['product_core'] = {k:pin[k] for k in ('path','sha256')}; save(self.root/'releases/two.json',candidate)
+        with self.assertRaisesRegex(Invalid,'declared owners'):
+            self.system.change_plan('releases/two.json',[])
+        plan = self.system.change_plan('releases/two.json',['product.core'])
+        self.assertTrue(set(self.release['characters']).issubset(plan['affected']))
 
     def test_piece_specific_line_does_not_leak_into_another_ad(self):
         pin = self.release['modules'][1]; m = read(self.root/pin['path'])
