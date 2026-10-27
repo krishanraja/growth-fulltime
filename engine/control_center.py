@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-from . import policy, reporting
+from . import gates, policy, reporting
 from .records import History, atomic_json
 
 DEFAULT_URL = 'https://controlcenter.krishraja.com'
@@ -515,7 +515,8 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             activity, held_items=held, events=reporting.publication_events(saved['creatives'], start),
             identity_known=identity_known,
             kill_list=record['native_weekly_review']['kill_list'] if mode == 'weekly' else (),
-            degraded=degraded, max_actions=max_actions(directive), waiting=waiting)
+            degraded=degraded, max_actions=max_actions(directive), waiting=waiting,
+            gate_proposals=gates.pending(growth.LOCAL))
         return report, {}
     return work
 
@@ -622,6 +623,10 @@ def main(args, growth):
         summary['waiting'] = waiting
     instructions = (summary.get('decisions') or {}).get('instructions') or []
     record_instructions(growth.LOCAL, instructions, summary['decisions_read_at'])
+    if summary.get('mode') == 'live' and summary.get('decisions'):
+        settled = gates.settle(growth.LOCAL, summary['decisions'])
+        if settled:
+            summary['verdicts_recorded'] = len(settled)
     atomic_json(ledger, summary)
     shown = dict(summary)
     if shown.get('decisions'):

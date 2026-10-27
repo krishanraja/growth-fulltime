@@ -458,12 +458,14 @@ def one_ask(proposals, waiting=None):
 
 def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list, activity,
           held_items=(), events=(), identity_known=None, kill_list=(), degraded=(), max_actions=3,
-          waiting=None):
+          waiting=None, gate_proposals=()):
     """The whole protocol report, sealed. `degraded` names sources that were missing.
     `waiting` is what is already on Krish's list (proposal_id to kind), from the last
-    live delivery; unknown is None, and then nothing is taken to be waiting."""
+    live delivery; unknown is None, and then nothing is taken to be waiting.
+    `gate_proposals` are the queued G1 and G2 asks (engine/gates.py); they lead, so
+    one ask at a time keeps them ahead of others of their kind."""
     state = state or {}
-    proposals, release_done = [], False
+    proposals, release_done = [copy.deepcopy(p) for p in gate_proposals], False
     retired = release_retired(state, rulings_file)
     ready = [x for x in items if not holds(x) and not (retired and x.get('why') == 'release')]
     for item in ready[:max(0, min(3, max_actions))]:

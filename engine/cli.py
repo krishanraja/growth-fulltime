@@ -21,6 +21,7 @@ def _add_v2(commands):
     spec = commands.add_parser('spec', help='check, digest, compile or prepare the weekly campaign spec (G1)')
     spec.add_argument('operation', choices=['check', 'digest', 'compile', 'propose'])
     spec.add_argument('file'); spec.add_argument('--gates'); spec.add_argument('--expires-at')
+    spec.add_argument('--queue', action='store_true', help='put the G1 ask on the queue for the next loop report')
     formats = commands.add_parser('formats', help='the format registry and readiness computed from verdicts')
     formats.add_argument('operation', choices=['list', 'readiness'])
     formats.add_argument('--verdicts'); formats.add_argument('--spec')
@@ -29,6 +30,9 @@ def _add_v2(commands):
     pack.add_argument('operation', choices=['check', 'propose'])
     pack.add_argument('file'); pack.add_argument('--offline', action='store_true')
     pack.add_argument('--expires-at')
+    pack.add_argument('--queue', action='store_true', help='put the G2 ask on the queue for the next loop report')
+    pack.add_argument('--spec', help='the signed spec, for each format\'s lock_version')
+    pack.add_argument('--context', help='{creative_id: {fixture_ref, unit_cost_recorded, unit_minutes_recorded}}')
     buffer = commands.add_parser('buffer', help='read-only Buffer receipts for the Full Time allowlist')
     buffer.add_argument('operation', choices=['query', 'receipts'])
     buffer.add_argument('--posts'); buffer.add_argument('--pack')
@@ -77,7 +81,11 @@ def _run_v2(args, growth):
             return spec.compile(data, _json(args.gates) if args.gates else {})
         if not args.expires_at:
             raise ValueError('propose needs --expires-at, an ISO date and time with its UTC offset')
-        return {'prepared': True, 'sent': False, 'proposal': spec.proposal(data, args.expires_at)}
+        proposal = spec.proposal(data, args.expires_at)
+        if args.queue:
+            from . import gates
+            return {'prepared': True, 'sent': False, **gates.prepare(growth.LOCAL, 'g1', proposal)}
+        return {'prepared': True, 'sent': False, 'proposal': proposal}
     if args.command == 'formats':
         from . import formats
         if args.operation == 'list':
@@ -85,10 +93,12 @@ def _run_v2(args, growth):
                           'published_pundits_min': r['published_pundits_min'],
                           'creative_system_format': r['creative_system_format']}
                     for key, r in formats.load_registry().items()}
-        if not args.verdicts:
-            raise ValueError('readiness needs --verdicts, a JSON list of Krish\'s verdicts')
-        verdicts = _json(args.verdicts)
-        verdicts = verdicts.get('verdicts') if isinstance(verdicts, dict) else verdicts
+        if args.verdicts:
+            verdicts = _json(args.verdicts)
+            verdicts = verdicts.get('verdicts') if isinstance(verdicts, dict) else verdicts
+        else:
+            from . import gates
+            verdicts = gates.verdicts(growth.LOCAL)     # Krish's G2 answers, as the loop recorded them
         if args.spec:
             from . import spec
             campaign = spec.load(args.spec)
@@ -107,7 +117,21 @@ def _run_v2(args, growth):
             raise ValueError(f'the matchday pack is refused (rail {source}): ' + '; '.join(errors))
         if args.operation == 'check':
             return {'ok': True, 'items': len(data['items']), 'rail': source, 'today_live': today_live}
-        return {'prepared': True, 'sent': False, 'proposal': pack.proposal(data, args.expires_at)}
+        proposal = pack.proposal(data, args.expires_at)
+        if not args.queue:
+            return {'prepared': True, 'sent': False, 'proposal': proposal}
+        from . import gates, spec
+        locks = {f['format_id']: f['lock_version'] for f in spec.load(args.spec)['formats']} if args.spec else {}
+        given = _json(args.context) if args.context else {}
+        context = {}
+        for item in data['items']:
+            mine = given.get(item['creative_id']) or {}
+            context[item['creative_id']] = {
+                'format_id': item['format_id'], 'lock_version': locks.get(item['format_id'], 'unlocked'),
+                'fixture_ref': mine.get('fixture_ref') or item.get('drop_id') or item['master_id'],
+                'unit_cost_recorded': mine.get('unit_cost_recorded') is True,
+                'unit_minutes_recorded': mine.get('unit_minutes_recorded') is True}
+        return {'prepared': True, 'sent': False, **gates.prepare(growth.LOCAL, 'g2', proposal, context)}
     if args.command == 'buffer':
         from . import buffer_read
         allowlist = buffer_read.load_allowlist(growth.LOCAL)

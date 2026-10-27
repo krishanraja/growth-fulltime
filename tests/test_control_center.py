@@ -139,12 +139,23 @@ def sample_state(**extra):
             'rulings': {}, 'decisions': [], **extra}
 
 
+def rulings_on_19_october():
+    """The rulings as they stood on 19 October, before ruling 1 of 27 October (D1 with
+    ORGANIC, and the RELEASE entry) was recorded. These tests are about that day's asks,
+    so they must not move when rulings.json does."""
+    rulings = copy.deepcopy(growth.load_rulings())
+    rulings['D1'] = {**rulings['D1'], 'status': 'pending', 'date': '', 'words': '', 'evidence': ''}
+    for later in ('ORGANIC', 'RELEASE'):
+        rulings.pop(later, None)
+    return rulings
+
+
 def sample_report(run_id='fulltime:2026-10-19:daily', mode='synthetic'):
     today = dt.date(2026, 10, 19)
     items = [{'item_id': 'fulltime-rail', 'platform': 'other', 'why': 'rail', 'text': 'Read the stored verdicts.'},
              {'item_id': 'fulltime-release', 'platform': 'other', 'why': 'release', 'text': 'Release decision.'}]
     held = [{'creative_id': 'YT_PROOF_SHORT_C01_H01_V1_20261017', 'holds': ['RAIL', 'RELEASE', 'D1']}]
-    return reporting.build(run_id, mode, '2026-10-19T05:12:00Z', sample_state(), items, growth.load_rulings(),
+    return reporting.build(run_id, mode, '2026-10-19T05:12:00Z', sample_state(), items, rulings_on_19_october(),
                            reporting.objectives(today, [], {}), ['Synced full-time aaaaaaaaaa.'], held_items=held,
                            identity_known=False)
 

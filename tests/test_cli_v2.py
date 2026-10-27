@@ -105,6 +105,19 @@ class CliV2(unittest.TestCase):
         code, body, _ = self.run_cli('pack', 'propose', pack, '--expires-at', '2026-11-01T20:00:00+00:00')
         self.assertEqual((code, body['sent'], body['proposal']['wall']), (0, False, 'post'))
 
+    def test_pack_propose_queue_waits_for_the_loop_and_readiness_reads_the_ledger(self):
+        self.write('local/buffer-channels.json', brand_allowlist())
+        pack = self.write('pack.json', {'run_id': 'fulltime:2026-11-01:g2', 'matchday': '2026-11-01',
+                                        'items': [take()]})
+        code, body, err = self.run_cli('pack', 'propose', pack, '--expires-at', '2026-11-01T20:00:00+00:00',
+                                       '--queue', '--spec', str(EXAMPLE))
+        self.assertEqual((code, body['sent'], body['kind']), (0, False, 'g2'), err)
+        gate = json.loads(Path(body['path']).read_text(encoding='utf-8'))
+        context = gate['context']['TT_CLASH_CLIP_C01_H01_V1_20261101']
+        self.assertEqual((context['fixture_ref'], context['unit_cost_recorded']), ('drop-full', False))
+        code, body, _ = self.run_cli('formats', 'readiness', '--format', 'take_clip')
+        self.assertEqual((code, body['ready'], body['streak']), (0, False, 0))
+
     def test_pack_check_refuses_without_the_allowlist(self):
         pack = self.write('pack.json', {'run_id': 'fulltime:2026-11-01:g2', 'matchday': '2026-11-01',
                                         'items': [take()]})
