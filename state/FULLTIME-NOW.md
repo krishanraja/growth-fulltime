@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `b27280fe84` and from fulltime.fm on 2026-10-27T05:13:49+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `0bbe707048` and from fulltime.fm on 2026-10-27T16:43:20+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -20,7 +20,10 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 Read these again before drafting anything:
 
+- changed: `AGENTS.md`
 - changed: `NOW.md`
+- changed: `docs/00-product.md`
+- changed: `docs/12-roadmap.md`
 
 ## Rulings the playbook needs
 
@@ -36,12 +39,12 @@ Read these again before drafting anything:
 
 ## Latest decisions (full-time `docs/12-roadmap.md`)
 
+- 2026-10-26 - Solo analysis first; paid conversation after quality and adoption
 - 2026-10-16 - A pilot beta for fans, a December target, one feedback inbox
 - 2026-09-27 - Premier League only, one match, no scroll
 - 2026-09-05 - Publish the pundits that passed
 - 2026-09-04 - Launch by founder override
 - 2026-08-10 - One documentation hierarchy
-- 2026-08-08 - Six minds, not six voices
 
 ## The Reporter feed
 
@@ -65,7 +68,8 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `b27280fe84` 2026-10-26 docs(steward): 2026-10-26 flatten NOW.md frontmatter lists, stamp head
+- `0bbe707048` 2026-10-27 Merge pull request #102 from krishanraja/codex/alpha-readiness-closeout
+- `ce10e52f35` 2026-10-27 feat: align solo pundit alpha with spoken quality and evidence handoff
 
 ## Work in flight (open pull requests)
 
