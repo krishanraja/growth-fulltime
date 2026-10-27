@@ -885,8 +885,8 @@ def store_pack(pack):
 
 def read_packs(days, kind):
     d = os.path.join(LOCAL, 'packs')
-    from zoneinfo import ZoneInfo
-    since = (dt.datetime.now(ZoneInfo('Europe/London')).date() - dt.timedelta(days=days)).isoformat()
+    from engine.clock import LONDON
+    since = (dt.datetime.now(LONDON).date() - dt.timedelta(days=days)).isoformat()
     out = []
     for f in sorted(os.listdir(d) if os.path.isdir(d) else [], reverse=True):
         if f.endswith('.json') and f[:10] >= since:

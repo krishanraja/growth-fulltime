@@ -375,12 +375,14 @@ def gate_holds(state, rulings_file, identity_known):
     out = []
     if not gate.get('open'):
         out.append(('RAIL', gate.get('why') or 'the rail was not read'))
-    if not policy.release_open(state):
-        out.append(('RELEASE', 'No product release decision is recorded in full-time docs/12-roadmap.md.'))
+    if policy.release_needed(state):
+        out.append(('RELEASE', 'No product release decision is recorded in full-time docs/12-roadmap.md, and the '
+                               'ORGANIC per-take exception is not in force there yet.'))
     if identity_known is None:
         out.append(('CHANNEL', 'Brand identity proof is kept in the private workspace; this runner cannot confirm it.'))
     elif not identity_known:
-        out.append(('CHANNEL', 'No verified Full Time brand identity for YouTube within thirty days.'))
+        out.append(('CHANNEL', 'No verified Full Time brand identity on TikTok, Instagram or YouTube within '
+                               'thirty days.'))
     if not ((state.get('rulings') or {}).get('D7') or {}).get('in_force'):
         out.append(('CONSENT', 'D7, the analytics consent item, is not in force.'))
     for rid, ruling in sorted(rulings_file.items()):
@@ -478,6 +480,10 @@ def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list
     for rid, ruling in sorted(rulings_file.items()):
         unlocks = set(ruling.get('unlocks') or [])
         # Only a pending ruling is asked: one approved in rulings.json is never asked again.
+        # RELEASE is the product's own decision: its one ask is the release proposal above,
+        # which ruling 1 retired, so it is never asked a second time under its own name.
+        if rid == 'RELEASE':
+            continue
         if ruling.get('status') == 'pending' and not (unlocks and unlocks <= policy.EXCLUDED):
             proposals.append(ruling_proposal(rid, ruling))
     proposals += [kill_proposal(line) for line in kill_list]

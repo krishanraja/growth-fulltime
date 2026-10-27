@@ -146,5 +146,31 @@ class GateLoop(unittest.TestCase):
         self.assertEqual(spec.digest(signed['spec']), spec.digest(example))
 
 
+class RulingOneInReports(unittest.TestCase):
+    def rulings(self, organic='approved'):
+        return {'D2': {'status': 'pending', 'unlocks': ['tiktok'], 'title': 'D2', 'recommendation': 'r'},
+                'ORGANIC': {'status': organic, 'unlocks': [], 'requires': ['D1'], 'title': 'O', 'recommendation': 'r'},
+                'RELEASE': {'status': 'pending', 'unlocks': [], 'title': 'Release', 'recommendation': 'r'},
+                'D1': {'status': 'approved', 'unlocks': ['tiktok'], 'title': 'D1', 'recommendation': 'r'}}
+
+    def report(self, state):
+        return reporting.build('fulltime:2026-11-01:daily', 'synthetic', '2026-11-01T06:00:00Z', state, [],
+                               self.rulings(), [], ['test'], identity_known=True)
+
+    def test_release_is_never_asked_again_under_its_own_name(self):
+        ids = [p['proposal_id'] for p in self.report({'push': {'open': False, 'why': 'thin'}})['proposals']]
+        self.assertNotIn('fulltime:ruling:RELEASE', ids)
+        self.assertNotIn('fulltime:ruling:release', ids)
+        self.assertIn('fulltime:ruling:D2', ids)
+
+    def test_organic_in_force_lifts_the_report_release_hold(self):
+        held = {'push': {'open': False, 'why': 'thin'}, 'rulings': {'ORGANIC': {'in_force': False}}}
+        reasons = [h['reason'] for h in self.report(held)['holds']]
+        self.assertIn('RELEASE', reasons)
+        live = {**held, 'rulings': {'ORGANIC': {'in_force': True}}}
+        self.assertNotIn('RELEASE', [h['reason'] for h in self.report(live)['holds']])
+        self.assertIn('RAIL', [h['reason'] for h in self.report(live)['holds']])   # whole-match still needs 4 of 6
+
+
 if __name__ == '__main__':
     unittest.main()

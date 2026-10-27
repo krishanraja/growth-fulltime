@@ -20,7 +20,7 @@ def constraints(gate, measures, state):
         blockers.append(('rail', 'Read the stored editorial verdicts for the newest drop; fix the refusal in a full-time session before another paid run.'))
     if measures['unique_completers']['status'] != 'measured':
         blockers.append(('measurement', 'Implement the aggregate completion and mature return queries in the existing source path; counts remain unknown.'))
-    if not policy.release_open(state):
+    if policy.release_needed(state):
         blockers.append(('release', 'Public acquisition stays held until Krish makes the product release decision and a full-time session records it in its decision log.'))
     return blockers[:3]
 

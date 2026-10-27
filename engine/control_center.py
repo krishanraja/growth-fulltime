@@ -491,7 +491,8 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
         state = dict(growth.load_state() or {})
         state['push'] = record['gate']
         identities = state.get('brand_identities') or {}
-        identity_known = any(policy.identity_verified(x, 'youtube') for x in identities.values())
+        identity_known = any(policy.identity_verified(x, platform) for x in identities.values()
+                             for platform in ('tiktok', 'instagram', 'youtube'))   # ruling 2: the three pushed
         usage = record['usage']
         gate = record['gate']
         activity = [f'Synced full-time {record["source_sha"][:10]}, read {record["source_observed_at"]}; '
