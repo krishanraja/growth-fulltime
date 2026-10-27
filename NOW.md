@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/growth-fulltime
 product: Full Time growth engine
-as_of: 2026-10-26
-head: 786954d
+as_of: 2026-10-27
+head: a9f8492
 lifecycle: building
 production_url: none
 state_doc: README.md
@@ -22,9 +22,9 @@ Full Time's growth engine: it drafts the moves that bring football fans to Full 
 
 Football fans who become Full Time's returning listeners. It proves Mindmake can grow a product with drafted, approved moves and no paid acquisition.
 
-## Where it is right now (as of 2026-10-26)
+## Where it is right now (as of 2026-10-27)
 
-<!-- north-star-state {"week_of": "2026-10-26", "week_target": 5, "current": null, "current_as_of": "2026-10-26", "current_source": "No fresh cohort measurement available in this implementation checkout; prior 2026-10-23 value is historical", "urgency": 4, "urgency_reason": "current number unmeasured"} --> **North Star number: U4, unmeasured.** New listeners this week who arrived through a fan's shared link or clip: unknown, against 5 this week, on the way to 1,250 by 25 January 2027. The previous 0 was a 23 October observation, not a measurement of this week's attribution.
+<!-- north-star-state {"week_of": "2026-10-26", "week_target": 5, "current": null, "current_as_of": "2026-10-27", "current_source": "No fresh cohort measurement available; prior 2026-10-23 value is historical", "urgency": 4, "urgency_reason": "current number unmeasured"} --> **North Star number: U4, unmeasured.** New listeners this week who arrived through a fan's shared link or clip: unknown, against 5 this week, on the way to 1,250 by 25 January 2027. The previous 0 was a 23 October observation, not a measurement of this week's attribution.
 
 Lifecycle: building. The detail is in `README.md`.
 
@@ -42,8 +42,11 @@ Ad performance, sofa cast, visual direction and exact audio locks stay here.
 The baseline and bridge are merged in PRs #10 and #11. Product PR #99 is merged;
 the active private release pins its exact core from product commit `43c4ae2`.
 The original audio locks and four owner video rejections survive this ownership
-migration; it claims no new creative approval. The current private package was
-exported with exact file hashes and is the continuation source.
+migration; it claims no new creative approval. The complete private continuation
+package now lives in the [canonical Growth Build Drive folder](https://drive.google.com/drive/folders/1Pn_ibUcfpcyWzi4w1ryDMZMF-8m1gT_M).
+Read [the 27 October creative handover](HANDOVER-2026-10-27-CREATIVES.md) first.
+It contains the exact package hashes, restore route, owner corrections and next
+review target. Liverpool v8 is a listening candidate; neither ad is ready to post.
 
 Local proof: 131 self-checks, 129 unit/integration tests including 46 creative
 tests, and repository verification passed. Actual session assets remain private.
@@ -51,6 +54,11 @@ The local operational run refused to proceed because existing growth history
 was absent; no live report was sent or fresh operational ledger created.
 
 ## What changed recently
+
+- 2026-10-27: archived the full private two-ad session and creative baseline to
+  Drive, verified local rebuild and Drive file identity/size readback, and set a
+  portable start-here path. The Liverpool ending, accents and TV music remain
+  subject to owner listening. See [current handover](HANDOVER-2026-10-27-CREATIVES.md).
 
 - 2026-10-26: implemented versioned creative standards, isolated composition,
   scope checks, improvement/regression gates, exact owner promotion and verified
@@ -60,10 +68,10 @@ was absent; no live report was sent or fresh operational ledger created.
 
 ## What is next and what is waiting on Krish
 
-- Resume the private creative handoff and prepare a controlled realism proof
-  against its pinned baseline. New generation/spend and creative promotion wait
-  on their exact owner decisions; public acquisition retains its existing gates.
-- North Star check (2026-10-26): holds.
+- Review the full Liverpool v8 mix with Krish, correct only what the listening
+  warrants, then get both existing concepts through audio and phone-size visual
+  acceptance. Extract and test a fast, low-cost match-ad recipe after that.
+- North Star check (2026-10-27): holds; U4 attribution is unmeasured.
 
 ## Read next
 
