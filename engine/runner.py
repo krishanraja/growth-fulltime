@@ -5,9 +5,9 @@ import io
 import json
 from pathlib import Path
 import time
-from zoneinfo import ZoneInfo
 
 from . import policy
+from .clock import LONDON
 from .measurements import scorecard, validate_export
 from .records import History, atomic_json, fingerprint, now
 
@@ -27,7 +27,7 @@ def constraints(gate, measures, state):
 
 def run(growth, mode, offline=False, observation_file=None, run_date=None):
     started = time.monotonic()
-    today = dt.datetime.now(ZoneInfo('Europe/London')).date()
+    today = dt.datetime.now(LONDON).date()
     day = dt.date.fromisoformat(run_date) if run_date else today
     if day != today:
         raise ValueError('operational runs use today in Europe/London; historical windows belong in observations')

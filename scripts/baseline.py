@@ -21,10 +21,11 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
-LONDON = ZoneInfo('Europe/London')
+sys.path.insert(0, str(ROOT))
+from engine.clock import LONDON  # noqa: E402  (Windows has no zoneinfo data; this falls back to UK rules)
+
 NO_SESSIONS = 'session logs are not on this machine'
 NO_ACTIONS = 'no Actions export was given (--actions-json)'
 PR_NUMBER = re.compile(r'(?:\(#(\d+)\)|Merge pull request #(\d+))')

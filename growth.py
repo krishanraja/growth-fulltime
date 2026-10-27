@@ -1142,11 +1142,15 @@ def self_test():
     print(f'growth-fulltime self-test passed: {n} checks')
 
 
+ENGINE_COMMANDS = ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export', 'cc',
+                   'spec', 'formats', 'pack', 'buffer', 'library', 'session', 'dispatch', 'audience', 'ga4')
+
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == 'standards':
         from engine.creative_system import main as standards_main
         raise SystemExit(standards_main(sys.argv[2:]))
-    if len(sys.argv) > 1 and sys.argv[1] in ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export', 'cc'):
+    if len(sys.argv) > 1 and sys.argv[1] in ENGINE_COMMANDS:
         from engine.cli import main as operations_main
         return operations_main(sys.argv[1:], sys.modules[__name__])
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
