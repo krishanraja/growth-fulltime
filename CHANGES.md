@@ -5,6 +5,11 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-27: the social kit's AI disclosure is enough as it stands. Krish, asked
+  whether take clips also need "synthetic voices" as the old renderer said: "Ai
+  pundit is fine". The kit shows "AI Pundit" on every frame and "Made by AI from
+  checked match facts" on every plate. The kit's spec still has the audio say "an AI
+  Pundit on Full Time" by 2 seconds, and the Voice Lock lint checks it within 5.
 - 2026-10-27: approved the Full Time social kit, "The Switch, revision 1". Krish,
   shown the rendered kit cold: "I like it. Looks good." Each AI Pundit is a channel
   in its own paper; the default post is one channel and never claims a disagreement,

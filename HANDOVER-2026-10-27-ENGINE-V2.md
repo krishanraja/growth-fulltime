@@ -82,7 +82,6 @@ posts by hand in Buffer. Nothing in this repository posts, sends, schedules or s
 | `ga4_landings` and the two objective keys | Control Center, after Krish starts the session | `briefs/2026-10-27-control-center-measurement.md` |
 | Proof zero | engine, on Krish's machine | The renderer is proved on a synthetic tone; render take clips with each published edition's real audio and ask them as the first G2 |
 | Caption timing and motion | engine | Word timings would light the current word; the tab blink, seal stamp and the cut variant are specified but not yet animated |
-| AI disclosure wording | Krish | The kit shows "AI Pundit" and "Made by AI from checked match facts"; the old renderer also said "synthetic voices". He may rule whether the new wording is enough |
 | Canva templates | engine and Krish | Rebuild the Cowork brief's six templates from the approved kit; uploads need his yes |
 | Baseline from Krish's machine | Krish's machine | `scripts/baseline.py` with his Codex and Claude logs; until then the baseline is cloud-only |
 | v1 briefs with the old stamp form | Librarian | Archive to `99_Archive/2026-W44/` at week close (Sunday) |
