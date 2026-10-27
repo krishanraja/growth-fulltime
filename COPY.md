@@ -26,8 +26,8 @@ Awareness from Breakthrough Advertising; leads from Great Leads and Phase 7.
 
 | Surface | Reader | Awareness of Full Time | Lead | Status |
 |---|---|---|---|---|
-| Branded YouTube Short (first public channel) | Fans of the clubs in that match | Unaware | Story or Proclamation: the take itself, quoted | Held until RELEASE, CHANNEL, RAIL and rulings pass |
-| Other brand channels (TikTok, Instagram, X, Reddit) | Same | Unaware | Story or Proclamation | Expansion options, held |
+| Brand short video: TikTok, Instagram Reels, YouTube Shorts (pushed daily, ruling 2) | Fans of the clubs in that match | Unaware | Story or Proclamation: the take itself, quoted | Per take once its show is published (ruling 1), after D7, handles and readiness |
+| Derived brand cards and text: Threads, X, Facebook, WhatsApp Channel | Same | Unaware | Story or Proclamation | Derived from the vertical master (ruling 2) |
 | WhatsApp share text, sent voluntarily by a listener | The listener's friends | Unaware of the product, warm to the sender | Story or Proclamation, short, in a fan's words | The North Star channel |
 | Email to inbound or opted-in listeners | People who asked | Product aware to most aware | Offer: this edition, for this match, is up | Permission must cover the purpose |
 | Site, feed and share previews | Someone who tapped a shared take | Solution or product aware for that match | Promise or Offer: the match and AI Pundit they were sent | Changes are briefs to full-time |
@@ -89,7 +89,7 @@ product's continuity; it is never sold.
 | Warm one-to-one | Personal invites, Krish's contacts | Excluded |
 | Warm one-to-many | Opted-in email; a brand channel's own followers | Permitted when permission and gates pass |
 | Cold one-to-one | Cold email, DMs, press or creator pitches | Excluded |
-| Cold one-to-many, organic | Branded YouTube first, other brand channels later | Active after release and channel gates |
+| Cold one-to-many, organic | TikTok, Reels and Shorts daily, derived cards elsewhere (ruling 2) | Active per take once a format is ready (rulings 1 and 7) |
 | Cold one-to-many, paid | Ads, boosts, paid creators, prizes | Excluded |
 | Others to many (referrals) | Listeners sharing a take | The North Star |
 
@@ -148,7 +148,7 @@ action; proof only of the allowed kinds; experiment and creative ID known;
 - **E, Action:** one call to action, a tracked link from `growth.py link`, a
   mobile path that works.
 
-Then run `python3 growth.py check` (the floor) and score the rubric.
+Then run `python3 growth.py check` on a draft, or `python3 growth.py pack check` on a matchday pack (the floor), and score the rubric.
 
 ## Rubric for packs (Part VI, adapted)
 
@@ -228,9 +228,9 @@ Each change is recorded so no session "fixes" it back:
    Pundit" exactly, simple words, one call to action, no em dashes, no filler,
    channel limits. Long-copy advice, the 500 to 800 word lead and the headline
    grid are thinking tools, not output.
-8. **Gates still hold.** Rule 3 (four of six AI Pundits on the rail) and rule
-   4 (release decision, verified brand identity, channel rulings) apply
-   whatever the rubric says. "Validate in market" comes only after the gates
+8. **Gates still hold.** The per-take gate (ruling 1: the exact show published,
+   four of six only for a whole-match post) and rule 4 (verified brand identity,
+   channel rulings) apply whatever the rubric says. "Validate in market" comes only after the gates
    pass and Krish acts.
 9. **Market statistics stay in the documents.** No figure cited in the corpus
    enters public copy (as knowledge/README.md, item 4, for the playbook).

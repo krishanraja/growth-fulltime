@@ -585,3 +585,24 @@ def render(growth, manifest_path):
         receipt['timeline'] = {'fps': KIT_FPS, 'frame0_seconds': FRAME0_SECONDS, 'frames': kit['counts']}
     atomic_json(receipt_path, receipt)
     return receipt
+
+
+def render_checks(local, creative_id, media):
+    """The pre-live checks a finished render proves for one pack item, read from its own
+    receipt (local/renders/<creative_id>/*/render.json) when the item's video is that
+    render, byte for byte: exact_quote and dimensions (the renderer refuses otherwise),
+    media_hashes (the item names the render's SHA-256) and captions_aligned. Caption
+    alignment comes from Krish's verdict, never self-declared (crew/motion_maker): he
+    judges these exact bytes in G2, and only his no-edit "post it" counts toward
+    readiness, so an edit or a reject (captions off included) never does. {} otherwise."""
+    shas = {m.get('sha256') for m in media or () if isinstance(m, dict) and m.get('kind') == 'video'}
+    folder = Path(local) / 'renders' / str(creative_id)
+    for path in sorted(folder.glob('*/render.json')) if folder.is_dir() else ():
+        try:
+            receipt = json.loads(path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        if receipt.get('creative_id') != creative_id or receipt.get('video_sha256') not in shas:
+            continue
+        return {'exact_quote': True, 'dimensions': True, 'media_hashes': True, 'captions_aligned': True}
+    return {}

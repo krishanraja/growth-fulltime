@@ -33,7 +33,9 @@ def _add_v2(commands):
     pack.add_argument('--expires-at')
     pack.add_argument('--queue', action='store_true', help='put the G2 ask on the queue for the next loop report')
     pack.add_argument('--spec', help='the week spec (or local/specs/<week>.signed.json) the items are checked against')
-    pack.add_argument('--context', help='{creative_id: {unit_cost_gbp, unit_minutes}}, measured; null when unknown')
+    pack.add_argument('--context', help='{creative_id: {unit_cost_gbp, unit_minutes, checks}}: measured cost and minutes '
+                      '(a null one never counts toward readiness) and any pre-live check the engine cannot see '
+                      '(the render receipt and the pack check fill the rest)')
     buffer = commands.add_parser('buffer', help='read-only Buffer receipts for the Full Time allowlist')
     buffer.add_argument('operation', choices=['query', 'receipts'])
     buffer.add_argument('--posts'); buffer.add_argument('--pack')
@@ -188,8 +190,14 @@ def _run_v2(args, growth):
             mine = given.get(item['creative_id']) or {}
             checks = dict(mine.get('checks') or {})
             checks.update({name: True for name in ran})
+            from .assets import render_checks       # what the item's own render receipt proves
+            checks.update(render_checks(growth.LOCAL, item['creative_id'], item.get('media')))
             if item.get('whole_match') is True and source == 'live':
                 checks['whole_match_four_of_six'] = True       # pack.check held it to four of six on the live rail
+            elif item.get('whole_match') is False:
+                # A per-take item makes no whole-match claim (pack.check refuses words that do),
+                # so the 4-of-6 rule has nothing to hold it to.
+                checks['whole_match_four_of_six'] = True
             context[item['creative_id']] = {'unit_cost_gbp': mine.get('unit_cost_gbp'),
                                             'unit_minutes': mine.get('unit_minutes'), 'checks': checks}
         return {'prepared': True, 'sent': False, 'mode': mode,

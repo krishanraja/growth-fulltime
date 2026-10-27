@@ -170,7 +170,7 @@ def _versioned(name, week):
     """Errors and the week for a <YYYY-Www>_<kind>_v<n>.<ext> name."""
     m = VERSIONED.match(name)
     if not m:
-        return [f'{NAME_RULE}: {name!r} is not <YYYY-Www>_<kind>_v<n>.<ext> in lowercase ASCII with hyphens'], None
+        return [f'{NAME_RULE}: {name!r} is not <YYYY-Www>_<kind>_v<n>.<ext>: lowercase ASCII, hyphens within parts, underscores between them'], None
     if not _week(m.group(1)):
         return [f'{NAME_RULE}: {m.group(1)} in {name!r} is not a real week'], None
     if week and m.group(1) != week:
@@ -183,7 +183,7 @@ def _instance(name):
     m = INSTANCE.match(name)
     if not m:
         return [f'{NAME_RULE}: {name!r} is not <YYYY-MM-DD>_<format>_<pundit>_<home>-<away>_<channel>_'
-                f'<CREATIVE_ID>.<ext> in lowercase ASCII with hyphens, with format one of {", ".join(FORMATS)} '
+                f'<CREATIVE_ID>.<ext>: lowercase ASCII, hyphens within parts, underscores between them, the creative ID in its own uppercase form, with format one of {", ".join(FORMATS)} '
                 f'and channel one of {", ".join(CHANNELS)}'], {}
     day, fmt, pundit, match, channel, creative_id = m.groups()
     dims = {'format': fmt, 'pundit': pundit, 'match': match, 'channel': channel}

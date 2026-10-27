@@ -11,7 +11,7 @@ Crew card (docs/ENGINE-V2.md, section 2a), loaded whenever anything is filed int
 - `00_START-HERE/INDEX.csv`: exactly one row per file, with its SHA-256 and source (rule 4).
 - Numbered-part backups under the Drive connector's 100 MB cap (`engine.library.bundle()`, `engine.library.assemble()`).
 
-**Lint before acting: `engine.library.file_plan()`.** The name follows the one pattern, lowercase ASCII and hyphens (rule 3); the path is inside the fixed tree (`engine.library.name_errors()`, `engine.library.folder_errors()`); bytes already filed link the existing copy instead; a filed path is never overwritten (rule 5); the index row is prepared.
+**Lint before acting: `engine.library.file_plan()`.** The name follows the one pattern: lowercase ASCII, hyphens within parts, underscores between them, a creative ID in its own uppercase form (rule 3); the path is inside the fixed tree (`engine.library.name_errors()`, `engine.library.folder_errors()`); bytes already filed link the existing copy instead; a filed path is never overwritten (rule 5); the index row is prepared.
 
 **Measured check after acting: `engine.library.reconcile()`.** The Drive readback against INDEX.csv: zero files outside the tree, zero orphans, zero duplicates and zero misnamed files, or `engine.library.hold()` puts a LIBRARY hold at the top of the report. `assemble()` re-hashes every downloaded backup part before it is trusted.
 

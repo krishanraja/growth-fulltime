@@ -111,5 +111,40 @@ class GateReadsOrganicEverywhere(unittest.TestCase):
                       (root / 'engine' / 'control_center.py').read_text(encoding='utf-8'))
 
 
+class RenderReceiptsProveTheirChecks(unittest.TestCase):
+    """A pack item whose video is a finished render takes that render's checks from its
+    own receipt, so readiness never waits on hand-typed checks the engine already proved."""
+
+    def setUp(self):
+        self.local = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.local)
+
+    def receipt(self, holds):
+        from engine import assets
+        folder = self.local / 'renders' / 'TT_CLASH_CLIP_C01_H01_V1_20261101' / 'abcd'
+        folder.mkdir(parents=True)
+        (folder / 'render.json').write_text(json.dumps({
+            'creative_id': 'TT_CLASH_CLIP_C01_H01_V1_20261101', 'video_sha256': 'a' * 64, 'holds': holds}),
+            encoding='utf-8')
+        return assets
+
+    def test_a_clean_render_proves_its_four_checks(self):
+        assets = self.receipt([])
+        found = assets.render_checks(self.local, 'TT_CLASH_CLIP_C01_H01_V1_20261101',
+                                     [{'kind': 'video', 'sha256': 'a' * 64}])
+        self.assertEqual(found, {'exact_quote': True, 'dimensions': True, 'media_hashes': True,
+                                 'captions_aligned': True})
+
+    def test_other_bytes_or_another_creative_prove_nothing(self):
+        # Caption alignment is Krish's verdict on these exact bytes in G2 (only a no-edit
+        # "post it" counts), so an ASSETS hold before his review takes nothing away.
+        assets = self.receipt(['ASSETS'])
+        cid = 'TT_CLASH_CLIP_C01_H01_V1_20261101'
+        self.assertTrue(assets.render_checks(self.local, cid, [{'kind': 'video', 'sha256': 'a' * 64}])
+                        ['captions_aligned'])
+        self.assertEqual(assets.render_checks(self.local, cid, [{'kind': 'video', 'sha256': 'b' * 64}]), {})
+        self.assertEqual(assets.render_checks(self.local, 'TT_OTHER', [{'kind': 'video', 'sha256': 'a' * 64}]), {})
+
+
 if __name__ == '__main__':
     unittest.main()

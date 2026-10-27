@@ -11,7 +11,7 @@ with the date when he confirms it, and close the row here in the same commit.
 |---|---|---|
 | D7 consent (PostHog and Google Analytics) | Must close before the first public post (ruling 1) | Rule in Control Center; it closes in the product with counsel's check (`docs/11-legal.md` in full-time) |
 | Handcrafted switch | Until then Control Center may show this engine as autonomous | One click in Control Center |
-| Liverpool v8 | The fastest creative mover; the match ad's first verdict | Listen once, give one verdict |
+| Liverpool v8 | The fastest creative mover; the match ad's first verdict | Listen once, give one verdict: `session/outputs/Liverpool-v8-mid-broadcast-TV-mix.mp3` in the session archive, Drive `06_Reference/creative-handoff/2026-10-27/` |
 | D1 and ORGANIC into force | The per-take gate stays shut until full-time's decision log carries the heading | Approve `briefs/2026-10-27-decision-log-rulings.md`, start a full-time session |
 | Share attribution and rail supply briefs | Without them the North Star stays U4 and there is little fresh to post | Approve both, start full-time sessions |
 | Handles and Buffer channels | Nothing can be posted or read back without them | Create YouTube, TikTok and Instagram first; connect to Buffer |
@@ -40,9 +40,10 @@ with the date when he confirms it, and close the row here in the same commit.
 
 | Item | Next step |
 |---|---|
-| Proof zero | Take clips with each published edition's real audio, reviewed, asked as the first G2 (`docs/RUNBOOK-MATCHDAY.md`) |
+| Proof zero | Take clips with each published edition's real audio, under a proof-mode spec per past week, reviewed, asked as the first G2 (`docs/RUNBOOK-MATCHDAY.md`, "Proof zero") |
 | Caption timing and motion | Word timings to light the current word; the tab blink, seal stamp and cut, as `brand/social-kit/spec.md` specifies |
-| Recipes beyond take_clip | `morning_card`, `row` and `match_ad` recipes in `formats/`, each pinned with `growth.py formats lock` |
+| Render steps beyond take_clip | The four recipes are registered and lockable; the steps behind `morning_card` (`canva_autofill`, `canva_export`), `row` and `match_ad` (`tv_mix` and its render) are not built |
+| Canva fields and the morning_card slots | The Cowork templates name quote, pundit, home, away, score, date, cta; the recipe's slots are fixture_ref, pundits, headline, kicker, caption, link. Map them when `canva_autofill` is built (headline from quote, kicker from the match line) |
 | Kit frames into Drive | `node brand/social-kit/render.js`, then the Librarian files `local/brand-kit/frames/` into `05_Brand-Kit` |
 | Media credits (GET-GOING Step 0.5) | The weekly `spend` ask for stills, only after G1 is signed |
 

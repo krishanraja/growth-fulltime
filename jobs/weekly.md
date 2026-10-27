@@ -14,7 +14,10 @@ HANDOVER-*.md, docs/ENGINE.md and MEASUREMENT.md.
    anything less is directional. Underpowered tests stay inconclusive. Read results
    through COPY.md's test record and [the listening standard](../docs/LISTENING-STANDARD.md).
 4. **This week's plan (G1):** `python3 growth.py fixtures fetch` (or import), rank
-   the fixtures, write the spec from the signed template and `learnings_applied`,
+   the fixtures, write the spec from last week's `local/specs/*.signed.json` (or
+   `specs/examples/synthetic-week.json`) and `learnings_applied`, and pin each format's
+   `lock_version` with `python3 growth.py formats lock --format <id>`: an `"unlocked"`
+   spec passes `spec check` but can never earn readiness,
    then `python3 growth.py spec check FILE` and
    `python3 growth.py spec propose FILE --expires-at <Sunday 23:59 London> --queue`.
    The Monday loop carries it as the one plan ask. A credits ask (`spend`) follows

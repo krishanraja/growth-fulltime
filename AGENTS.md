@@ -46,7 +46,7 @@ Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "appro
 4. **Roles.** Claude plans, sets strategy and orchestrates; Codex does creative production and social media management, never touching the network, connectors or any account, and never certifying its own work.
 5. **Four formats** carry the 11/10 bar: the remote-switch match ad, AI Pundit take clips, AI Pundit vs AI Pundit rows and match-morning cards.
 6. **Production runs on Krish's machine**, where the private baseline and Codex live.
-7. **A format is ready** after three no-edit "post it" verdicts on three different matches, each passing every pre-live check on a pinned lock, computed from his decisions, never written.
+7. **A format is ready** after three no-edit "post it" verdicts on three different matches, each passing every pre-live check on a pinned lock with its unit cost and minutes measured, computed from his decisions, never written.
 8. **What works is owned** by the What-Works Analyst; **measurement** by the Measurement Analyst, which includes Google Analytics 4 landings by creative ID ("make sure this is a part of your Measurement Specialist"), kept apart from listener numbers.
 9. **A full brand kit is built in Canva** through Cowork on Krish's PC (`briefs/2026-10-27-cowork-canva-brand-kit.md`), from the approved social kit (`brand/social-kit/`).
 10. **Everything the engine produces lives in Drive** in `Ventures/Full Time/Growth Build`, kept findable by the Librarian with no sprawl.
@@ -97,8 +97,8 @@ or write its app data by any other route.
 
 ## Read before a job
 
-1. Run `python3 growth.py sync` first; read this file and the newest
-   `HANDOVER-*.md`.
+1. Run `python3 growth.py sync` first; read this file and the newest-dated
+   `HANDOVER-*.md` files (on 27 October there are two: ENGINE-V2 and CREATIVES).
 2. Read `local/state/FULLTIME-NOW.md`. Read any changed canon before drafting.
    A STOP means the checker must be reconciled with product truth first.
 3. Read `docs/ENGINE.md` (the map), `COPY.md` (before any drafting or review of
@@ -166,7 +166,8 @@ ruling 3 he posts by hand, and nothing here sends, posts, spends or publishes. T
    personalisation, predictions, prices or a guaranteed release date.
 6. Reuse published audio, exact transcript quotations and Full Time's own
    artwork. No football footage, player likenesses, broadcaster/league marks,
-   living-pundit imitation or betting framing. Disclose AI and synthetic voices.
+   living-pundit imitation or betting framing. Disclose AI and synthetic voices (the
+   kit's "AI Pundit" label does this: "Ai pundit is fine", Krish, 27 October 2026).
 7. Follow UK English and product voice: AI Pundit, exactly; simple words; one
    call to action; no em dashes, filler or invented audience proof.
 8. This repository is public. Keep credentials, listener identifiers, inbox

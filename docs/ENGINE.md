@@ -18,7 +18,7 @@ By 31 January 2027, most new Full Time listeners arrive because a fan shared an 
 4. Claude plans and orchestrates; Codex makes, never touches network or accounts, never certifies itself.
 5. Four formats: match ad, take clip, Pundit vs Pundit row, morning card.
 6. Production runs on Krish's machine.
-7. Ready = three no-edit "post it" verdicts on three matches, on a pinned lock, computed.
+7. Ready = three no-edit "post it" verdicts on three matches, on a pinned lock, cost measured.
 8. What-Works Analyst owns what works; the Measurement Analyst owns the number.
 9. A full Canva brand kit, built through Cowork from the approved social kit.
 10. Everything lives in Drive `Growth Build`, filed by the Librarian.

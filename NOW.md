@@ -2,7 +2,7 @@
 repo: krishanraja/growth-fulltime
 product: Full Time growth engine
 as_of: 2026-10-27
-head: 4f74866
+head: 2aeeb71
 lifecycle: building
 production_url: none
 state_doc: README.md

@@ -7,8 +7,9 @@ ask on Krish's list, and he posts by hand in Buffer (ruling 3).
 ## Before the first matchday (once)
 
 - Python 3.9+, FFmpeg and FFprobe on the path; Node 22.6 or later with Playwright
-  (`npm i playwright` in this repository, then `npx playwright install chromium`);
-  network to Google Fonts and fulltime.fm.
+  (`npm i playwright` in this repository, then `npx playwright install chromium`;
+  `.gitignore` keeps `node_modules/` and the npm files out of git); network to
+  Google Fonts and fulltime.fm.
 - A checkout of `krishanraja/full-time` beside this one (`../full-time`), for the
   kit's art: `node brand/social-kit/prepare-assets.mjs ../full-time`.
 - Persistent history in `local/engine/history.json` (never start a fresh one).
@@ -33,7 +34,7 @@ ask on Krish's list, and he posts by hand in Buffer (ruling 3).
    `local/assets/<drop>/<pundit>/source.json` with the audio, cover and the
    **published transcript**: every quote and caption comes from it, word for word.
 2. **Choose the take** (crew/take_writer): one line a fan would send to one named
-   mate, under 90 characters, exact from the transcript, passing COPY.md's take
+   mate, 90 characters at most, exact from the transcript, passing COPY.md's take
    test. Note its start and end seconds in the audio.
 3. **The instance** (`local/takes/<name>.json`): the shape is in
    `brand/social-kit/README.md`, "A take_clip". `shows` lists every AI Pundit
@@ -50,9 +51,10 @@ ask on Krish's list, and he posts by hand in Buffer (ruling 3).
    - Example: `TT_CLASH_CLIP_C01_H01_V1_20261101`. `master_id` ties the cuts together.
 6. **Render:** copy `examples/clip-manifest.json` to `local/takes/<name>.manifest.json`;
    set `creative_id`, `drop_id`, one segment matching the instance's audio,
-   `"size": "1080x1920"`, `"layers"` and `"instance"`. Set
-   `caption_alignment_verified` to true only after watching the captions against the
-   audio; false holds the render (ASSETS). Then
+   `"size": "1080x1920"`, `"layers"` and `"instance"`. Leave
+   `caption_alignment_verified` false: the render carries an ASSETS hold until Krish
+   judges it, and his no-edit "post it" in G2 is the caption verdict (crew/motion_maker;
+   only that verdict counts toward readiness). Then
    `python3 growth.py assets render local/takes/<name>.manifest.json`.
    Output: `local/renders/<creative_id>/<hash>/` (the MP4, SRT, thumbnail and a
    receipt with every hash).
@@ -68,13 +70,34 @@ ask on Krish's list, and he posts by hand in Buffer (ruling 3).
    receipt; the review link into `03_Runs`. Then
    `python3 growth.py pack check FILE --spec local/specs/<week>.signed.json` and
    `python3 growth.py pack propose FILE --spec local/specs/<week>.signed.json --context CONTEXT --expires-at <end of matchday, London> --queue`
-   (`--context` carries each item's measured unit cost and minutes, null when unknown).
+   `--context` is `{"<creative_id>": {"unit_cost_gbp": 0.0, "unit_minutes": 12, "checks": {}}}`:
+   the measured cost and minutes for each item, and any pre-live check the engine
+   cannot see itself. The engine fills the rest: copy and AI label from the pack check,
+   the live-rail checks, and exact quote, dimensions, media hashes and captions from
+   the item's own render receipt. A verdict counts toward readiness only when every
+   check in `formats/<format_id>/recipe.json` is true and cost and minutes are measured,
+   never null.
 10. **The ask:** the next `python3 growth.py cc morning` carries it as G2. Krish
     answers: Clear posts every item, Change it first gives each item a verdict,
     Purge rejects them all, Bump keeps it off his list until his next day.
-11. **After he posts:** `python3 growth.py buffer receipts ... --record` reads his
-    permalinks back and closes the G2. His no-edit "post it" verdicts on pinned
+11. **After he posts:** `python3 growth.py buffer query --channels FILE` gives the
+    read-only `list_posts` query for the Full Time allowlist; run it with the Buffer
+    connector, save the reply, then
+    `python3 growth.py buffer receipts --posts FILE --pack FILE --channels FILE --record`
+    (`--channels` is Buffer's own `list_channels` reply). That reads his permalinks back
+    and closes the G2. His no-edit "post it" verdicts on pinned
     locks build each format's readiness (`python3 growth.py formats readiness`).
+
+## Proof zero: the shows already published
+
+The four published editions (19 and 20 September, 11 and 19 October) sit in past
+weeks, and a pack must sit inside its own week's spec. So proof zero uses one
+**proof-mode** spec per past week: copy the example, set `run_id` (for example
+`fulltime:2026-W43`), the Monday-to-Sunday `window` holding the match, `"mode": "proof"`,
+the match as the one fixture and the pinned locks. `spec check` accepts it, and a
+proof spec needs no signature: its G2 asks for verdicts only and says nothing is to
+be posted. Then follow the matchday steps above with that spec. Krish's no-edit
+"post it" verdicts count toward readiness; posts about old matches are never made.
 
 ## Why the kit's "fulltime.fm" is allowed
 

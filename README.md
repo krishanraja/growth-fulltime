@@ -151,7 +151,7 @@ The report maps the engine's own outputs:
 | `fulltime:YYYY-MM-DD:<kind>` (daily, report, dispatch) | `run_id` |
 | Ready actions, at most three | `proposals[]`, wall `none`; a creative that passed every gate is wall `post` with `exact_payload` and `channel` |
 | Held drafts and closed gates | `holds[]`, one per code (RAIL, RELEASE, CHANNEL, CONSENT, DATA, D1 to D7) |
-| The release decision and pending rulings D1, D2, D3 and D7 | wall `strategy` proposals. D4, D5 and D6 unlock only channels the owner excluded, so they are holds, not asks |
+| The pending rulings, one ask at a time (D7, then D2, D3; D1 and ORGANIC are approved; RELEASE is the product's own) | wall `strategy` proposals. D4, D5 and D6 unlock only channels the owner excluded, so they are holds, not asks |
 | The weekly kill list | wall `strategy` proposals |
 | Human-confirmed publication receipts | `events[]` `creative_published` with the permalink |
 | `attributed_new_completers`, `marketing_cash_gbp` | `objectives[]` over the seven complete London days ending yesterday |

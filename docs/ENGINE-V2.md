@@ -45,7 +45,7 @@ Status: approved. Ruling (Krish, 2026-10-27): "approved, do it all". Owner: Kris
 7. **A format is ready** when three instances, on three different matches, each get his "post it" with no edits, pass every pre-live check, and have their unit cost and time measured. The engine computes this. No session ever writes "ready".
 8. **Knowing what works and what does not is critical,** so it gets its own owner, the What-Works Analyst (crew #9). That owner is not one of the makers and not the counter.
 9. **A full brand kit is built in Canva** through Cowork with computer use on Krish's PC, from the brand assets in his H drive Ventures folder (Appendix A).
-10. **Every asset and strategy the engine produces lives in one Growth folder** in Drive (Ventures, Full Time), and the engine is responsible for keeping it easy to find with no sprawl. The home is the existing **`Full Time/Growth Build`** folder, which Krish created on 27 Oct and which is still empty. A second "Growth" folder beside it would be the first sprawl. If he wants a separate one, he says so at approval. A tenth specialist, the Librarian, owns this (section 2a).
+10. **Every asset and strategy the engine produces lives in one Growth folder** in Drive (Ventures, Full Time), and the engine is responsible for keeping it easy to find with no sprawl. The home is the existing **`Full Time/Growth Build`** folder, which Krish created on 27 Oct and which is still empty. A second "Growth" folder beside it would be the first sprawl. If he wants a separate one, he says so at approval. A specialist, the Librarian (crew #10 of eleven), owns this (section 2a).
 
 AGENTS.md lines amended to match these rulings:
 - rule 3 (per-take);
@@ -154,7 +154,7 @@ Growth Build/
 3. **Names in one pattern.**
    - Instances: `<YYYY-MM-DD>_<format>_<pundit>_<home>-<away>_<channel>_<creative_id>.<ext>`.
    - Strategy: `<YYYY-Www>_<kind>_v<n>.<ext>`.
-   - Lowercase ASCII and hyphens only. Anything else is refused.
+   - Lowercase ASCII, hyphens within parts and underscores between them; a creative ID keeps its own uppercase form. Anything else is refused.
 4. **Every file has exactly one `INDEX.csv` row, and every row has its file.** The row holds:
    - path, kind, week, match, format, AI Pundit, channel;
    - status: draft, reviewed, verdict or posted;
@@ -423,7 +423,7 @@ A run only fills slots. One 1080x1920 master gets a creative ID per channel, all
   - the first G2 verdicts are recorded.
 
 **Phase 2: spec, crew, locks, templates (by 9 Nov).**
-- Schema and compiler; `invariants/registry.json`, mapping every item; the ten crews and the learning register; `engine/library.py` with its sprawl tests; the session-pack builder; dispatch with the guard; the Buffer reader.
+- Schema and compiler; `invariants/registry.json`, mapping every item; the eleven crew members and the learning register; `engine/library.py` with its sprawl tests; the session-pack builder; dispatch with the guard; the Buffer reader.
 - Code edits, each with tests:
   - renderer prefixes for every channel, a 1080x1920 master and `master_id`;
   - `PLATFORMS` and `BRAND_CHANNELS` gain threads, facebook and whatsapp_channel;

@@ -5,3 +5,7 @@
 __pycache__/
 *.pyc
 .DS_Store
+# The kit's Node tools install Playwright here; never commit them.
+node_modules/
+/package.json
+/package-lock.json
