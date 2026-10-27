@@ -1,0 +1,402 @@
+{
+  "_about": "A synthetic Growth Build library that reconciles cleanly: the listing is the shape engine/library.py reconcile() reads (one entry per Drive folder and file, its path relative to Growth Build, bytes null for folders), and index holds the matching INDEX.csv rows as read_index() returns them. Every hash, name and source here is made up; there are no Drive file IDs. The real listing and INDEX.csv stay private in Drive.",
+  "listing": [
+    {
+      "path": "00_START-HERE",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "00_START-HERE/INDEX.csv",
+      "bytes": 4800,
+      "is_folder": false
+    },
+    {
+      "path": "00_START-HERE/START-HERE.md",
+      "bytes": 3200,
+      "is_folder": false
+    },
+    {
+      "path": "01_Strategy",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "01_Strategy/2026-W44",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "01_Strategy/2026-W44/2026-W44_campaign-spec_v1.json",
+      "bytes": 4100,
+      "is_folder": false
+    },
+    {
+      "path": "01_Strategy/2026-W44/2026-W44_weekly-report_v1.md",
+      "bytes": 2600,
+      "is_folder": false
+    },
+    {
+      "path": "02_Formats",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "02_Formats/take_clip",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "02_Formats/take_clip/unlocked",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "02_Formats/take_clip/unlocked/lock-card.md",
+      "bytes": 1800,
+      "is_folder": false
+    },
+    {
+      "path": "03_Runs",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "03_Runs/2026-W44",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues/2026-10-31_take_clip_zen_reds-blues_tiktok_TT_CLASH_CLIP_C01_H01_V1_20261031.mp4",
+      "bytes": 5242880,
+      "is_folder": false
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues/2026-10-31_take_clip_zen_reds-blues_yt_shorts_YT_CLASH_SHORT_C01_H01_V1_20261031.mp4",
+      "bytes": 5243392,
+      "is_folder": false
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues/pack.json",
+      "bytes": 6100,
+      "is_folder": false
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues/review.json",
+      "bytes": 2300,
+      "is_folder": false
+    },
+    {
+      "path": "04_Learning",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "04_Learning/2026-W44",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "04_Learning/2026-W44/2026-W44_learning-report_v1.md",
+      "bytes": 2000,
+      "is_folder": false
+    },
+    {
+      "path": "04_Learning/register.csv",
+      "bytes": 900,
+      "is_folder": false
+    },
+    {
+      "path": "05_Brand-Kit",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "05_Brand-Kit/2026-W44_canva-kit-receipt_v1.json",
+      "bytes": 700,
+      "is_folder": false
+    },
+    {
+      "path": "06_Reference",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "06_Reference/backups",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "06_Reference/backups/2026-10-26",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "06_Reference/backups/2026-10-26/fulltime-growth-backup-2026-10-26.json",
+      "bytes": 1200,
+      "is_folder": false
+    },
+    {
+      "path": "06_Reference/backups/2026-10-26/fulltime-growth-backup-2026-10-26.zip.part01",
+      "bytes": 94371840,
+      "is_folder": false
+    },
+    {
+      "path": "06_Reference/creative-handoff",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "06_Reference/creative-handoff/2026-10-27",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "06_Reference/creative-handoff/2026-10-27/00-START-HERE-SYNTHETIC-HANDOFF.md",
+      "bytes": 5400,
+      "is_folder": false
+    },
+    {
+      "path": "99_Archive",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "99_Archive/2026-W44",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "99_Archive/2026-W44/01_Strategy",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "99_Archive/2026-W44/01_Strategy/2026-W43",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "99_Archive/2026-W44/01_Strategy/2026-W43/2026-W43_weekly-report_v1.md",
+      "bytes": 2400,
+      "is_folder": false
+    }
+  ],
+  "index": [
+    {
+      "path": "00_START-HERE/START-HERE.md",
+      "kind": "library_map",
+      "week": "",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "current",
+      "sha256": "3cf8493318177bca9422e9ccb244ac28b0480ddb4a5cf618723f1f40767ac15e",
+      "bytes": "3200",
+      "drive_file_id": "",
+      "source": "librarian 2026-10-27"
+    },
+    {
+      "path": "01_Strategy/2026-W44/2026-W44_campaign-spec_v1.json",
+      "kind": "campaign_spec",
+      "week": "2026-W44",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "verdict",
+      "sha256": "e9c92fc95a1fe3a086bbd9462236bbd4528bd0c7dbd2387a3eb615ef0ff39df9",
+      "bytes": "4100",
+      "drive_file_id": "",
+      "source": "specs/examples/synthetic-week.json@0000000"
+    },
+    {
+      "path": "01_Strategy/2026-W44/2026-W44_weekly-report_v1.md",
+      "kind": "weekly_report",
+      "week": "2026-W44",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "draft",
+      "sha256": "66379288c3416d4b5cf7cbaf4b51e3cc9536f75ca0b7dee78c2619ffae80f5ed",
+      "bytes": "2600",
+      "drive_file_id": "",
+      "source": "repo commit 0000000"
+    },
+    {
+      "path": "02_Formats/take_clip/unlocked/lock-card.md",
+      "kind": "lock_card",
+      "week": "",
+      "match": "",
+      "format": "take_clip",
+      "pundit": "",
+      "channel": "",
+      "status": "draft",
+      "sha256": "ced634199355c331c19a899a2972dd6b38dbe2d047de0d04bf9cccbaf2e8852c",
+      "bytes": "1800",
+      "drive_file_id": "",
+      "source": "repo commit 0000000"
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues/2026-10-31_take_clip_zen_reds-blues_tiktok_TT_CLASH_CLIP_C01_H01_V1_20261031.mp4",
+      "kind": "instance",
+      "week": "2026-W44",
+      "match": "reds-blues",
+      "format": "take_clip",
+      "pundit": "zen",
+      "channel": "tiktok",
+      "status": "reviewed",
+      "sha256": "6092af1731edc85a4892ec4e32ba9f544c7daa78195a39286f6aa14c3b34190d",
+      "bytes": "5242880",
+      "drive_file_id": "",
+      "source": "TT_CLASH_CLIP_C01_H01_V1_20261031"
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues/2026-10-31_take_clip_zen_reds-blues_yt_shorts_YT_CLASH_SHORT_C01_H01_V1_20261031.mp4",
+      "kind": "instance",
+      "week": "2026-W44",
+      "match": "reds-blues",
+      "format": "take_clip",
+      "pundit": "zen",
+      "channel": "yt_shorts",
+      "status": "reviewed",
+      "sha256": "21b4b783598a1d41dcfd9ca955e51f5ecea541028bc878e71e34e0060979895a",
+      "bytes": "5243392",
+      "drive_file_id": "",
+      "source": "YT_CLASH_SHORT_C01_H01_V1_20261031"
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues/pack.json",
+      "kind": "pack",
+      "week": "2026-W44",
+      "match": "reds-blues",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "reviewed",
+      "sha256": "5b5552773ae12eda458a5b1434bbf692b8f4df0a33f3aa5b1f4af219be3648cf",
+      "bytes": "6100",
+      "drive_file_id": "",
+      "source": "repo commit 0000000"
+    },
+    {
+      "path": "03_Runs/2026-W44/2026-10-31_reds-blues/review.json",
+      "kind": "review",
+      "week": "2026-W44",
+      "match": "reds-blues",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "reviewed",
+      "sha256": "299fa8e3bcd7d21c7c011b7eb80b6a0c5255c7ec915b097c8a05d657af83e18a",
+      "bytes": "2300",
+      "drive_file_id": "",
+      "source": "repo commit 0000000"
+    },
+    {
+      "path": "04_Learning/2026-W44/2026-W44_learning-report_v1.md",
+      "kind": "learning_report",
+      "week": "2026-W44",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "draft",
+      "sha256": "24e067a5b48806e27e506f3819a25f85e71af1077e6113686594a350772ed54e",
+      "bytes": "2000",
+      "drive_file_id": "",
+      "source": "repo commit 0000000"
+    },
+    {
+      "path": "04_Learning/register.csv",
+      "kind": "learning_register",
+      "week": "",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "current",
+      "sha256": "7db302d059a1f75985943fe463d67b08517351793da0d7c5968f4920347fad89",
+      "bytes": "900",
+      "drive_file_id": "",
+      "source": "repo commit 0000000"
+    },
+    {
+      "path": "05_Brand-Kit/2026-W44_canva-kit-receipt_v1.json",
+      "kind": "brand_kit_receipt",
+      "week": "2026-W44",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "current",
+      "sha256": "dd8b3dd5e91452aa4aa655f799fa2836f7af1b7806b00d277e2652e410edae63",
+      "bytes": "700",
+      "drive_file_id": "",
+      "source": "cowork receipt 2026-10-27"
+    },
+    {
+      "path": "06_Reference/backups/2026-10-26/fulltime-growth-backup-2026-10-26.json",
+      "kind": "backup_manifest",
+      "week": "2026-W44",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "reference",
+      "sha256": "67d8c6d7fb6175aa6f2df74d906adbba7802246b08c2bf2c3e102857aea7e4a5",
+      "bytes": "1200",
+      "drive_file_id": "",
+      "source": "librarian bundle 2026-10-26"
+    },
+    {
+      "path": "06_Reference/backups/2026-10-26/fulltime-growth-backup-2026-10-26.zip.part01",
+      "kind": "backup_part",
+      "week": "2026-W44",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "reference",
+      "sha256": "219d804bb22666c9cdf55f55ffbcff48c829b99773121168814d991d370a12a8",
+      "bytes": "94371840",
+      "drive_file_id": "",
+      "source": "librarian bundle 2026-10-26"
+    },
+    {
+      "path": "06_Reference/creative-handoff/2026-10-27/00-START-HERE-SYNTHETIC-HANDOFF.md",
+      "kind": "handoff_readme",
+      "week": "2026-W44",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "reference",
+      "sha256": "pending-local",
+      "bytes": "5400",
+      "drive_file_id": "",
+      "source": "adopted unrenamed; sha256 filled by the first local reconcile"
+    },
+    {
+      "path": "99_Archive/2026-W44/01_Strategy/2026-W43/2026-W43_weekly-report_v1.md",
+      "kind": "weekly_report",
+      "week": "2026-W43",
+      "match": "",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "superseded",
+      "sha256": "f8fb4cdd4ab45d36b88ebffad0f3575e69ce1640cf60afc374615438db1cd6a0",
+      "bytes": "2400",
+      "drive_file_id": "",
+      "source": "repo commit 0000000"
+    }
+  ]
+}
