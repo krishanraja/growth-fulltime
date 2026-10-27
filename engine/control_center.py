@@ -420,6 +420,35 @@ def execute(client, command, run_id, work, since):
 # ---------------------------------------------------------------------------
 # The engine's own work for each entry point.
 # ---------------------------------------------------------------------------
+def measurement_lines(local, today, rows=None):
+    """The North Star readings and Google Analytics landings, as activity lines for
+    Control Center. They stay out of the objectives until Control Center registers
+    the new keys (briefs/2026-10-27-control-center-measurement.md), and out of the
+    printed summary, because the runner's log is public."""
+    from . import attribution
+    lines = []
+    try:
+        for row in attribution.objectives(rows or [], today):
+            value = 'missing' if row['value'] is None else f'{row["value"]} people'
+            lines.append(f'North Star reading, {row["key"]}: {value}. {row["reason"] or ""}'.strip())
+    except ValueError as error:
+        lines.append(f'North Star reading refused: {error}')
+    path = Path(local) / 'ga4' / 'landings-latest.json'
+    if not path.is_file():
+        return lines + ['Google Analytics: not read on this run (docs/GA4-ACCESS.md, route A).']
+    try:
+        export = json.loads(path.read_text(encoding='utf-8'))
+        landings = attribution.by_creative(export)
+    except (ValueError, OSError, KeyError, TypeError) as error:
+        return lines + [f'Google Analytics: the export was refused ({str(error)[:160]}).']
+    tagged = sum(v['new_users'] for v in landings.values())
+    top = sorted(landings.items(), key=lambda kv: (-kv[1]['new_users'], kv[0]))[:3]
+    best = '; most: ' + ', '.join(f'{cid} {v["new_users"]}' for cid, v in top) if top else ''
+    return lines + [f'Google Analytics, {export["window_start"]} to {export["window_end"]}: {tagged} new web '
+                    f'users from {len(landings)} tagged creatives and {landings.untagged["new_users"]} from '
+                    f'untagged links{best}. Web landings on fulltime.fm, never listeners.']
+
+
 def directive_line(directive, dispatched=None):
     body = directive.get('directive') or {}
     action = body.get('next_action') or {}
@@ -476,6 +505,7 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             activity.append('Weekly review over the seven complete London days ending yesterday: '
                             + record['native_weekly_review']['findings']['measurement'])
         activity += directive_line(directive)
+        activity += measurement_lines(growth.LOCAL, today, saved['observations'])
         degraded = [] if record.get('rail') is not None else ['The live rail was not read; fulltime.fm did not answer.']
         start = reporting.week_window(today)[0].isoformat()
         report = reporting.build(
@@ -545,6 +575,7 @@ def runner_work(growth, report_mode, dispatched=None, waiting=None):
         activity.append('Private history, held creatives, brand identity proof and approved aggregates stay in '
                         'the persistent workspace; this runner reports only what it can see.')
         activity += directive_line(directive, dispatched)
+        activity += measurement_lines(growth.LOCAL, today)
         report = reporting.build(
             reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
             items, growth.load_rulings(), reporting.objectives(today, workspace=False), activity,

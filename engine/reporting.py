@@ -14,15 +14,14 @@ import json
 import math
 from pathlib import Path
 import re
-from zoneinfo import ZoneInfo
 
 from . import policy
+from .clock import LONDON
 from .policy import VERSION, holds
 from .records import fingerprint
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = ROOT / 'docs' / 'control-center' / 'engine-report.schema.json'
-LONDON = ZoneInfo('Europe/London')
 ENGINE_ID = 'growth-fulltime'
 PRODUCT_SLUG = 'full-time'
 SLUG = 'fulltime'
