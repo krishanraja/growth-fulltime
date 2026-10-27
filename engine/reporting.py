@@ -512,11 +512,21 @@ def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list
     proposals, release_done = [copy.deepcopy(p) for p in gate_proposals], False
     retired = release_retired(state, rulings_file)
     ready = [x for x in items if not holds(x) and not (retired and x.get('why') == 'release')]
-    for item in ready[:max(0, min(3, max_actions))]:
+    done, slots = answered_pairs(answered), max(0, min(3, max_actions))
+    settled = []
+    for item in ready:
+        if slots == 0:
+            break
         if item.get('why') == 'release':
-            proposals.append(release_proposal()); release_done = True
-        else:
-            proposals.append(action_proposal(item))
+            proposals.append(release_proposal()); release_done = True; slots -= 1
+            continue
+        p = action_proposal(item)
+        # One he has already answered on this digest (approved or declined) is not asked
+        # again and holds no slot, so three declines never block the next post.
+        if (p['proposal_id'], p.get('payload_sha256')) in done:
+            settled.append(p['proposal_id'])
+            continue
+        proposals.append(p); slots -= 1
     if not release_done and not retired:
         proposals.append(release_proposal())
     for rid, ruling in sorted(rulings_file.items()):
@@ -539,6 +549,9 @@ def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list
               'captured_at': state.get('synced_at') or observed_at}
     lines = [{'line': a[0][:500], 'evidence_url': a[1]} if isinstance(a, tuple)
              else {'line': a[:500], 'evidence_url': None} for a in activity]
+    if settled:
+        lines = lines[:39] + [{'line': ('Already answered, not asked again: ' + ', '.join(settled) + '.')[:500],
+                               'evidence_url': None}]
     if deferred:
         lines = lines[:39] + [{'line': ('One ask at a time: these wait until the ask of their kind already '
                                         "on Krish's list is answered: "

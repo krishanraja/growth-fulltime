@@ -360,7 +360,8 @@ class PushGateTests(unittest.TestCase):
              'canon_removed': [], 'feed': [], 'canon': {}, 'canon_from_index': True, 'commits': [], 'open_pulls': [],
              'notes': [], 'push': growth.push_gate(rail()[:1], state())}
         md = growth.now_md(s)
-        self.assertIn('## Push gate: HOLD', md)
+        self.assertIn('## Whole-match push gate: HOLD', md)
+        self.assertNotIn('## Push gate: HOLD', md)
         self.assertIn('## Per-take gate (ORGANIC): OPEN', md)
         self.assertIn('Whole-match promotion still waits for 4 of 6.', md)
         self.assertNotIn('Per-take', growth.now_md({**s, 'push': growth.push_gate(rail()[:1])}))

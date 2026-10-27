@@ -224,9 +224,15 @@ class NowStateTests(unittest.TestCase):
         return invariants.now_state_errors(text, self.LADDER, today)
 
     def test_the_real_now_md_passes(self):
-        # Checked against today in London: a line left over from an earlier week fails.
-        self.assertEqual(invariants.now_state_errors(today=dt.datetime.now(LONDON).date()), [])
-        self.assertEqual(invariants.now_state_errors(), [])
+        # Its shape, ladder and urgency, as of the day it was read: CI never turns red on
+        # a date. A line left over from an earlier week is the daily report's to raise.
+        self.assertEqual(invariants.now_state_shape_errors(), [])
+
+    def test_a_stale_line_is_found_by_the_dated_check_but_never_fails_the_shape_check(self):
+        text = (invariants.ROOT / 'NOW.md').read_text(encoding='utf-8')
+        later = dt.date(2099, 1, 5)
+        self.assertTrue(any('not this week' in e for e in invariants.now_state_errors(text, today=later)))
+        self.assertEqual(invariants.now_state_shape_errors(text), [])
 
     def test_a_good_line_passes_measured_or_not(self):
         self.assertEqual(self.errors(self.line()), [])

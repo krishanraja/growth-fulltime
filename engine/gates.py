@@ -11,11 +11,14 @@ local/engine/receipts.jsonl and on each G2 gate, and an approved G2 closes with 
 creative_published event once every item he kept has one. Nothing here sends, posts
 or spends.
 """
+import datetime as dt
 import json
 from pathlib import Path
 import re
 
-from . import formats, reporting
+from urllib.parse import urlsplit
+
+from . import formats, policy, reporting
 from .clock import LONDON
 from .records import atomic_json, instant, now
 
@@ -213,6 +216,13 @@ def _receipt(number, receipt):
         raise ValueError(f'receipt {number} needs a creative_id and a channel')
     if not isinstance(link, str) or not link.startswith('https://') or link != link.strip():
         raise ValueError(f'receipt {number}: the permalink must be an https link')
+    parts = urlsplit(link)
+    host = (parts.hostname or '').lower()
+    hosts = policy.IDENTITY_HOSTS.get(channel, ())
+    if parts.username or parts.password or not any(host == h or host.endswith('.' + h) for h in hosts):
+        raise ValueError(f'receipt {number}: a {channel} permalink must sit on ' + (', '.join(hosts) or 'a known brand channel'))
+    if policy.sensitive_errors(receipt):
+        raise ValueError(f'receipt {number}: ' + policy.sensitive_errors(receipt)[0])
     if at is not None:
         try:
             instant(at)
@@ -230,6 +240,16 @@ def _pack_items(gate):
         return [(item['creative_id'], item.get('channel')) for item in items]
     except (ValueError, KeyError, TypeError):
         return []
+
+
+def _matchday_floor(gate):
+    """The London date a G2 pack is for; None when the pack carries no valid matchday,
+    and then no receipt is copied onto it."""
+    try:
+        day = json.loads(gate['proposal']['exact_payload'])['matchday']
+        return dt.date.fromisoformat(day) if isinstance(day, str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', day) else None
+    except (ValueError, KeyError, TypeError):
+        return None
 
 
 def record_receipts(local, receipts):
@@ -258,7 +278,12 @@ def record_receipts(local, receipts):
         if gate.get('kind') != 'g2':
             continue
         items, held = _pack_items(gate), gate.setdefault('receipts', {})
+        since = _matchday_floor(gate)
         for row in kept + new:
+            # A post made before this ask's matchday (London) cannot be its receipt, so an
+            # old permalink never closes a later G2 that reuses a creative.
+            if since is None or instant(row['published_at'] or row['recorded_at']).astimezone(LONDON).date() < since:
+                continue
             if (row['creative_id'], row['channel']) in items and row['creative_id'] not in held:
                 held[row['creative_id']] = {k: row[k] for k in ('channel', 'permalink', 'published_at', 'recorded_at')}
                 if gate['proposal']['proposal_id'] not in changed:

@@ -568,7 +568,7 @@ def now_md(s):
         lines += [f'| `{k}` | {v} | {RULES_BASIS.get(k)} |' for k, v in s['rules'].items() if v != RULES_BASIS.get(k)]
         lines += ['']
     push = s['push']
-    lines += ['## Push gate: ' + ('OPEN' if push['open'] else 'HOLD'), '',
+    lines += [('## Whole-match push gate: ' if 'per_take' in push else '## Push gate: ') + ('OPEN' if push['open'] else 'HOLD'), '',
               f'{push["why"][0].upper() + push["why"][1:]}. A push sends fans to a match only when at least {RAIL_MIN} of the six AI Pundits made a show for it (PLAYBOOK.md, "The rail gate").', '']
     if 'per_take' in push:
         lines += ['## Per-take gate (ORGANIC): ' + ('OPEN' if push['per_take'] else 'HOLD'), '',

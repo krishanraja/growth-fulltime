@@ -58,6 +58,14 @@ BANNED = {
     'any_personal_account_action': "Krish's ruling: Full Time brand profiles only, never his personal accounts",
     'any_action_without_official_api': "Krish's ruling: automate only through official APIs",
 }
+# The only kinds of automated action this engine knows. A word list alone lets a banned
+# tactic through under a synonym ("react", "heart", a reel "container"), so any other id
+# is refused here: a new kind of action needs a code change, a review and a test.
+KNOWN_ACTIONS = frozenset({
+    'reply_to_comments_on_own_posts', 'hide_or_report_abusive_comments_on_own_posts',
+    'pin_best_comment_on_own_post', 'update_profile_bio_and_links', 'rotate_pinned_post',
+    'add_post_to_playlist_or_highlight', 'schedule_story_or_community_post', 'crosslink_profiles',
+})
 # Publishing stays with Krish in Buffer, whatever a ruling on the action says.
 HANDCRAFTED = {'schedule_story_or_community_post': 'publishing stays with Krish in Buffer (ruling 3)'}
 # What an action does, read from its id, title and official API with punctuation as
@@ -364,6 +372,9 @@ def refusals(action_id, platform, account, now, today_count, actions=None, allow
     if entry is None:
         return [f'{name} is not in engagement-actions.json']
     out = _kind_refusals(name, entry)
+    if name not in KNOWN_ACTIONS:
+        out.append(f'{name} is not a kind of action this engine knows; a new kind needs a code change '
+                   'and review (engine/audience.py KNOWN_ACTIONS), never only an entry in the file')
     if name in HANDCRAFTED:
         out.append(f'{name} is never automated: {HANDCRAFTED[name]}')
     if entry['status'] != 'approved':

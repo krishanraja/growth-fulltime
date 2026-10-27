@@ -49,7 +49,7 @@ def run(growth, mode, offline=False, observation_file=None, run_date=None):
     start = end - dt.timedelta(days=6) if mode == 'weekly' else end
     measures = scorecard(rows, start.isoformat(), end.isoformat())
     rail = state.get('rail')
-    gate = growth.push_gate(rail)
+    gate = growth.push_gate(rail, state)
     source = 'full-time ' + state['sha'][:10] + ', read ' + state['synced_at']
     items = [{'item_id': 'fulltime-' + key, 'platform': 'other', 'why': key,
               'text': text, 'estimated_minutes': 5} for key, text in constraints(gate, measures, state)]

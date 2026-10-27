@@ -729,7 +729,7 @@ def runner_work(growth, report_mode, dispatched=None, waiting=None, answered=())
                 degraded.append('The source snapshot has no valid capture time.')
             if state.get('rail') is None:
                 degraded.append('The live rail was not read; fulltime.fm did not answer.')
-        state['push'] = state.get('push') or growth.push_gate(state.get('rail'))
+        state['push'] = state.get('push') or growth.push_gate(state.get('rail'), state)
         today = reporting.london_today()
         start, end = reporting.week_window(today)[:2]
         measures = scorecard([], start.isoformat(), end.isoformat())

@@ -243,6 +243,20 @@ def _day(value):
     return dt.date.fromisoformat(value)
 
 
+def now_state_shape_errors(now_text=None, north_star_text=None):
+    """now_state_errors as of the day the line says it was read, so CI checks the line's
+    shape, ladder and urgency without turning red on a date. Whether it is this week's
+    line is the daily report's job (now_state_errors with today, London), where Krish
+    sees it as an action, never a failed build."""
+    text = (ROOT / 'NOW.md').read_text(encoding='utf-8') if now_text is None else now_text
+    found = STATE.findall(text)
+    try:
+        as_of = _day(json.loads(found[0][0]).get('current_as_of')) if len(found) == 1 else None
+    except (ValueError, AttributeError):
+        as_of = None
+    return now_state_errors(text, north_star_text, today=as_of)
+
+
 def now_state_errors(now_text=None, north_star_text=None, today=None):
     """Every reason the north-star-state line in NOW.md is wrong, in plain words: its
     shape, that it is for this London week (today, London, by default) with a reading at

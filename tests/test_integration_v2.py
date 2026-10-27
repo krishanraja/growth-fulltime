@@ -259,7 +259,7 @@ class G2Closes(unittest.TestCase):
         mine = json.loads(self.sent['exact_payload'])
         del mine['items'][1]
         self.answer(amended(self.sent, mine))
-        gates.record_receipts(self.local, [self.receipt(0, None)])
+        gates.record_receipts(self.local, [self.receipt(0, '2026-11-01T18:00:00Z')])
         events = gates.events(self.local, '2026-10-26')
         self.assertEqual([(e['proposal_id'], e['evidence_url']) for e in events],
                          [(self.proposal['proposal_id'], 'https://www.tiktok.com/@fulltime/video/1')])
