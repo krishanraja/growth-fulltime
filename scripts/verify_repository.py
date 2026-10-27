@@ -75,6 +75,14 @@ def v2_errors(root=ROOT):
                            ('https://archive.ubuntu.com/ubuntu', 'renderer packages come from the HTTPS mirror')):
         if needle not in check:
             errors.append('.github/workflows/check.yml: ' + reason)
+    loop = (root / '.github/workflows/control-center.yml').read_text(encoding='utf-8')
+    for used in re.findall(r'uses:\s*google-github-actions/auth@(\S+)', loop):
+        if not re.fullmatch(r'[0-9a-f]{40}', used):
+            errors.append('.github/workflows/control-center.yml: pin google-github-actions/auth to a full commit SHA')
+    for needle, reason in (('upload-artifact', 'the loop uploads nothing; GA4 exports stay on the runner'),
+                           ('credentials_json', 'Google access is keyless (docs/GA4-ACCESS.md, route A); no key file')):
+        if needle in loop:
+            errors.append('.github/workflows/control-center.yml: ' + reason)
     return errors
 
 

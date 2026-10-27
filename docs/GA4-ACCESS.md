@@ -21,7 +21,48 @@ The reader is `engine/ga4.py`. This page is the setup, in order.
   it, and nothing here changes what fulltime.fm collects or asks visitors. D7 must
   still close in the product before the first public post.
 
-## Steps
+## Two routes: use route A
+
+**Route A, GitHub Actions, keyless (recommended).** The daily control center loop
+already runs in GitHub Actions. It proves who it is to Google with GitHub's own
+short-lived identity token, and Google answers with a ten-minute token that can only
+read Analytics. No key, client secret or refresh token exists anywhere, so there is
+nothing to leak, rotate or let expire, and nothing depends on a chat session or on
+your computer being on. Google accepts the identity only from
+`krishanraja/growth-fulltime` on its `main` branch (checked against your numeric
+GitHub ID), and the reader it acts as has one permission: Viewer on the Full Time
+property. The export stays on the runner and is never uploaded.
+
+**Route B, your own computer (optional).** A one-time sign-in that saves a refresh
+token in `local/ga4/oauth.json`, for running reports by hand on your machine.
+
+Why not Vercel: Vercel's settings serve the product's own runtime. Reading Analytics
+there would mean building and guarding a new endpoint on fulltime.fm just to hand the
+numbers back to this engine, whose scheduled runs already live in GitHub.
+
+## Route A: GitHub Actions, keyless (about 10 minutes, once)
+
+1. Open [Google Cloud Shell](https://shell.cloud.google.com), signed in to the Google
+   account that owns the Full Time Google Analytics property. Pick or create a
+   project (for example "Full Time growth") and note its project ID.
+2. Upload or paste [`scripts/ga4-github-setup.sh`](../scripts/ga4-github-setup.sh),
+   then run `bash ga4-github-setup.sh YOUR_PROJECT_ID`. It turns on four free Google
+   APIs, creates the read-only reader and the GitHub trust, and prints what to do
+   next. Running it twice changes nothing.
+3. In Google Analytics: Admin, **Property access management**, add the reader's
+   email the script printed, with the **Viewer** role and nothing more.
+4. In GitHub: this repository, Settings, Secrets and variables, Actions,
+   **Variables** (not secrets), add the three the script printed:
+   `GA4_WIF_PROVIDER`, `GA4_SERVICE_ACCOUNT` and `GA4_PROPERTY_ID` (the number from
+   Admin, Property details, not the `G-` ID).
+5. Check it: Actions, **control center loop**, Run workflow. The "Read Google
+   Analytics landings" step prints `ga4 doctor` and the week's counts, never a
+   token. From then on every morning's loop reads it on its own.
+
+To stop it, delete the three variables, or remove the reader from Property access
+management. Either takes effect at the next run.
+
+## Route B: sign in from your own computer (optional)
 
 You need about 15 minutes, on your own computer, signed in to the Google account
 that owns the Full Time Google Analytics property.
@@ -105,38 +146,19 @@ python growth.py ga4 report --days 7 --out local/ga4/week.json
 It covers the seven complete London days ending yesterday, writes the export
 under `local/` only, and prints the counts and the path.
 
-### 9. Give the cloud sessions the same access
-
-Open the cloud environment's settings (the cloud environment menu in the session's
-title bar, then Edit). Add four secrets, under Network secrets where that section
-is offered, otherwise as environment variables:
-
-| Name | Value |
-|---|---|
-| `GA4_CLIENT_ID` | `client_id` from `local/ga4/oauth.json` |
-| `GA4_CLIENT_SECRET` | `client_secret` from that file |
-| `GA4_REFRESH_TOKEN` | `refresh_token` from that file |
-| `GA4_PROPERTY_ID` | the number from step 6 |
-
-Copy each value from the file yourself. Never paste them into a chat. A new
-session picks them up. If the environment limits network access, allow
-`oauth2.googleapis.com` and `analyticsdata.googleapis.com` under Allowed domains.
-
-When those four are set, the reader uses them and ignores the file.
-
 ## If something goes wrong
 
 The commands answer with a code and a plain sentence, never a secret.
 
 | Code | What to do |
 |---|---|
-| `missing_ga4_credentials` | Do step 7, or step 9 in the cloud |
+| `missing_ga4_credentials` | Route A: check the three variables. Route B: do step 7 |
 | `missing_ga4_property_id`, `ga4_property_id_invalid` | Use the number from step 6, not the `G-` ID |
 | `ga4_credentials_exposed` | Run `chmod 600 local/ga4/oauth.json` |
-| `unauthorized` | The sign-in was revoked or expired (see step 3 about Testing): run step 7 again and update step 9 |
+| `unauthorized` | Route A: check the reader is still a Viewer on the property. Route B: the sign-in was revoked or expired (see step 3 about Testing); run step 7 again |
 | `forbidden` | Check step 2 and step 5 |
 | `ga4_unavailable` | Google did not answer; try later |
 
-To stop the engine reading Google Analytics, remove the app at
+To stop route B, remove the app at
 [myaccount.google.com/permissions](https://myaccount.google.com/permissions), or
-delete the OAuth client from step 4, then remove the four secrets.
+delete the OAuth client from step 4.

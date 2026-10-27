@@ -414,6 +414,33 @@ class CommandTests(Base):
         code, out, _ = self.run_main(['report'], {})
         self.assertEqual((code, json.loads(out)['error_code']), (2, 'missing_ga4_credentials'))
 
+    def test_keyless_github_token_comes_first_and_never_refreshes(self):
+        keyless = {**ENV, 'GA4_ACCESS_TOKEN': ACCESS}
+        creds = ga4.credentials(self.local, keyless)
+        self.assertEqual((creds['source'], creds['property_id']), (ga4.KEYLESS, PROPERTY_ID))
+        self.assertNotIn('refresh_token', creds)
+        self.assertClean(repr(creds) + str(creds))
+        code, out, _ = self.run_main(['doctor'], {'GA4_ACCESS_TOKEN': ACCESS, 'GA4_PROPERTY_ID': PROPERTY_ID})
+        summary = json.loads(out)
+        self.assertEqual((code, summary['credentials'], summary['token_refresh']), (0, ga4.KEYLESS, 'ok'), out)
+        self.assertEqual([call[0] for call in self.google.calls], ['report'])
+        target = self.local / 'ga4' / 'landings-latest.json'
+        code, out, _ = self.run_main(['report', '--days', '7', '--out', str(target)],
+                                     {'GA4_ACCESS_TOKEN': ACCESS, 'GA4_PROPERTY_ID': PROPERTY_ID})
+        self.assertEqual(code, 0, out)
+        self.assertTrue(target.is_file())
+        self.assertNotIn('token', [call[0] for call in self.google.calls])
+        self.assertNoSecretOnDisk()
+
+    def test_a_refused_keyless_token_is_unauthorized_and_a_missing_property_stops_first(self):
+        code, out, _ = self.run_main(['doctor'], {'GA4_ACCESS_TOKEN': 'standin-wrong-' + 'W' * 30,
+                                                  'GA4_PROPERTY_ID': PROPERTY_ID})
+        self.assertEqual((code, json.loads(out)['token_refresh']), (1, 'unauthorized'))
+        calls = len(self.google.calls)
+        code, out, _ = self.run_main(['doctor'], {'GA4_ACCESS_TOKEN': ACCESS})
+        self.assertEqual((code, json.loads(out)['property_id']), (1, 'missing'))
+        self.assertEqual(len(self.google.calls), calls)
+
     def test_report_writes_under_local_only_and_prints_counts_and_the_path(self):
         self.google.rows = [ga4_row('tiktok', 'social', 'matchday', 'TT_TAKE_C01', 3, 4, 2),
                             ga4_row('youtube', 'social', 'matchday', 'YT_TAKE_C01', 1, 2, 2)]

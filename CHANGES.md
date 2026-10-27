@@ -5,6 +5,14 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-27: Google Analytics moved off per-session access. Krish: "I need a
+  more robust way of connecting Google Analytics than just in this session. That's
+  so fragile. Can it not go in GitHub or Vercel?" The daily control center loop in
+  GitHub Actions now signs in to Google keylessly (workload identity federation, no
+  key or secret anywhere, accepted only from this repository's main branch) and
+  reads aggregate landings read-only; Vercel was not used, because the engine's
+  scheduled runs live in GitHub. Setup: `docs/GA4-ACCESS.md`, route A, and
+  `scripts/ga4-github-setup.sh`. The per-session secrets step is gone.
 - 2026-10-27: added the Audience Builder and a direct Google Analytics reader.
   Krish: "there needs to be a social media specialist working relentlessly: not
   necessarily to publish content, but to make sure that my profile is as visible

@@ -50,7 +50,9 @@ PAGE = 10000
 MAX_ROWS = 100000
 FILE = Path('ga4') / 'oauth.json'
 ENV = {'client_id': 'GA4_CLIENT_ID', 'client_secret': 'GA4_CLIENT_SECRET',
-       'refresh_token': 'GA4_REFRESH_TOKEN', 'property_id': 'GA4_PROPERTY_ID'}
+       'refresh_token': 'GA4_REFRESH_TOKEN', 'property_id': 'GA4_PROPERTY_ID',
+       'access_token': 'GA4_ACCESS_TOKEN'}
+KEYLESS = 'github_workload_identity'   # a one-hour token GitHub Actions swapped for its own identity
 SECRET_FIELDS = ('client_id', 'client_secret', 'refresh_token')
 DIMENSIONS = {'sessionSource': 'utm_source', 'sessionMedium': 'utm_medium',
               'sessionCampaignName': 'utm_campaign', 'sessionManualAdContent': 'utm_content'}
@@ -150,12 +152,21 @@ def _read_file(path):
 
 
 def credentials(local_dir, environ=None):
-    """The OAuth client, refresh token and numeric property ID, from the environment when
-    all three secrets are set there, else from local_dir/ga4/oauth.json (refused when
-    other users can read it). None when neither holds them: report missing_ga4_credentials.
-    GA4_PROPERTY_ID in the environment, when set, names the property for either source."""
+    """What the reader signs in with, first found wins:
+    1. GA4_ACCESS_TOKEN, the short-lived read-only token the control center loop gets from
+       Google by keyless GitHub sign-in (docs/GA4-ACCESS.md, route A). Nothing long-lived
+       exists anywhere on that route;
+    2. the OAuth client and refresh token in the environment, when all three are set;
+    3. local_dir/ga4/oauth.json (refused when other users can read it), route B.
+    None when none of them is there: report missing_ga4_credentials. GA4_PROPERTY_ID in the
+    environment, when set, names the property for every source."""
     environ = os.environ if environ is None else environ
     value = lambda key: str(environ.get(ENV[key]) or '').strip()
+    if value('access_token'):
+        if not PRINTABLE.fullmatch(value('access_token')):
+            raise GA4Error('ga4_credentials_malformed')
+        return Credentials({'access_token': value('access_token')},
+                           property_id=_property_id(value('property_id')), source=KEYLESS)
     if all(value(k) for k in SECRET_FIELDS):
         found, source = {k: value(k) for k in SECRET_FIELDS}, 'environment'
         found['property_id'] = value('property_id')
@@ -305,7 +316,7 @@ def run_report(creds, start, end, base_url=DATA_URL, *, token_url=TOKEN_URL, acc
         raise GA4Error('missing_ga4_property_id')
     loopback = _endpoint(base_url, origin=True)
     url = base_url.rstrip('/') + f'/v1beta/properties/{property_id}:runReport?prettyPrint=false'
-    head = {'Authorization': 'Bearer ' + (access or access_token(creds, token_url)),
+    head = {'Authorization': 'Bearer ' + (access or creds.get('access_token') or access_token(creds, token_url)),
             'Content-Type': 'application/json'}
     rows, total = Rows(), None
     while True:
@@ -538,8 +549,15 @@ def _doctor(local):
         return {**summary, **_failed('doctor', GA4Error('missing_ga4_credentials')), 'credentials': 'missing'}, 2
     summary.update(credentials=creds['source'], property_id='set' if creds['property_id'] else 'missing')
     try:
-        access_token(creds, TOKEN_URL)
-        summary['token_refresh'] = 'ok'
+        if creds['source'] == KEYLESS:
+            # No refresh on this route: prove the token reads the property with one day's report.
+            if creds['property_id']:
+                day = days_window(1)[0]
+                run_report(creds, day, day, DATA_URL)
+            summary['token_refresh'] = 'ok'
+        else:
+            access_token(creds, TOKEN_URL)
+            summary['token_refresh'] = 'ok'
     except GA4Error as error:
         summary['token_refresh'] = error.code
         summary['message'] = MESSAGES.get(error.code, 'Not ready.')
