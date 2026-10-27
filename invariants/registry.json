@@ -781,18 +781,18 @@
    "rule": "Canva mirrors the tree: Growth/Templates and Growth/<week>, reconciled the same way.",
    "origin": "library rule 8",
    "status": "open",
-   "enforced_by": null,
-   "test": null,
-   "remains": "No Canva listing is reconciled yet."
+   "enforced_by": "engine.library.canva_reconcile",
+   "test": "tests.test_library.CanvaMirror.test_sprawl_in_the_mirror_is_reported_and_holds_the_report",
+   "remains": "The mirror structure is reconciled; the plan sets no name pattern for week designs yet, so those are not checked."
   },
   {
    "id": "LIB9",
    "rule": "One source per artefact: git for public docs with a source stamp on the Drive copy, Drive for private assets, and a verified private backup each week.",
    "origin": "library rule 9",
    "status": "open",
-   "enforced_by": "engine.library.bundle",
-   "test": "tests.test_library.Backups.test_bundle_then_assemble_round_trips_with_tiny_parts",
-   "remains": "Backups are built and verified in code; the source stamp on Drive copies of public docs is not checked."
+   "enforced_by": "engine.library.stamp_errors",
+   "test": "tests.test_library.SourceStamp.test_a_missing_wrong_or_doubled_stamp_is_refused",
+   "remains": "Stamps and backups are checked in code; the weekly private backup is not yet run on a schedule."
   },
   {
    "id": "INV-NO-WRITE",

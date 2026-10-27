@@ -76,15 +76,20 @@ def rail(*drops):
 def take_on(drop, n):
     cid = f'TT_CLASH_CLIP_C0{n}_H01_V1_20261101'
     return take(creative_id=cid, drop_id=drop, master_id=f'M_20261101_{drop.upper()}_{n}',
+                fixture_ref=drop, lock_version=LOCK,
                 media=[media(str(n) * 64, url=f'https://review.example.com/2026-11-01/take-0{n}')])
 
 
-def queued_pack(local, day, *items, drops):
+def all_checks(format_id='take_clip', skip=()):
+    return {name: True for name in formats.recipe(format_id)['prelive_checks'] if name not in skip}
+
+
+def queued_pack(local, day, *items, drops, skip=()):
     built = pack.build(list(items), f'fulltime:{day}:g2', day, rail(*drops), allowlist(), False)
     proposal = pack.proposal(built, EXPIRES)
-    context = {i['creative_id']: {'format_id': 'take_clip', 'lock_version': LOCK, 'fixture_ref': i['drop_id'],
-                                  'unit_cost_recorded': True, 'unit_minutes_recorded': True} for i in built['items']}
-    gates.prepare(local, 'g2', proposal, context)
+    context = {i['creative_id']: {'unit_cost_gbp': 0.0, 'unit_minutes': 4, 'checks': all_checks(skip=skip)}
+               for i in built['items']}
+    gates.prepare(local, 'g2', proposal, context, checked=True)
     return built, proposal
 
 
@@ -118,11 +123,41 @@ class GateLoop(unittest.TestCase):
         decided = control_center.classify([amended(sent, mine)], report['proposals'])
         rows = gates.settle(self.local, decided)
         self.assertEqual([r['verdict'] for r in rows], ['post_it', 'edit', 'reject'])
+        self.assertEqual([r['fixture_ref'] for r in rows], ['drop-a', 'drop-b', 'drop-c'])   # from what he decided
         self.assertEqual(gates.pending(self.local), [])
         self.assertEqual(gates.settle(self.local, decided), [])        # settled once only
         self.assertEqual(len(gates.verdicts(self.local)), 3)
         with self.assertRaises(ValueError):
             gates.prepare(self.local, 'g2', proposal, {i['creative_id']: {} for i in built['items']})
+
+    def test_an_added_item_never_loses_the_decision_and_one_bad_gate_never_stops_another(self):
+        _, first = queued_pack(self.local, '2026-11-01', take_on('drop-a', 1), take_on('drop-b', 2),
+                               drops=('drop-a', 'drop-b'))
+        _, second = queued_pack(self.local, '2026-11-02', take_on('drop-c', 3), drops=('drop-c',))
+        report = report_with_gates(self.local)
+        mine = json.loads(first['exact_payload'])
+        mine['items'].pop(1)
+        mine['items'].append({**mine['items'][0], 'creative_id': 'TT_CLASH_CLIP_C09_H01_V1_20261101'})
+        broken = {'proposal_id': second['proposal_id'], 'decision': 'approved', 'amended': True,
+                  'payload_sha256': second['payload_sha256'], 'exact_payload': 'not json'}
+        broken['amended_sha256'] = control_center.amended_digest(broken)
+        decided = control_center.classify([amended(first, mine), broken], report['proposals'])
+        rows = gates.settle(self.local, decided)
+        self.assertEqual([(r['creative_id'][:15], r['verdict']) for r in rows],
+                         [('TT_CLASH_CLIP_C', 'post_it'), ('TT_CLASH_CLIP_C', 'reject')])
+        self.assertEqual([p['proposal_id'] for p in gates.pending(self.local)], [second['proposal_id']])
+
+    def test_an_unpinned_lock_or_a_missing_match_is_never_queued(self):
+        built = pack.build([take_on('drop-a', 1)], 'fulltime:2026-11-01:g2', '2026-11-01', rail('drop-a'),
+                           allowlist(), False)
+        loose = json.loads(json.dumps(built))
+        loose['items'][0]['lock_version'] = 'unlocked'
+        proposal = pack.proposal(loose, EXPIRES)
+        with self.assertRaises(ValueError) as caught:
+            gates.prepare(self.local, 'g2', proposal, {loose['items'][0]['creative_id']:
+                                                       {'unit_cost_gbp': None, 'unit_minutes': None, 'checks': {}}},
+                          checked=True)
+        self.assertIn('pinned lock', str(caught.exception))
 
     def test_an_old_digest_or_unverified_amendment_settles_nothing(self):
         _, proposal = queued_pack(self.local, '2026-11-01', take_on('drop-a', 1), drops=('drop-a',))
@@ -143,8 +178,27 @@ class GateLoop(unittest.TestCase):
                      'payload_sha256': proposal['payload_sha256']}
             gates.settle(self.local, control_center.classify([clear], report['proposals']))
         ledger = gates.verdicts(self.local)
+        self.assertTrue(all(r['unit_cost_recorded'] and r['prelive_checks_passed'] for r in ledger))
         self.assertTrue(formats.readiness(ledger, 'take_clip', LOCK)['ready'])
         self.assertFalse(formats.readiness(ledger, 'take_clip', 'b' * 64)['ready'])   # a new lock starts again
+
+    def test_two_gate_ids_can_never_share_one_file(self):
+        for bad in ('fulltime-g2-2026-11-01-g2:a', '../escape', 'fulltime g2'):
+            with self.assertRaises(ValueError):
+                gates._path(self.local, bad)
+        self.assertEqual(gates._path(self.local, 'fulltime-g2-2026-11-01-g2a').name, 'fulltime-g2-2026-11-01-g2a.json')
+
+    def test_a_check_nobody_recorded_has_not_passed(self):
+        for n, (day, drop) in enumerate((('2026-11-01', 'drop-a'), ('2026-11-02', 'drop-b'),
+                                         ('2026-11-03', 'drop-c')), start=1):
+            _, proposal = queued_pack(self.local, day, take_on(drop, n), drops=(drop,), skip=('captions_aligned',))
+            report = report_with_gates(self.local)
+            clear = {'proposal_id': proposal['proposal_id'], 'decision': 'approved',
+                     'payload_sha256': proposal['payload_sha256']}
+            gates.settle(self.local, control_center.classify([clear], report['proposals']))
+        ledger = gates.verdicts(self.local)
+        self.assertEqual({tuple(r['prelive_checks_missing']) for r in ledger}, {('captions_aligned',)})
+        self.assertFalse(formats.readiness(ledger, 'take_clip', LOCK)['ready'])
 
     def test_a_signed_g1_is_kept_as_the_week_spec(self):
         from engine import spec
@@ -246,6 +300,26 @@ class Capabilities(unittest.TestCase):
         summary = self.run_once()
         self.assertEqual(summary['status'], 'succeeded')
         self.assertNotIn('autonomy', summary)
+
+
+class StrictTime(unittest.TestCase):
+    """One parser, one answer on every Python from 3.9 (review of 27 October)."""
+
+    def test_rfc_3339_is_read_and_everything_else_refused(self):
+        from engine.records import instant
+        self.assertEqual(instant('2026-11-01T09:00:00Z').isoformat(), '2026-11-01T09:00:00+00:00')
+        self.assertEqual(instant('2026-11-01T09:00:00.5+01:00').isoformat(), '2026-11-01T09:00:00.500000+01:00')
+        self.assertEqual(instant('2026-11-01T09:00:00.123456789-05:30').microsecond, 123456)
+        for loose in ('2026-11-01T09:00Z', '2026-11-01 09:00:00+00:00', '2026-11-01T09:00:00', '20261101T090000Z',
+                      '2026-11-01T09:00:00+0100', '2026-11-01T09:00:00Z\n', None, 20261101):
+            with self.assertRaises(ValueError, msg=repr(loose)):
+                instant(loose)
+
+    def test_a_verdict_with_a_loose_time_is_refused_not_guessed(self):
+        verdict = {'format_id': 'take_clip', 'lock_version': LOCK, 'fixture_ref': 'fx', 'creative_id': 'X',
+                   'verdict': 'post_it', 'decided_at': '2026-11-01 09:00:00+00:00'}
+        with self.assertRaises(ValueError):
+            formats.readiness([verdict], 'take_clip', LOCK)
 
 
 if __name__ == '__main__':

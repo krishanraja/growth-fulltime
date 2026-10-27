@@ -1,10 +1,11 @@
 {
-  "_about": "The shape of local/buffer-channels.json, the only Buffer channels the engine may read. Every ID here is synthetic. The real file stays in the ignored local/ folder and names Full Time brand channels only: never a personal or other-product channel. A null buffer_channel_id is a channel Buffer does not carry, which Krish posts by hand.",
+  "_about": "The shape of local/buffer-channels.json, the only Buffer channels the engine may read. Every ID and name here is synthetic. The real file stays in the ignored local/ folder and names Full Time brand channels only: never a personal or other-product channel. organization_id is required, because Buffer's list_posts needs it. A null buffer_channel_id is a channel Buffer does not carry, which Krish posts by hand. The optional buffer_name is the channel name list_channels shows; when the session passes Buffer's own channel records, each ID must have the entry's service and that name. Reels and feed share one Instagram channel, so they share one ID; no other entries may.",
   "product": "fulltime",
   "organization_id": "000000000000000000000000",
   "channels": {
     "fulltime-tiktok": {
       "buffer_channel_id": "000000000000000000000001",
+      "buffer_name": "fulltime-synthetic-tiktok",
       "service": "tiktok",
       "channel": "tiktok",
       "account_scope": "brand",
@@ -12,6 +13,7 @@
     },
     "fulltime-ig-reels": {
       "buffer_channel_id": "000000000000000000000002",
+      "buffer_name": "fulltime-synthetic-instagram",
       "service": "instagram",
       "channel": "ig_reels",
       "account_scope": "brand",
@@ -19,6 +21,7 @@
     },
     "fulltime-ig-feed": {
       "buffer_channel_id": "000000000000000000000002",
+      "buffer_name": "fulltime-synthetic-instagram",
       "service": "instagram",
       "channel": "ig_feed",
       "account_scope": "brand",
@@ -26,6 +29,7 @@
     },
     "fulltime-yt-shorts": {
       "buffer_channel_id": "000000000000000000000003",
+      "buffer_name": "fulltime-synthetic-youtube",
       "service": "youtube",
       "channel": "yt_shorts",
       "account_scope": "brand",
@@ -33,6 +37,7 @@
     },
     "fulltime-threads": {
       "buffer_channel_id": "000000000000000000000004",
+      "buffer_name": "fulltime-synthetic-threads",
       "service": "threads",
       "channel": "threads",
       "account_scope": "brand",
@@ -40,6 +45,7 @@
     },
     "fulltime-x": {
       "buffer_channel_id": "000000000000000000000005",
+      "buffer_name": "fulltime-synthetic-x",
       "service": "twitter",
       "channel": "x",
       "account_scope": "brand",
@@ -47,6 +53,7 @@
     },
     "fulltime-facebook": {
       "buffer_channel_id": "000000000000000000000006",
+      "buffer_name": "fulltime-synthetic-facebook",
       "service": "facebook",
       "channel": "facebook",
       "account_scope": "brand",

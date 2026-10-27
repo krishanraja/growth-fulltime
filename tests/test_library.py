@@ -18,6 +18,7 @@ WEEK = '2026-W44'
 MATCH = '03_Runs/2026-W44/2026-10-31_reds-blues'
 CLIP = MATCH + '/2026-10-31_take_clip_zen_reds-blues_tiktok_TT_CLASH_CLIP_C01_H01_V1_20261031.mp4'
 SPEC_V1 = '01_Strategy/2026-W44/2026-W44_campaign-spec_v1.json'
+ARCHIVED_CLIP = '99_Archive/2026-W45/03_Runs/2026-W44--2026-10-31_reds-blues/' + CLIP.split('/')[-1]
 SHA_A, SHA_B, SHA_C = 'a' * 64, 'b' * 64, 'c' * 64
 
 
@@ -53,7 +54,9 @@ class Names(unittest.TestCase):
             '06_Reference/baseline/2026-10-27_baseline_v1.json', '06_Reference/rulings/2026-10-27_rulings_v2.json',
             '06_Reference/backups/2026-10-27/fulltime-growth-backup-2026-10-27.zip.part01',
             '06_Reference/backups/2026-10-27/fulltime-growth-backup-2026-10-27.json',
-            '99_Archive/2026-W45/' + SPEC_V1,
+            '06_Reference/creative-handoff/2026-11-15/fulltime-creative-system-2026-11-15.zip.part01',
+            '99_Archive/2026-W45/' + SPEC_V1, ARCHIVED_CLIP,
+            '99_Archive/2026-W45/02_Formats/take_clip--v1/lock-card.md', '99_Archive/2026-W45/04_Learning/register.csv',
         ]
         for path in good:
             with self.subTest(path=path):
@@ -100,6 +103,14 @@ class Names(unittest.TestCase):
             '99_Archive/2026-W44/plan.md': tree,
             '99_Archive/2026-W44/99_Archive/2026-W43/' + SPEC_V1: tree,
             '02_Formats/take_clip/v1/a/b/lock-card.md': depth,
+            '99_Archive/2026-W45/' + CLIP: depth,
+            '99_Archive/2026-W45/03_Runs/2026-W44----2026-10-31_reds-blues/pack.json': tree,
+            '99_Archive/2026-W45/03_Runs/2026-W44/pack.json': tree,
+            '99_Archive/2026-W45/01_Strategy/2026-W44/Plan.md': names,
+            '06_Reference/creative-handoff/2026-11-15/Plan FINAL (2).docx': names,
+            '06_Reference/creative-handoff/2027-03-01/\u00dcn\u00efcode Notes.md': names,
+            '02_Formats/take_clip/v1/aux.md': names,
+            '06_Reference/backups/2026-10-27/con.json': names,
         }
         for path, rule in cases.items():
             with self.subTest(path=path):
@@ -126,20 +137,51 @@ class Names(unittest.TestCase):
         self.assertTrue(library.name_errors(library.ADOPTED + 'latest/' + adopted[0]))
         self.assertTrue(library.name_errors(library.ADOPTED + '2026-10-27/sub/' + adopted[0]))
         self.assertTrue(library.name_errors(library.ADOPTED + adopted[0]))
+        self.assertEqual(library.ADOPTED_DATES, ('2026-10-27',))
 
-    def test_an_archived_copy_keeps_its_path_and_its_rules(self):
-        self.assertEqual(library.name_errors('99_Archive/2026-W45/' + CLIP), [])
-        self.assertEqual(library.folder_errors('99_Archive/2026-W45/' + MATCH), [])
+    def test_only_the_adopted_date_keeps_original_names(self):
+        for day in ('2026-11-15', '2027-03-01'):
+            for name in ('Plan FINAL (2).docx', 'Synthetic Handoff Notes (final).md'):
+                with self.subTest(day=day, name=name):
+                    errors = library.name_errors(library.ADOPTED + day + '/' + name)
+                    self.assertIn('rule 3', ' '.join(errors))
+            self.assertEqual(library.name_errors(library.ADOPTED + day + '/assemble-notes.md'), [])
+        self.assertEqual(library.folder_errors(library.ADOPTED + '2026-11-15'), [])
+
+    def test_an_original_name_must_be_one_windows_can_hold(self):
+        for name in ('CON', 'con.md', 'Aux.txt', 'NUL .md', 'COM1.log', 'lpt9', 'notes.md:hidden', 'a<b>.md',
+                     'what?.md', 'star*.md', 'pipe|.md', 'say "hi".md', 'Notes.md.', 'Notes.md '):
+            with self.subTest(name=name):
+                self.assertIn('Windows', ' '.join(library.name_errors(library.ADOPTED + '2026-10-27/' + name)))
+        for name in ('console.md', 'COM10.md', 'auxiliary notes.md', 'Notes (v2).md', '.hidden-start.md'):
+            with self.subTest(name=name):
+                self.assertEqual(library.name_errors(library.ADOPTED + '2026-10-27/' + name), [])
+
+    def test_an_archived_copy_keeps_its_rules_within_the_depth_limit(self):
+        # Rule 2 has no exception for 99_Archive: an archived run file is 4 folders deep, not 5.
+        self.assertEqual(library.archived_path(CLIP, '2026-W45'), ARCHIVED_CLIP)
+        self.assertEqual(library.name_errors(ARCHIVED_CLIP), [])
+        self.assertEqual(len(ARCHIVED_CLIP.split('/')) - 1, library.MAX_DEPTH)
+        self.assertIn('rule 2, depth', ' '.join(library.name_errors('99_Archive/2026-W45/' + CLIP)))
+        self.assertEqual(library.folder_errors('99_Archive/2026-W45/03_Runs/2026-W44--2026-10-31_reds-blues'), [])
+        self.assertIn('rule 2', ' '.join(library.folder_errors('99_Archive/2026-W45/' + MATCH)))
+        self.assertEqual(library.archived_path(SPEC_V1, '2026-W45'), '99_Archive/2026-W45/' + SPEC_V1)
+        self.assertEqual(library.archived_path('04_Learning/register.csv', '2026-W45'),
+                         '99_Archive/2026-W45/04_Learning/register.csv')
         self.assertTrue(library.name_errors('99_Archive/2026-W45/01_Strategy/2026-W44/Plan.md'))
+        self.assertTrue(library.name_errors('99_Archive/2026-W45/03_Runs/2026-W44--2026-10-31_greens-blues/'
+                                            + CLIP.split('/')[-1]))      # the name still names its own match
         self.assertTrue(library.name_errors('99_Archive/latest/' + SPEC_V1))
 
     def test_folders_outside_the_tree_are_named(self):
         for folder in ('00_START-HERE', '01_Strategy/2026-W44', '02_Formats/take_clip/v2', MATCH, MATCH + '/',
-                       '04_Learning/2026-W44', '06_Reference/creative-handoff/2026-10-27', '99_Archive/2026-W45'):
+                       '04_Learning/2026-W44', '06_Reference/creative-handoff/2026-10-27', '99_Archive/2026-W45',
+                       '99_Archive/2026-W45/03_Runs/2026-W44--2026-10-31_reds-blues'):
             with self.subTest(folder=folder):
                 self.assertEqual(library.folder_errors(folder), [])
         for folder in ('New folder', 'Growth', '01_Strategy/drafts', '03_Runs/2026-W44/reds-blues',
-                       '05_Brand-Kit/templates', '06_Reference/backups/latest', '00_START-HERE/old'):
+                       '05_Brand-Kit/templates', '06_Reference/backups/latest', '00_START-HERE/old',
+                       '99_Archive/2026-W45/' + MATCH):
             with self.subTest(folder=folder):
                 self.assertIn('rule 2', ' '.join(library.folder_errors(folder)))
 
@@ -263,6 +305,20 @@ class Reconcile(unittest.TestCase):
         self.assertEqual(result['duplicates'], [{'sha256': None, 'paths': [SPEC_V1, SPEC_V1]}])
         self.assertFalse(result['clean'])
 
+    def test_a_folder_listed_twice_is_a_duplicate(self):
+        # Drive allows two same-named folders under one parent; files split across them are sprawl.
+        data = example()
+        twice = [dict(e) for e in data['listing'] if e['path'] in ('01_Strategy', '01_Strategy/2026-W44')]
+        data['listing'] += twice
+        result = library.reconcile(data['listing'], data['index'])
+        self.assertFalse(result['clean'])
+        self.assertEqual(result['duplicates'], [{'sha256': None, 'paths': ['01_Strategy', '01_Strategy']},
+                                                {'sha256': None, 'paths': ['01_Strategy/2026-W44'] * 2}])
+        self.assertIn('2 sets of duplicates', library.hold(result)['detail'])
+        data = example()
+        data['listing'].append({'path': '01_Strategy/', 'bytes': None, 'is_folder': True})
+        self.assertFalse(library.reconcile(data['listing'], data['index'])['clean'])
+
     def test_index_csv_needs_no_row_of_its_own(self):
         data = example()
         self.assertIn(library.INDEX_PATH, [e['path'] for e in data['listing']])
@@ -314,6 +370,16 @@ class Filing(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'rule 5'):
             library.file_plan([row(SPEC_V1, sha=SHA_A)], SPEC_V1, SHA_B, 10, 'campaign_spec', 'x')
 
+    def test_a_windows_twin_of_a_filed_path_is_never_overwritten(self):
+        # On the H: mount, case-only and trailing-dot twins are the same file.
+        folder = library.ADOPTED + '2026-10-27/'
+        rows = [row(folder + 'Notes.md', sha=SHA_A, status='reference')]
+        for twin in ('notes.md', 'NOTES.MD', 'Notes.MD'):
+            with self.subTest(twin=twin):
+                with self.assertRaisesRegex(ValueError, 'rule 5.*on Windows'):
+                    library.file_plan(rows, folder + twin, SHA_B, 5, 'note', 'x')
+        self.assertEqual(library.file_plan(rows, folder + 'Notes-2.md', SHA_B, 5, 'note', 'x')['action'], 'file')
+
     def test_bad_columns_are_refused(self):
         with self.assertRaisesRegex(ValueError, 'its name gives week'):
             library.file_plan([], CLIP, SHA_A, 1, 'instance', 'x', week='2026-W45')
@@ -340,7 +406,9 @@ class Archive(unittest.TestCase):
     def test_archive_plans_only_move_and_never_delete(self):
         plan = library.archive_plan(self.rows(), WEEK)
         self.assertEqual(plan, [{'move': SPEC_V1, 'to': '99_Archive/2026-W44/' + SPEC_V1},
-                                {'move': CLIP, 'to': '99_Archive/2026-W44/' + CLIP}])
+                                {'move': CLIP, 'to': library.archived_path(CLIP, WEEK)}])
+        self.assertEqual(plan[1]['to'], '99_Archive/2026-W44/03_Runs/2026-W44--2026-10-31_reds-blues/'
+                         + CLIP.split('/')[-1])
         for step in plan:
             self.assertEqual(set(step), {'move', 'to'})
             self.assertEqual(library.name_errors(step['to']), [])
@@ -355,6 +423,20 @@ class Archive(unittest.TestCase):
         result = library.reconcile(listing, moved)
         self.assertTrue(result['clean'], result)
         self.assertEqual(library.archive_plan(moved, WEEK), [])
+
+    def test_same_named_files_from_different_folders_archive_without_a_clash(self):
+        rows = [row('02_Formats/take_clip/v1/lock-card.md', sha=SHA_A, status='superseded'),
+                row('02_Formats/row/v1/lock-card.md', sha=SHA_B, status='superseded'),
+                row(MATCH + '/pack.json', sha=SHA_C, status='rejected'),
+                row('03_Runs/2026-W44/2026-11-01_greens-blues/pack.json', sha='d' * 64, status='rejected')]
+        plan = library.archive_plan(rows, WEEK)
+        targets = [step['to'] for step in plan]
+        self.assertEqual(len(set(targets)), 4)
+        self.assertIn('99_Archive/2026-W44/02_Formats/take_clip--v1/lock-card.md', targets)
+        self.assertIn('99_Archive/2026-W44/03_Runs/2026-W44--2026-11-01_greens-blues/pack.json', targets)
+        for target in targets:
+            self.assertEqual(library.name_errors(target), [])
+            self.assertLessEqual(len(target.split('/')) - 1, library.MAX_DEPTH)
 
     def test_a_move_onto_an_indexed_path_is_refused(self):
         rows = self.rows() + [row('99_Archive/2026-W44/' + SPEC_V1, sha='f' * 64, status='superseded')]
@@ -499,6 +581,42 @@ class Backups(unittest.TestCase):
             library.assemble(manifest, parts_dir, restored)
         self.assertFalse((restored / 'fake.zip').exists())
 
+    def test_a_zip_the_test_cannot_read_is_refused_and_removed(self):
+        import hashlib
+        import struct
+        source = self.root / 'whole.zip'
+        with zipfile.ZipFile(source, 'w', compression=zipfile.ZIP_DEFLATED) as packed:
+            packed.writestr('a.txt', b'synthetic ledger line\n' * 200)
+        body = source.read_bytes()
+        central = body.find(b'PK\x01\x02')
+        start = 30 + struct.unpack('<H', body[26:28])[0] + struct.unpack('<H', body[28:30])[0]
+
+        def method(data):               # compression method 99, which zipfile does not support
+            data[8:10] = data[central + 10:central + 12] = struct.pack('<H', 99)
+
+        def encrypted(data):            # the encryption flag, which needs a password
+            for at in (6, central + 8):
+                data[at:at + 2] = struct.pack('<H', struct.unpack('<H', data[at:at + 2])[0] | 1)
+
+        def deflate(data):              # a broken Deflate stream
+            data[start] ^= 0xFF
+        for name, change in (('method', method), ('encrypted', encrypted), ('deflate', deflate)):
+            data = bytearray(body)
+            change(data)
+            parts_dir = self.root / ('parts-' + name)
+            parts_dir.mkdir()
+            (parts_dir / 'w.zip.part01').write_bytes(bytes(data))
+            digest = hashlib.sha256(bytes(data)).hexdigest()
+            manifest = {'schema_version': 1, 'archives': [{'file_name': 'w.zip', 'bytes': len(data), 'sha256': digest,
+                        'parts': [{'file_name': 'w.zip.part01', 'part_number': 1, 'bytes': len(data),
+                                   'sha256': digest}]}]}
+            restored = self.root / ('restored-' + name)
+            with self.subTest(change=name):
+                for _ in range(2):      # the rerun meets the same refusal, not "Refusing to overwrite"
+                    with self.assertRaisesRegex(ValueError, 'ZIP'):
+                        library.assemble(manifest, parts_dir, restored)
+                    self.assertEqual(list(restored.iterdir()), [])
+
     def test_a_wrong_whole_archive_hash_is_refused(self):
         manifest = self.make()
         manifest['archives'][0]['sha256'] = '0' * 64
@@ -531,6 +649,71 @@ class Backups(unittest.TestCase):
         library.assemble(manifest, self.out, restored)
         with zipfile.ZipFile(restored / manifest['archives'][0]['file_name']) as packed:
             self.assertEqual(sorted(packed.namelist()), ['member-0.bin', 'member-1.bin', 'member-2.bin'])
+
+
+class CanvaMirror(unittest.TestCase):
+    """Rule 8: Canva's Growth folder holds Templates and the Drive tree's week folders only."""
+
+    def listing(self):
+        return [{'path': 'Templates', 'is_folder': True},
+                {'path': 'Templates/template_1080x1920_cover', 'is_folder': False},
+                {'path': 'Templates/template_1080x1350_carousel-ten-page', 'is_folder': False},
+                {'path': WEEK, 'is_folder': True},
+                {'path': WEEK + '/Morning card for reds v blues', 'is_folder': False}]
+
+    def test_the_mirror_reconciles_clean(self):
+        result = library.canva_reconcile(self.listing())
+        self.assertEqual(result, {'outside_tree': [], 'misnamed': [], 'duplicates': [], 'clean': True})
+        self.assertIsNone(library.hold(result, 'The Canva Growth folder'))
+
+    def test_sprawl_in_the_mirror_is_reported_and_holds_the_report(self):
+        listing = self.listing() + [
+            {'path': 'Old stuff', 'is_folder': True}, {'path': 'Old stuff/draft', 'is_folder': False},
+            {'path': 'loose design', 'is_folder': False}, {'path': '2026-W54', 'is_folder': True},
+            {'path': WEEK + '/drafts', 'is_folder': True}, {'path': 'Templates/Cover FINAL', 'is_folder': False},
+            {'path': 'Templates', 'is_folder': True}]
+        result = library.canva_reconcile(listing)
+        self.assertFalse(result['clean'])
+        self.assertEqual(result['outside_tree'], sorted(['Old stuff', 'Old stuff/draft', 'loose design', '2026-W54',
+                                                         WEEK + '/drafts']))
+        self.assertEqual([m['path'] for m in result['misnamed']], ['Templates/Cover FINAL'])
+        self.assertIn('rule 8', result['misnamed'][0]['errors'][0])
+        self.assertEqual(result['duplicates'], [{'sha256': None, 'paths': ['Templates', 'Templates']}])
+        detail = library.hold(result, 'The Canva Growth folder')['detail']
+        self.assertTrue(detail.startswith('The Canva Growth folder needs tidying: 5 items outside the fixed tree'))
+
+    def test_a_malformed_canva_listing_is_refused(self):
+        for listing in ({'path': 'Templates'}, [{'path': 'Templates'}], [{'path': 3, 'is_folder': True}]):
+            with self.subTest(listing=listing):
+                with self.assertRaises(ValueError):
+                    library.canva_reconcile(listing)
+
+
+class SourceStamp(unittest.TestCase):
+    """Rule 9: a Drive copy of a public doc carries one source: <path>@<commit> stamp."""
+
+    def test_a_stamped_copy_passes(self):
+        text = '# Engine v2\n\nsource: docs/ENGINE-V2.md@' + '0' * 40 + '\n\nThe plan.\n'
+        self.assertEqual(library.stamp_errors(text), [])
+        self.assertEqual(library.stamp_errors(text, 'docs/ENGINE-V2.md'), [])
+        self.assertEqual(library.stamp_errors('  source: README.md@abc1234  \n'), [])
+
+    def test_a_missing_wrong_or_doubled_stamp_is_refused(self):
+        stamp = 'source: docs/ENGINE-V2.md@' + '0' * 40
+        cases = {'none': 'The plan, copied by hand.', 'two': stamp + '\n' + stamp,
+                 'no commit': 'source: docs/ENGINE-V2.md', 'short commit': 'source: docs/ENGINE-V2.md@abc',
+                 'upper commit': 'source: docs/ENGINE-V2.md@' + 'A' * 40, 'free text': 'source: librarian 2026-10-27',
+                 'outside the repo': 'source: ../secrets.md@' + '0' * 40, 'private': 'source: local/notes.md@abc1234',
+                 'backslashes': 'source: docs\\ENGINE-V2.md@abc1234'}
+        for name, text in cases.items():
+            with self.subTest(case=name):
+                errors = library.stamp_errors(text)
+                self.assertTrue(errors)
+                self.assertIn('rule 9', errors[0])
+        self.assertIn('not README.md', library.stamp_errors(stamp, 'README.md')[0])
+        self.assertTrue(library.stamp_errors(None))
+        # Prose that mentions the stamp mid-line is not a stamp.
+        self.assertTrue(library.stamp_errors('Each Drive copy carries a source: <path>@<commit> stamp.'))
 
 
 class House(unittest.TestCase):

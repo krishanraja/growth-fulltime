@@ -15,7 +15,7 @@ Crew card (docs/ENGINE-V2.md, section 2a), loaded whenever anything is filed int
 
 **Measured check after acting: `engine.library.reconcile()`.** The Drive readback against INDEX.csv: zero files outside the tree, zero orphans, zero duplicates and zero misnamed files, or `engine.library.hold()` puts a LIBRARY hold at the top of the report. `assemble()` re-hashes every downloaded backup part before it is trusted.
 
-**Not built yet.** The Canva `Growth/` mirror reconcile (rule 8), and the `source: <path>@<commit>` stamp check on Drive copies of public docs (rule 9).
+**Rules 8 and 9.** `engine.library.canva_reconcile()` checks the Canva `Growth/` mirror's structure, and `engine.library.stamp_errors()` the `source: <path>@<commit>` stamp on a Drive copy of a public doc. Not built yet: a name pattern for week designs, and the weekly backup on a schedule.
 
 **Never.** Delete or overwrite a file: a new version is a new `_v<n>`, and old ones move to `99_Archive` at week close. Change sharing or permissions. Write outside Growth Build. Write into `00_Brand-Assets`, which is read only.
 

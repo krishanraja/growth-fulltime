@@ -1,5 +1,5 @@
 {
-  "_about": "A synthetic Growth Build library that reconciles cleanly: the listing is the shape engine/library.py reconcile() reads (one entry per Drive folder and file, its path relative to Growth Build, bytes null for folders), and index holds the matching INDEX.csv rows as read_index() returns them. Every hash, name and source here is made up; there are no Drive file IDs. The real listing and INDEX.csv stay private in Drive.",
+  "_about": "A synthetic Growth Build library that reconciles cleanly: the listing is the shape engine/library.py reconcile() reads (one entry per Drive folder and file, its path relative to Growth Build, bytes null for folders), and index holds the matching INDEX.csv rows as read_index() returns them. An archived run file shows 99_Archive's layout: the top folder, the original subfolders joined by --, and the name, so the depth stays 4 or less. Every hash, name and source here is made up; there are no Drive file IDs. The real listing and INDEX.csv stay private in Drive.",
   "listing": [
     {
       "path": "00_START-HERE",
@@ -184,6 +184,21 @@
     {
       "path": "99_Archive/2026-W44/01_Strategy/2026-W43/2026-W43_weekly-report_v1.md",
       "bytes": 2400,
+      "is_folder": false
+    },
+    {
+      "path": "99_Archive/2026-W44/03_Runs",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "99_Archive/2026-W44/03_Runs/2026-W43--2026-10-25_greens-whites",
+      "bytes": null,
+      "is_folder": true
+    },
+    {
+      "path": "99_Archive/2026-W44/03_Runs/2026-W43--2026-10-25_greens-whites/pack.json",
+      "bytes": 5900,
       "is_folder": false
     }
   ],
@@ -395,6 +410,20 @@
       "status": "superseded",
       "sha256": "f8fb4cdd4ab45d36b88ebffad0f3575e69ce1640cf60afc374615438db1cd6a0",
       "bytes": "2400",
+      "drive_file_id": "",
+      "source": "repo commit 0000000"
+    },
+    {
+      "path": "99_Archive/2026-W44/03_Runs/2026-W43--2026-10-25_greens-whites/pack.json",
+      "kind": "pack",
+      "week": "2026-W43",
+      "match": "greens-whites",
+      "format": "",
+      "pundit": "",
+      "channel": "",
+      "status": "superseded",
+      "sha256": "8cfb23dd79f05aad34477deeac2a5f92e49a61c73c11176cc4982186b9df77bd",
+      "bytes": "5900",
       "drive_file_id": "",
       "source": "repo commit 0000000"
     }

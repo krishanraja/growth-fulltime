@@ -9,6 +9,8 @@ per file. This module is the rulebook and the planner:
 - read_index() and write_index() keep INDEX.csv in one exact shape;
 - reconcile() compares a Drive listing with the index and finds the sprawl, and
   hold() turns an unclean result into the LIBRARY hold for Control Center;
+- canva_reconcile() checks the Canva Growth/ mirror the same way (rule 8), and
+  stamp_errors() checks the source stamp on a Drive copy of a public doc (rule 9);
 - file_plan() and archive_plan() say what to file or move, never what to delete;
 - bundle() and assemble() make and check the numbered-part backups that the
   Drive connector's 100 MB upload cap needs, ported from the 27 October
@@ -33,8 +35,14 @@ TREE = ('00_START-HERE', '01_Strategy', '02_Formats', '03_Runs', '04_Learning', 
 INDEX_FIELDS = ('path', 'kind', 'week', 'match', 'format', 'pundit', 'channel', 'status', 'sha256', 'bytes',
                 'drive_file_id', 'source')
 # The 27 October handoff moved here unrenamed, so its files keep their original names.
+# Only that adopted date is exempt from rule 3: a later handoff folder follows the pattern.
 ADOPTED = '06_Reference/creative-handoff/'
+ADOPTED_DATES = ('2026-10-27',)
 ARCHIVE = '99_Archive/'
+# An archived file keeps its top folder and name, and its original subfolders become one
+# folder joined by JOIN, so 99_Archive stays within rule 2's depth. No tree folder name
+# holds two hyphens in a row, so the original path is always recoverable.
+JOIN = '--'
 FORMATS = spec.FORMATS
 CHANNELS = spec.CHANNELS
 START_FILES = ('START-HERE.md', 'INDEX.csv')
@@ -45,7 +53,7 @@ STATUSES = ('draft', 'reviewed', 'verdict', 'posted', 'current', 'reference', 's
 ARCHIVE_STATUSES = ('superseded', 'rejected')
 DIMS = ('week', 'match', 'format', 'pundit', 'channel', 'status', 'drive_file_id')
 PENDING = 'pending-local'      # a row whose bytes were not hashed yet
-MAX_DEPTH = 4                  # folders below Growth Build, for the live tree
+MAX_DEPTH = 4                  # folders below Growth Build, 99_Archive included
 PART_BYTES = 90 * 1024 * 1024
 UPLOAD_CAP = 100 * 1000 * 1000  # the Drive connector's upload cap
 BLOCK = 4 * 1024 * 1024
@@ -75,6 +83,13 @@ LOCK = re.compile(r'^(?:unlocked|[0-9a-f]{64}|v[1-9][0-9]*)$')
 SHA = re.compile(r'^[0-9a-f]{64}$')
 DIGITS = re.compile(r'^[0-9]+$')
 DRIVE_ID = re.compile(r'^[A-Za-z0-9_-]*$')
+# Names Windows cannot hold, or holds as another file, on the H: mount of Growth Build.
+WINDOWS_BAD = re.compile(r'[<>:"|?*]')
+WINDOWS_DEVICES = {'CON', 'PRN', 'AUX', 'NUL'} | {f'{d}{n}' for d in ('COM', 'LPT') for n in range(1, 10)}
+STAMP_RULE = 'rule 9, single source'
+STAMP = re.compile(r'^source: (\S+)@([0-9a-f]{7,40})$')
+CANVA_RULE = 'rule 8, Canva mirrors the tree'
+TEMPLATE = re.compile(r'^template_[0-9]+x[0-9]+_[a-z0-9]+(?:[_-][a-z0-9]+)*$')
 
 LAYOUT = {
     '00_START-HERE': '00_START-HERE/START-HERE.md or 00_START-HERE/INDEX.csv',
@@ -88,7 +103,8 @@ LAYOUT = {
                      '06_Reference/rulings/<YYYY-MM-DD>_rulings_v<n>.json, '
                      '06_Reference/backups/<YYYY-MM-DD>/<part or manifest> or '
                      '06_Reference/creative-handoff/<YYYY-MM-DD>/<adopted name>'),
-    '99_Archive': "99_Archive/<YYYY-Www>/<the archived file's original path>",
+    '99_Archive': ("99_Archive/<YYYY-Www>/<top folder>/<its original subfolders joined by -->/<original name>, "
+                   'for example 99_Archive/2026-W45/03_Runs/2026-W44--2026-10-31_reds-blues/pack.json'),
 }
 
 
@@ -301,7 +317,24 @@ def _reference(folders, name):
     if sub == 'backups' and not (PART.match(name) or MANIFEST.match(name)):
         return [f'{NAME_RULE}: a backup folder holds only numbered parts (<name>.zip.partNN) and manifests '
                 f'(<name>.json) in lowercase ASCII, not {name!r}'], dims
+    if sub == REFERENCE[3] and folders[2] not in ADOPTED_DATES and not ENGINE_NAME.match(name):
+        return [f'{NAME_RULE}: only the adopted {", ".join(ADOPTED_DATES)} handoff keeps its original names; '
+                f'{name!r} must be a lowercase <name>.<ext>'], dims
     return [], dims       # adopted handoff files keep their original names
+
+
+def _windows_errors(name):
+    """Why Windows could not hold this original name as its own file, if it could not."""
+    stem = name.split('.')[0].rstrip(' ').upper()
+    if WINDOWS_BAD.search(name) or stem in WINDOWS_DEVICES or name[-1] in '. ':
+        return [f'{NAME_RULE}: {name!r} is not a name Windows can hold as its own file (no <>:"|?*, no device '
+                'name such as CON or AUX, and no trailing dot or space)']
+    return []
+
+
+def _windows_key(path):
+    """The path as Windows compares it: case folded, trailing dots and spaces dropped from each part."""
+    return '/'.join(part.rstrip('. ').casefold() for part in path.split('/'))
 
 
 CHECKS = {'00_START-HERE': _start_here, '01_Strategy': _strategy, '02_Formats': _formats, '03_Runs': _runs,
@@ -310,26 +343,47 @@ CHECKS = {'00_START-HERE': _start_here, '01_Strategy': _strategy, '02_Formats': 
 
 def _check(parts, folder):
     """Every rule a split path breaks, and the index columns its name gives."""
-    depth = len(parts) - (0 if folder else 1)
-    if parts[0] != TREE[-1] and depth > MAX_DEPTH:
-        return [f'{DEPTH_RULE}: {depth} folders deep; Growth Build allows at most {MAX_DEPTH}'], {}
     if not folder and len(parts) == 1:
         return [f'{TREE_RULE}: nothing sits at the top of Growth Build; file it inside a numbered folder'], {}
     top = parts[0]
     if top not in TREE:
         return [f'{TREE_RULE}: {top!r} is not one of the numbered folders ({", ".join(TREE)})'], {}
+    if top == TREE[-1] and len(parts) > 2 and parts[2] == top:
+        return [f'{TREE_RULE}: an archived copy is never archived again'], {}
+    depth = len(parts) - (0 if folder else 1)
+    if depth > MAX_DEPTH:
+        return [f'{DEPTH_RULE}: {depth} folders deep; Growth Build allows at most {MAX_DEPTH}'], {}
     if top != TREE[-1]:
         folders, name = (parts, None) if folder else (parts[:-1], parts[-1])
-        return CHECKS[top](folders, name)
+        errors, dims = CHECKS[top](folders, name)
+        return (errors or ([] if folder else _windows_errors(name))), dims
     if len(parts) > 1 and not _week(parts[1]):
         return [f'{TREE_RULE}: {parts[1]!r} is not a week folder; the layout is {LAYOUT[top]}'], {}
     if len(parts) <= (2 if folder else 3):
         if folder:
             return [], {}
-        return [f'{TREE_RULE}: archived files keep their original path; the layout is {LAYOUT[top]}'], {}
-    if parts[2] == top:
-        return [f'{TREE_RULE}: an archived copy is never archived again'], {}
-    return _check(parts[2:], folder)
+        return [f'{TREE_RULE}: an archived file keeps its top folder and name; the layout is {LAYOUT[top]}'], {}
+    original = _unarchived(parts[2:], folder)
+    if original is None:
+        return [f'{TREE_RULE}: {"/".join(parts[3:])!r} does not join its original subfolders with {JOIN}; '
+                f'the layout is {LAYOUT[top]}'], {}
+    return _check(original, folder)
+
+
+def _unarchived(rest, folder):
+    """The original path parts of an archived path below 99_Archive/<week>/, or None."""
+    joined = rest[1:] if folder else rest[1:-1]
+    middle = joined[0].split(JOIN) if joined else []
+    if '' in middle:
+        return None
+    return [rest[0]] + middle + ([] if folder else [rest[-1]])
+
+
+def archived_path(path, week):
+    """Where a filed path goes in 99_Archive at the close of week, within the depth limit."""
+    parts = path.split('/')
+    folders = [JOIN.join(parts[1:-1])] if len(parts) > 2 else []
+    return '/'.join([TREE[-1], week, parts[0]] + folders + [parts[-1]])
 
 
 def name_errors(path):
@@ -442,17 +496,19 @@ def reconcile(listing, rows):
 
     outside_tree, orphans (files with no row), missing (rows with no file) and
     pending_hashes are sorted paths; misnamed is [{path, errors}]; duplicates is
-    [{sha256, paths}], where sha256 None marks one path listed more than once;
+    [{sha256, paths}], where sha256 None marks one path (file or folder) listed more
+    than once, as Drive allows two same-named items under one parent;
     size_mismatch is [{path, listed_bytes, indexed_bytes}]. clean is true only when
     every list except pending_hashes is empty. INDEX.csv itself needs no row, and a
     listed file whose bytes are null (a Drive-native document) skips the size check."""
     entries = _listing(listing)
     rows = _rows(rows)
     by_path = {row['path']: row for row in rows}
-    outside, misnamed, orphans, sizes, files = [], [], [], [], {}
+    outside, misnamed, orphans, sizes, files, folders = [], [], [], [], {}, {}
     for path, size, is_folder in entries:
         parts, error = _parts(path, folder=is_folder)
         if is_folder:
+            folders[path] = folders.get(path, 0) + 1
             if error or _check(parts, True)[0]:
                 outside.append(path)
             continue
@@ -474,8 +530,8 @@ def reconcile(listing, rows):
         if row['sha256'] != PENDING:
             by_sha.setdefault(row['sha256'], []).append(row['path'])
     duplicates = [{'sha256': sha, 'paths': sorted(paths)} for sha, paths in sorted(by_sha.items()) if len(paths) > 1]
-    duplicates += [{'sha256': None, 'paths': [path] * len(found)} for path, found in sorted(files.items())
-                   if len(found) > 1]
+    duplicates += [{'sha256': None, 'paths': [path] * count} for path, count in
+                   sorted([(p, len(found)) for p, found in files.items()] + list(folders.items())) if count > 1]
     result = {'outside_tree': sorted(set(outside)), 'misnamed': sorted(misnamed, key=lambda m: m['path']),
               'orphans': sorted(set(orphans)), 'missing': sorted(p for p in by_path if p not in files),
               'duplicates': duplicates, 'size_mismatch': sorted(sizes, key=lambda s: s['path']),
@@ -492,16 +548,68 @@ HOLD_COUNTS = (('outside_tree', 'item outside the fixed tree', 'items outside th
                ('size_mismatch', 'size that does not match its row', 'sizes that do not match their rows'))
 
 
-def hold(result):
-    """None when the library is clean, else the LIBRARY entry for the report's holds."""
+def hold(result, place='The Growth Build library'):
+    """None when the library is clean, else the LIBRARY entry for the report's holds.
+    place names what was reconciled, such as 'The Canva Growth folder'."""
     if result.get('clean'):
         return None
     sizes = [(len(result.get(key) or []), one, many) for key, one, many in HOLD_COUNTS]
     counts = [f'{n} {one if n == 1 else many}' for n, one, many in sizes if n]
     if not counts:
-        return {'code': 'LIBRARY', 'detail': 'The Growth Build library did not reconcile cleanly.'}
+        return {'code': 'LIBRARY', 'detail': f'{place} did not reconcile cleanly.'}
     listed = counts[0] if len(counts) == 1 else ', '.join(counts[:-1]) + ' and ' + counts[-1]
-    return {'code': 'LIBRARY', 'detail': f'The Growth Build library needs tidying: {listed}.'}
+    return {'code': 'LIBRARY', 'detail': f'{place} needs tidying: {listed}.'}
+
+
+def canva_reconcile(listing):
+    """Check the Canva Growth/ mirror (rule 8) the way reconcile() checks Drive.
+
+    listing is [{path, is_folder}] relative to the Full Time project's Growth folder,
+    with bytes null or left out. Growth holds only Templates and real week folders
+    (YYYY-Www, the Drive tree's names), one level deep; each template is named
+    template_<size>_<use>. Week designs are not name-checked: the plan sets no pattern
+    for them yet. Returns outside_tree, misnamed, duplicates and clean, which hold()
+    reads with place='The Canva Growth folder'."""
+    if not isinstance(listing, list):
+        raise ValueError('a Canva listing must be a list of {path, is_folder}')
+    entries = _listing([dict(e, bytes=None) if isinstance(e, dict) else e for e in listing])
+    outside, misnamed, seen = [], [], {}
+    for path, _, is_folder in entries:
+        seen[path] = seen.get(path, 0) + 1
+        parts, error = _parts(path, folder=is_folder)
+        home = None if error else parts[0]
+        if error or (home != 'Templates' and not _week(home)) or len(parts) > (1 if is_folder else 2) \
+                or (not is_folder and len(parts) == 1):
+            outside.append(path)
+        elif home == 'Templates' and not is_folder and not TEMPLATE.match(parts[1]):
+            misnamed.append({'path': path, 'errors': [f'{path}: {CANVA_RULE}: {parts[1]!r} is not '
+                                                       'template_<size>_<use>, such as template_1080x1920_cover']})
+    duplicates = [{'sha256': None, 'paths': [path] * n} for path, n in sorted(seen.items()) if n > 1]
+    result = {'outside_tree': sorted(set(outside)), 'misnamed': sorted(misnamed, key=lambda m: m['path']),
+              'duplicates': duplicates}
+    result['clean'] = not any(result.values())
+    return result
+
+
+def stamp_errors(text, repo_path=None):
+    """Why a Drive copy of a public doc does not carry its one source stamp (rule 9): a line
+    reading exactly 'source: <repo path>@<commit>', naming repo_path when it is given."""
+    if not isinstance(text, str):
+        return [f'{STAMP_RULE}: the Drive copy must be read as text']
+    stamps = [STAMP.match(line.strip()) for line in text.splitlines() if line.strip().startswith('source:')]
+    if not stamps:
+        return [f'{STAMP_RULE}: the Drive copy carries no "source: <path>@<commit>" stamp']
+    if len(stamps) > 1:
+        return [f'{STAMP_RULE}: the Drive copy carries {len(stamps)} source lines; it needs exactly one']
+    if not stamps[0]:
+        return [f'{STAMP_RULE}: the source line must read "source: <repo path>@<commit>", with the commit '
+                'in 7 to 40 lowercase hex']
+    path = stamps[0].group(1)
+    if _parts(path)[1] or path.startswith('local/'):
+        return [f'{STAMP_RULE}: {path!r} is not a public repo path']
+    if repo_path is not None and path != repo_path:
+        return [f'{STAMP_RULE}: the stamp names {path}, not {repo_path}']
+    return []
 
 
 def file_plan(rows, path, sha256, bytes, kind, source, **dims):
@@ -525,8 +633,12 @@ def file_plan(rows, path, sha256, bytes, kind, source, **dims):
         for row in rows:
             if row['sha256'] == sha256:
                 return {'action': 'link_existing', 'path': row['path']}
-    if any(row['path'] == path for row in rows):
-        raise ValueError(f'{KEEP_RULE}: {path} is already filed with other bytes; a new version is a new _v<n> file')
+    key = _windows_key(path)
+    for row in rows:
+        if _windows_key(row['path']) == key:
+            twin = '' if row['path'] == path else f' (as {row["path"]}, the same file on Windows)'
+            raise ValueError(f'{KEEP_RULE}: {path} is already filed with other bytes{twin}; '
+                             'a new version is a new _v<n> file')
     derived = _check(path.split('/'), False)[1]
     row = dict.fromkeys(INDEX_FIELDS, '')
     row.update(derived, status='draft')
@@ -543,24 +655,26 @@ def file_plan(rows, path, sha256, bytes, kind, source, **dims):
 
 
 def archive_plan(rows, week):
-    """The moves that close a week: superseded and rejected files go to 99_Archive/<week>/, keeping their path.
+    """The moves that close a week: superseded and rejected files go to 99_Archive/<week>/
+    (archived_path: the top folder, the original subfolders joined by --, the name).
 
     Only moves are ever planned. A move that would land on a path already in the
-    index is refused, so nothing is overwritten."""
+    index (as Windows compares paths) is refused, so nothing is overwritten."""
     if not isinstance(week, str) or not _week(week):
         raise ValueError(f'{week!r} is not a week (YYYY-Www)')
     rows = _rows(rows)
-    taken = {row['path'] for row in rows}
+    taken = {_windows_key(row['path']) for row in rows}
     plan = []
     for row in sorted(rows, key=lambda r: r['path']):
         if row['status'] not in ARCHIVE_STATUSES or row['path'].startswith(ARCHIVE):
             continue
-        target = f'{ARCHIVE}{week}/{row["path"]}'
-        if target in taken:
+        target = archived_path(row['path'], week)
+        if _windows_key(target) in taken:
             raise ValueError(f'{KEEP_RULE}: {target} is already indexed, so {row["path"]} cannot move there')
         errors = name_errors(target)
         if errors:
             raise ValueError('; '.join(errors))
+        taken.add(_windows_key(target))
         plan.append({'move': row['path'], 'to': target})
     return plan
 
@@ -713,14 +827,15 @@ def assemble(manifest, parts_dir, out_dir):
             if _sha256(source) != item['sha256']:
                 raise ValueError(f'Part hash mismatch {item["file_name"]}')
         try:
-            with target.open('xb') as destination:
+            destination = target.open('xb')
+        except FileExistsError:
+            raise ValueError(f'Refusing to overwrite {target}') from None
+        try:
+            with destination:
                 for item in parts:
                     with (parts_dir / item['file_name']).open('rb') as source:
                         for block in iter(lambda: source.read(BLOCK), b''):
                             destination.write(block)
-        except FileExistsError:
-            raise ValueError(f'Refusing to overwrite {target}') from None
-        try:
             if target.stat().st_size != archive['bytes'] or _sha256(target) != archive['sha256']:
                 raise ValueError(f'Reassembled archive hash mismatch {target}')
             try:
@@ -728,10 +843,12 @@ def assemble(manifest, parts_dir, out_dir):
                     damaged = packed.testzip()
             except zipfile.BadZipFile as error:
                 raise ValueError(f'{target} is not a readable ZIP: {error}') from None
+            except Exception as error:     # an unsupported method, encryption or a broken stream
+                raise ValueError(f'{target} failed the ZIP test: {type(error).__name__}: {error}') from None
             if damaged:
                 raise ValueError(f'Corrupt ZIP member {damaged}')
-        except ValueError:
-            target.unlink()
+        except BaseException:
+            target.unlink()                # this call wrote it, so nothing unverified is left behind
             raise
         results.append({'file_name': target.name, 'sha256': archive['sha256'], 'bytes': target.stat().st_size,
                         'zip_verified': True})
