@@ -8,6 +8,22 @@ No personal social accounts, cold outbound email, paid acquisition or paid
 media generation. All implementation belongs here. Full-time and Control
 Center changes are handoff briefs. Nothing here sends or publishes marketing.
 
+## Start here
+
+- **What it is chasing:** [docs/NORTH_STAR.md](docs/NORTH_STAR.md), and its number
+  and urgency on the first line under "Where it is right now" in [NOW.md](NOW.md).
+- **How it works now (engine v2):** [docs/ENGINE.md](docs/ENGINE.md), the 6 KB map a
+  fresh session starts from. The approved plan is [docs/ENGINE-V2.md](docs/ENGINE-V2.md).
+- **What happened last:** the newest `HANDOVER-*.md`.
+- **What waits on Krish today:** `python3 growth.py actions`.
+
+The daily shape of v2: each morning the engine reads the product and the week's
+fixtures, prepares one matchday pack (G2) when a show is published, and reports
+to Control Center with Krish's actions as plain lines. Each Monday it proposes the
+week's plan (G1). Krish answers in Control Center and posts by hand in Buffer;
+the engine reads the permalinks back and counts what worked. A format goes live
+only when its readiness, computed from Krish's own verdicts, says so.
+
 ## Run
 
 Python 3.9+, git and network access are required. Rendering additionally uses

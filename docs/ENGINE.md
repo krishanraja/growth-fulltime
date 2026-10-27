@@ -1,10 +1,10 @@
 # Engine index
 
-Status: current, 27 October 2026. The map a fresh session starts from (6 KB at most). Read only the long document your task needs. Where this file and the code disagree, the code and its tests are right.
+Status: current, 27 October 2026. The map a fresh session starts from (6 KB at most). Read only the long document your task needs; where it and the code disagree, the code and its tests are right.
 
 ## What the engine is
 
-Full Time's growth engine: a public repository, Python 3.9+ standard library only. It reads live product truth, keeps creative and experiment history, prepares exact posts and reports to Control Center with `python3 growth.py cc`. Nothing it makes sends, posts, schedules or spends on its own: Krish posts by hand in Buffer. Private data stays in ignored `local/` and in Drive `Ventures/Full Time/Growth Build`.
+Full Time's growth engine: a public repository, Python 3.9+ standard library only. It reads live product truth, keeps creative and experiment history, prepares exact posts and reports to Control Center with `python3 growth.py cc`. Nothing it makes sends, posts, schedules or spends on its own: Krish posts by hand in Buffer. Private data is in ignored `local/` and in Drive `Ventures/Full Time/Growth Build`.
 
 ## North Star
 
@@ -34,8 +34,8 @@ Each has `crew/<name>/card.md` (3 KB at most) and a reviewer's `lens.md` (1 KB).
 4. Voice Lock: each voice matches its pinned lock and has a human listening verdict.
 5. Motion Maker: renders offline, stills before video, credits only inside an approved `spend`.
 6. Card Maker: Canva cards from pinned brand templates.
-7. Channel & Pack Steward: Full Time allowlisted channels only; receipts from the read-only Buffer readback.
-8. Measurement Analyst (the Measurement Specialist): counts the number from the product export with a 95% interval, and reads Google Analytics 4 landings by creative ID, read-only, from Control Center (`docs/GA4-ACCESS.md`) as a leading web signal, kept apart from listener numbers.
+7. Channel & Pack Steward: allowlisted Full Time channels only; receipts from read-only Buffer.
+8. Measurement Analyst (the number): counts it from the product export with a 95% interval; reads Google Analytics 4 landings by creative ID, read-only, kept apart from listener numbers.
 9. What-Works Analyst: a fresh session, never a maker. A claim is confirmed only after two matchweeks, 20 events per arm and |z| of 2 or more.
 10. Librarian: the only writer into Growth Build; no orphans, duplicates or misnamed files.
 11. Audience Builder: brand-profile visibility and followers, within platform rules.
@@ -48,20 +48,25 @@ Each has `crew/<name>/card.md` (3 KB at most) and a reviewer's `lens.md` (1 KB).
 
 ## Sessions
 
-Kinds: scheduled (the CLI, no model), orchestrator, production (Codex, main checkout), review (lenses and rubric) and build (a task card). Budgets: `engine/config/budgets.json`; Krish's minutes stay at 20 a day or fewer. `engine/session.py` builds the pack (36 KB at most) and logs each session to `local/engine/sessions.jsonl`. `engine/dispatch.py` checks task cards (`tasks/card.schema.json`) and guards the shared Codex allowance: refused above 80% or on an unknown or stale reading, unless Krish approved its spend ask (`fulltime-codex-<card_id>`) on that exact card. Codex runs on `gpt-6.1-sol`.
+Kinds: scheduled (the CLI, no model), orchestrator, production (Codex, main checkout), review (lenses and rubric) and build (a task card). Budgets: `engine/config/budgets.json`; Krish's minutes stay at 20 a day or fewer. `engine/session.py` builds the pack (36 KB at most) and logs sessions. `engine/dispatch.py` checks task cards and guards the Codex allowance: refused above 80% or on an unknown reading, unless Krish approved that card's spend ask. Codex runs on `gpt-6.1-sol`.
 
 ## Commands
 
 ```
 python3 growth.py sync | doctor | --self-test | standards startup
-python3 growth.py run morning|weekly [--offline] [--require-existing-history]
-python3 growth.py cc morning|weekly|dispatch
-python3 -m unittest discover -s tests -v
-python3 scripts/verify_repository.py
-python3 scripts/baseline.py [--actions-json FILE] [--run-sessions-dir DIR] [--build-sessions-dir DIR]
+growth.py run|cc morning|weekly [--require-existing-history]; cc dispatch
+growth.py actions                  # Krish's actions today, the engine's to-do
+growth.py fixtures fetch|import F  # the Match Clock's week
+growth.py spec check|compile|propose F   # G1
+growth.py formats readiness|lock   # readiness is computed, never written
+growth.py pack check|propose F     # G2
+growth.py buffer receipts ... --record
+growth.py library | session | dispatch | audience | ga4
+python3 -m unittest discover -s tests; python3 scripts/verify_repository.py
+python3 scripts/baseline.py   # build and run cost, from real logs
 ```
 
-The v2 verbs are wired as each phase lands; [ENGINE-V2.md](ENGINE-V2.md) section 2 lists them.
+None of these posts, sends, schedules or spends; `--help` gives options.
 
 ## Where the long documents are
 

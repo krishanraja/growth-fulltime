@@ -134,7 +134,8 @@ Fix the weakest link first (Part I); separate evidence from prose problems.
 **Before drafting:** gates read and holds known (AGENTS.md, rules 3 and 4);
 surface, awareness and lead set from the table above; take passed the take
 test, with exact quotation and timing checked; one reader, one take, one
-action; proof only of the allowed kinds; experiment and creative ID known.
+action; proof only of the allowed kinds; experiment and creative ID known;
+`whole_match` set to true or false (AGENTS.md, how the rulings run in code).
 
 **Before handoff**, run the edit passes (Part IV, Phase 9):
 

@@ -52,6 +52,20 @@ Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "appro
 10. **Google Analytics comes from Control Center** ("just get google analytics data from control center, much easier", superseding "Direct read-only API" the same day): its daily directive carries the week's landings once Control Center builds the read (`briefs/2026-10-27-control-center-measurement.md`). Krish sets nothing up; the direct readers in `docs/GA4-ACCESS.md` stay as unused fallbacks. Landings stay apart from listener numbers.
 11. **Everything the engine produces lives in Drive** in `Ventures/Full Time/Growth Build`, kept findable by the Librarian with no sprawl. A full Canva brand kit is built through Cowork on Krish's PC (`briefs/2026-10-27-cowork-canva-brand-kit.md`).
 
+### How the rulings run in code
+
+- **Every brand take says whether it promotes a whole match.** Under ORGANIC a draft
+  carries `"whole_match": true` or `false`. False passes the per-take gate (its exact
+  show published, facts checked); true needs four of six. A draft without the flag
+  is held for RAIL, and a bare `fulltime.fm` in public copy is refused as untracked:
+  use `tracked()`.
+- **Krish's actions and the engine's to-do** come from `python3 growth.py actions`
+  and travel in every report. One-off setup steps live in
+  `engine/config/owner-actions.json`; a `manual` one closes only when a session
+  records his confirmation there with the date.
+- **Fixtures are read, never remembered:** `python3 growth.py fixtures fetch|import`.
+- **Receipts close G2:** `python3 growth.py buffer receipts ... --record`, read-only.
+
 ## Autonomy (Ruling, Krish, 2026-10-19)
 
 For posts, ruling 3 of 27 October above replaces step 3 below: Krish publishes in Buffer himself and the engine records his permalink as the receipt.
