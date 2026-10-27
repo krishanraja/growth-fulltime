@@ -1,6 +1,13 @@
-"""Reuse published audio/art with local FFmpeg; never generate media or publish."""
+"""Reuse published audio/art with local FFmpeg; never generate media or publish.
+
+A render manifest may also name its canvas ('size', 720x1280 by default or a
+1080x1920 master), the 'master_id' its channel cuts share, and a 'fontfile' and
+'fontsdir' for FFmpeg builds with no default font, such as those on Windows (or
+FULLTIME_FONT_FILE and FULLTIME_FONTS_DIR in the environment). With none of
+these, a render is made exactly as before."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -14,7 +21,17 @@ from .records import atomic_json, fingerprint, now
 from . import policy
 
 STORAGE_HOST = 'hzadscrqmyilbisexvyz.supabase.co'
-RENDERER_VERSION = 2
+RENDERER_VERSION = 3
+# Creative ID codes the renderer takes, and the platform each posts to. WEB is a private
+# site preview: it has no brand identity, so it stays held for CHANNEL.
+RENDER_PLATFORMS = {'TT': 'tiktok', 'YT': 'youtube', 'IG': 'instagram', 'TH': 'threads', 'FB': 'facebook',
+                    'WC': 'whatsapp_channel', 'X': 'x', 'WEB': 'site'}
+SIZES = {'720x1280': (720, 1280), '1080x1920': (1080, 1920)}
+DEFAULT_SIZE = '720x1280'
+MASTER_ID = re.compile(r'^[A-Za-z0-9][A-Za-z0-9:._-]{0,79}$')   # the shape engine/pack.py accepts
+REQUIRED_FIELDS = {'schema_version', 'creative_id', 'drop_id', 'segments', 'caption_alignment_verified'}
+OPTIONAL_FIELDS = {'identity_ref', 'size', 'master_id', 'fontfile', 'fontsdir'}
+FONT_ENV = {'fontfile': 'FULLTIME_FONT_FILE', 'fontsdir': 'FULLTIME_FONTS_DIR'}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -28,7 +45,7 @@ def sha(path):
 
 def probe(path):
     result = subprocess.run(['ffprobe', '-v', 'error', '-show_streams', '-show_format',
-                             '-of', 'json', str(path)], capture_output=True, text=True, timeout=30)
+                             '-of', 'json', str(path)], capture_output=True, text=True, encoding='utf-8', timeout=30)
     if result.returncode:
         raise ValueError('FFprobe could not read the asset')
     return json.loads(result.stdout)
@@ -84,16 +101,100 @@ def normalise(value):
     return re.sub(r'\s+', ' ', value).strip().casefold()
 
 
+def render_platform(growth, creative_id):
+    """The platform a creative ID renders for, or a refusal naming the codes the renderer takes."""
+    matched = growth.CREATIVE_ID.fullmatch(creative_id) if isinstance(creative_id, str) else None
+    if not matched:
+        raise ValueError('render requires a stable creative ID')
+    if matched.group(1) not in RENDER_PLATFORMS:
+        raise ValueError('the renderer supports Full Time brand channels (TT, YT, IG, TH, FB, WC, X) '
+                         'and private site previews (WEB)')
+    return RENDER_PLATFORMS[matched.group(1)]
+
+
+def fonts(manifest):
+    """The drawtext font file and the subtitles fonts folder, from the manifest or else the
+    environment, as absolute paths with forward slashes. Empty when neither is set, so FFmpeg
+    finds its own fonts as before."""
+    out = {}
+    for key, env in FONT_ENV.items():
+        value = manifest.get(key) or os.environ.get(env, '').strip()
+        if not value:
+            continue
+        path = Path(value).expanduser().resolve()
+        if not (path.is_file() if key == 'fontfile' else path.is_dir()):
+            raise ValueError(f'{key} must be an existing {"font file" if key == "fontfile" else "folder"} on this machine')
+        text = path.as_posix()
+        if any(c in text for c in "'\\") or any(ord(c) < 32 for c in text):
+            raise ValueError(f'{key} must be a path without quotes, backslashes or control characters')
+        out[key] = text
+    return out
+
+
+def filter_path(text):
+    """A path as an FFmpeg filter option value: quoted, with each colon escaped (C\\:/Windows/Fonts)."""
+    return "'" + text.replace(':', '\\:') + "'"
+
+
+def video_filters(size, font):
+    """The card, labels and captions, laid out for 720x1280 and scaled to the canvas."""
+    k = SIZES[size][0] / 720
+
+    def px(value):
+        return int(round(value * k))
+    face = f':fontfile={filter_path(font["fontfile"])}' if font.get('fontfile') else ''
+    folder = f':fontsdir={filter_path(font["fontsdir"])}' if font.get('fontsdir') else ''
+    return (f'[0:v]drawbox=x={px(50)}:y={px(240)}:w={px(620)}:h={px(360)}:color=0x1b3037:t=fill,'
+            f'drawbox=x={px(50)}:y={px(240)}:w={px(620)}:h={px(5)}:color=0x98e76a:t=fill,'
+            f'drawtext=textfile=brand.txt:expansion=none{face}:fontcolor=0x98e76a:fontsize={px(24)}:x=(w-tw)/2:y={px(70)},'
+            f'drawtext=textfile=heading.txt:expansion=none{face}:fontcolor=white:fontsize={px(36)}:x=(w-tw)/2:y={px(150)},'
+            f'drawtext=textfile=match.txt:expansion=none{face}:fontcolor=white:fontsize={px(34)}:x=(w-tw)/2:y={px(300)}'
+            f':line_spacing={px(12)},'
+            f'drawtext=textfile=score.txt:expansion=none{face}:fontcolor=white:fontsize={px(88)}:x=(w-tw)/2:y={px(450)},'
+            f'drawtext=textfile=label.txt:expansion=none{face}:fontcolor=white:fontsize={px(22)}:x=(w-tw)/2:y={px(1070)},'
+            f'subtitles=caption.ass{folder}[v]')
+
+
+def render_holds(growth, state, manifest, match, pundits):
+    """The gate codes a render carries. CHANNEL is checked for the creative's own platform.
+    Under ORGANIC a render is a take: no RELEASE, and RAIL is the per-take gate."""
+    state = state or {}
+    platform = render_platform(growth, manifest['creative_id'])
+    rulings = state.get('rulings') or {}
+    holds = ['APPROVAL']
+    if policy.release_needed(state):
+        holds.append('RELEASE')
+    identity = (state.get('brand_identities') or {}).get(manifest.get('identity_ref'))
+    if not policy.identity_verified(identity, platform):
+        holds.append('CHANNEL')
+    if not rulings.get('D1', {}).get('in_force'):
+        holds.append('D1')
+    if not rulings.get('D7', {}).get('in_force'):
+        holds.append('CONSENT')
+    take = {'platform': platform, 'drop_id': manifest['drop_id'], 'pundits': list(pundits)}
+    if (policy.take_gate(take, state) if policy.organic_in_force(state) else match['fill'] < growth.RAIL_MIN):
+        holds.append('RAIL')
+    if not manifest['caption_alignment_verified']:
+        holds.append('ASSETS')
+    return holds
+
+
 def checked_segments(growth, manifest):
-    allowed = {'schema_version', 'creative_id', 'drop_id', 'segments', 'caption_alignment_verified'}
-    if not allowed <= set(manifest) or set(manifest) - allowed - {'identity_ref'} or manifest['schema_version'] != 1:
+    if (not isinstance(manifest, dict) or not REQUIRED_FIELDS <= set(manifest)
+            or set(manifest) - REQUIRED_FIELDS - OPTIONAL_FIELDS or manifest['schema_version'] != 1):
         raise ValueError('manifest must have exactly the documented render fields')
     if type(manifest['caption_alignment_verified']) is not bool:
         raise ValueError('caption alignment verification must be an explicit boolean')
-    if not growth.CREATIVE_ID.fullmatch(manifest['creative_id']):
-        raise ValueError('render requires a stable creative ID')
-    if not manifest['creative_id'].startswith(('YT_', 'WEB_')):
-        raise ValueError('the initial renderer supports Full Time YouTube and private site previews')
+    render_platform(growth, manifest['creative_id'])
+    if manifest.get('size', DEFAULT_SIZE) not in SIZES:
+        raise ValueError('size must be ' + ' or '.join(SIZES))
+    if 'master_id' in manifest and (not isinstance(manifest['master_id'], str)
+                                    or not MASTER_ID.fullmatch(manifest['master_id'])):
+        raise ValueError('master_id must name the master this cut comes from')
+    for key in FONT_ENV:
+        if key in manifest and (not isinstance(manifest[key], str) or not manifest[key].strip()):
+            raise ValueError(f'{key} must be a path')
+    fonts(manifest)
     segments = manifest['segments']
     if not isinstance(segments, list) or not 1 <= len(segments) <= 2:
         raise ValueError('render one published edition or two distinct editions of the same match')
@@ -110,7 +211,7 @@ def checked_segments(growth, manifest):
         source_path = Path(segment['source_record']).resolve()
         if asset_root not in source_path.parents:
             raise ValueError('source records must remain inside local/assets/')
-        source = json.loads(source_path.read_text())
+        source = json.loads(source_path.read_text(encoding='utf-8'))
         pundit = source.get('pundit')
         expected_url = f'{growth.SITE}/api/public/drops/{manifest["drop_id"]}/variants/{pundit}'
         if (source.get('drop_id') != manifest['drop_id'] or pundit not in match['pundits']
@@ -150,13 +251,19 @@ def timestamp(seconds):
 def render(growth, manifest_path):
     if not shutil.which('ffmpeg') or not shutil.which('ffprobe'):
         raise ValueError('local FFmpeg and FFprobe are required')
-    manifest = json.loads(Path(manifest_path).read_text())
+    manifest = json.loads(Path(manifest_path).read_text(encoding='utf-8'))
     segments, match, total = checked_segments(growth, manifest)
-    root = Path(growth.LOCAL) / 'renders' / manifest['creative_id'] / fingerprint({'renderer': RENDERER_VERSION, 'manifest': manifest})[:16]
+    size = manifest.get('size', DEFAULT_SIZE)
+    width, height = SIZES[size]
+    font = fonts(manifest)
+    key = {'renderer': RENDERER_VERSION, 'manifest': manifest}
+    if font:
+        key['fonts'] = font
+    root = Path(growth.LOCAL) / 'renders' / manifest['creative_id'] / fingerprint(key)[:16]
     root.mkdir(parents=True, exist_ok=True)
     output, receipt_path = root / 'clip.mp4', root / 'render.json'
     if receipt_path.exists():
-        cached = json.loads(receipt_path.read_text())
+        cached = json.loads(receipt_path.read_text(encoding='utf-8'))
         if (output.exists() and sha(output) == cached['video_sha256']
                 and all(Path(cached[k]).exists() and sha(cached[k]) == cached.get(k + '_sha256')
                         for k in ('captions', 'thumbnail'))):
@@ -182,16 +289,9 @@ def render(growth, manifest_path):
             (work / 'match.txt').write_text(textwrap.fill(match['home'] + ' v ' + match['away'], 28), encoding='utf-8')
             (work / 'score.txt').write_text(str(match['score'][0]) + '-' + str(match['score'][1]), encoding='utf-8')
             part = work / f'part{number}.mp4'
-            filters = ('[0:v]drawbox=x=50:y=240:w=620:h=360:color=0x1b3037:t=fill,'
-                       'drawbox=x=50:y=240:w=620:h=5:color=0x98e76a:t=fill,'
-                       'drawtext=textfile=brand.txt:expansion=none:fontcolor=0x98e76a:fontsize=24:x=(w-tw)/2:y=70,'
-                       'drawtext=textfile=heading.txt:expansion=none:fontcolor=white:fontsize=36:x=(w-tw)/2:y=150,'
-                       'drawtext=textfile=match.txt:expansion=none:fontcolor=white:fontsize=34:x=(w-tw)/2:y=300:line_spacing=12,'
-                       'drawtext=textfile=score.txt:expansion=none:fontcolor=white:fontsize=88:x=(w-tw)/2:y=450,'
-                       'drawtext=textfile=label.txt:expansion=none:fontcolor=white:fontsize=22:x=(w-tw)/2:y=1070,'
-                       'subtitles=caption.ass[v]')
+            filters = video_filters(size, font)
             command = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y',
-                       '-f', 'lavfi', '-i', 'color=c=0x122126:s=720x1280:r=24', '-ss', str(segment['start_seconds']),
+                       '-f', 'lavfi', '-i', f'color=c=0x122126:s={size}:r=24', '-ss', str(segment['start_seconds']),
                        '-i', source['audio'], '-filter_complex', filters, '-map', '[v]', '-map', '1:a:0',
                        '-t', str(duration), '-c:v', 'libx264', '-preset', 'veryfast', '-threads', '2',
                        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-ar', '48000', '-ac', '2', '-movflags', '+faststart', str(part)]
@@ -201,7 +301,7 @@ def render(growth, manifest_path):
             parts.append(part)
             captions.append(f'{number}\n{timestamp(offset)} --> {timestamp(offset + duration)}\n{textwrap.fill(segment["quote"],36)}\n')
             offset += duration
-        (work / 'parts.txt').write_text('\n'.join(f"file '{p.name}'" for p in parts))
+        (work / 'parts.txt').write_text('\n'.join(f"file '{p.name}'" for p in parts), encoding='utf-8')
         result = subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '1',
                                  '-i', 'parts.txt', '-c', 'copy', '-movflags', '+faststart', str(output.resolve())],
                                 cwd=work, capture_output=True, timeout=60)
@@ -210,7 +310,7 @@ def render(growth, manifest_path):
     metadata = probe(output)
     video = next((x for x in metadata['streams'] if x['codec_type'] == 'video'), {})
     audio = next((x for x in metadata['streams'] if x['codec_type'] == 'audio'), {})
-    if (video.get('width'), video.get('height')) != (720, 1280) or not audio or abs(float(metadata['format']['duration']) - total) > 1:
+    if (video.get('width'), video.get('height')) != (width, height) or not audio or abs(float(metadata['format']['duration']) - total) > 1:
         raise ValueError('render failed size, duration or audio verification')
     (root / 'captions.srt').write_text('\n'.join(captions), encoding='utf-8')
     thumb = subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(output),
@@ -219,24 +319,14 @@ def render(growth, manifest_path):
         raise ValueError('thumbnail extraction failed')
     state = growth.load_state()
     landing = growth.tracked(f'https://fulltime.fm/?drop={manifest["drop_id"]}&pundit={segments[0][1]["pundit"]}', manifest['creative_id'])
-    holds = ['APPROVAL']
-    if not policy.release_open(state):
-        holds.append('RELEASE')
-    identity = (state.get('brand_identities') or {}).get(manifest.get('identity_ref'))
-    if not policy.identity_verified(identity, 'youtube'):
-        holds.append('CHANNEL')
-    if not (state.get('rulings') or {}).get('D1', {}).get('in_force'):
-        holds.append('D1')
-    if not (state.get('rulings') or {}).get('D7', {}).get('in_force'):
-        holds.append('CONSENT')
-    if match['fill'] < growth.RAIL_MIN:
-        holds.append('RAIL')
-    if not manifest['caption_alignment_verified']:
-        holds.append('ASSETS')
-    receipt = {'renderer_version': RENDERER_VERSION, 'creative_id': manifest['creative_id'], 'video': str(output), 'video_sha256': sha(output),
+    holds = render_holds(growth, state, manifest, match, [source['pundit'] for _, source in segments])
+    receipt = {'renderer_version': RENDERER_VERSION, 'creative_id': manifest['creative_id'],
+               'platform': render_platform(growth, manifest['creative_id']), 'master_id': manifest.get('master_id'),
+               'video': str(output), 'video_sha256': sha(output),
                'captions': str(root / 'captions.srt'), 'thumbnail': str(root / 'thumbnail.jpg'),
                'captions_sha256': sha(root / 'captions.srt'), 'thumbnail_sha256': sha(root / 'thumbnail.jpg'),
-               'duration_seconds': float(metadata['format']['duration']), 'width': 720, 'height': 1280,
+               'duration_seconds': float(metadata['format']['duration']), 'size': size, 'width': width, 'height': height,
+               'fonts': font or None,
                'source_sha': state['sha'], 'drop_id': manifest['drop_id'],
                'pundits': [x[1]['pundit'] for x in segments], 'landing_url': landing,
                'segments': [{'pundit': source['pundit'], 'start_seconds': segment['start_seconds'],

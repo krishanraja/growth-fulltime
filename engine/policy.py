@@ -1,4 +1,11 @@
-"""The owner's channel limits apply to held drafts as well as ready work."""
+"""The owner's channel limits apply to held drafts as well as ready work.
+
+Since 27 October 2026 (Krish's ruling 1, ORGANIC in rulings.json): once ORGANIC is
+in force, an organic brand post needs no RELEASE hold, and RAIL becomes the
+per-take gate: the exact AI Pundit shows it promotes are published on the synced
+rail. A whole-match post still needs four of the six. CHANNEL and CONSENT apply
+either way, and the listener-shared 'whatsapp' platform stays apart from the
+brand 'whatsapp_channel'."""
 import re
 import datetime as dt
 import json
@@ -7,7 +14,13 @@ from urllib.parse import urlsplit
 
 VERSION = 'fulltime-brand-zero-cash-v1'
 EXCLUDED = {'invite', 'linkedin', 'hn', 'producthunt', 'press', 'creator', 'ads', 'fpl'}
-BRAND_CHANNELS = {'youtube', 'tiktok', 'instagram', 'x', 'reddit'}
+BRAND_CHANNELS = {'youtube', 'tiktok', 'instagram', 'x', 'reddit', 'threads', 'facebook', 'whatsapp_channel'}
+# The hosts a verified brand identity's source page may sit on, per channel.
+IDENTITY_HOSTS = {'youtube': ('youtube.com', 'youtu.be'), 'tiktok': ('tiktok.com',), 'instagram': ('instagram.com',),
+                  'x': ('x.com', 'twitter.com'), 'reddit': ('reddit.com',), 'threads': ('threads.net', 'threads.com'),
+                  'facebook': ('facebook.com',), 'whatsapp_channel': ('whatsapp.com',)}
+# The rail gate for a whole match: four of the six AI Pundits (growth.RAIL_MIN).
+RAIL_MIN = 4
 INTERNAL = {'site', 'other'}
 HOLDS = {'RAIL', 'RELEASE', 'CHANNEL', 'CONSENT', 'DATA', 'ASSETS', 'APPROVAL',
          'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'}
@@ -17,7 +30,7 @@ PACK_FIELDS = {'schema_version', 'policy_version', 'pack_date', 'kind', 'venture
 ITEM_FIELDS = {'item_id', 'platform', 'creative_id', 'experiment_id', 'target_url',
                'target_name', 'why', 'text', 'needs', 'holds', 'account_scope',
                'identity_ref', 'contact_basis', 'consent_ref', 'sender',
-               'distribution', 'drop_id', 'pundits', 'assets', 'estimated_minutes'}
+               'distribution', 'drop_id', 'pundits', 'whole_match', 'assets', 'estimated_minutes'}
 USAGE_FIELDS = {'marketing_cash_gbp', 'model_calls', 'audio_generation_calls', 'model_spend_usd',
                 'agent_spend_usd', 'hosting_spend_usd', 'elapsed_seconds', 'founder_minutes'}
 
@@ -58,6 +71,43 @@ def release_open(state):
             and evidence.get('source_path') == 'docs/12-roadmap.md')
 
 
+def organic_in_force(state):
+    """ORGANIC (Krish, 2026-10-27) is approved in rulings.json and in full-time's decision log."""
+    return (((state or {}).get('rulings') or {}).get('ORGANIC') or {}).get('in_force') is True
+
+
+def release_needed(state):
+    """Public brand work waits for RELEASE unless the product released or ORGANIC is in force."""
+    return not organic_in_force(state) and not release_open(state)
+
+
+def take_gate(item, state):
+    """Why an item fails the per-take gate, or '' when it passes. Its drop_id must be a
+    match on the synced rail and every AI Pundit in its pundits must have a published
+    show there. A whole-match post (whole_match true) still needs four of the six."""
+    rail = (state or {}).get('rail')
+    if not isinstance(rail, list):
+        return 'the rail was not read, so nothing is promoted blind'
+    drop = item.get('drop_id')
+    match = next((m for m in rail if isinstance(m, dict) and drop and m.get('drop') == drop), None)
+    if match is None:
+        return 'its drop_id is not a match on the synced rail'
+    published = match.get('pundits') or []
+    pundits = item.get('pundits')
+    if item.get('whole_match') is True:
+        if match.get('fill', 0) < RAIL_MIN:
+            return (f'a whole-match post needs {RAIL_MIN} of 6 AI Pundits, and this match has '
+                    f'{match.get("fill", 0)}')
+        if pundits is None:
+            return ''
+    if not isinstance(pundits, list) or not pundits or any(not isinstance(p, str) for p in pundits):
+        return 'it must name, in pundits, the AI Pundits whose published shows it promotes'
+    missing = [p for p in pundits if p not in published]
+    if missing:
+        return 'no published show on that match from ' + ', '.join(missing)
+    return ''
+
+
 def identity_verified(identity, platform):
     if not isinstance(identity, dict):
         return False
@@ -65,8 +115,7 @@ def identity_verified(identity, platform):
         checked = dt.datetime.fromisoformat(identity.get('verified_at', '').replace('Z', '+00:00'))
         age = dt.datetime.now(dt.timezone.utc) - checked
         host = urlsplit(identity.get('source_url', '')).hostname or ''
-        expected = {'youtube': ('youtube.com', 'youtu.be'), 'tiktok': ('tiktok.com',),
-                    'instagram': ('instagram.com',), 'x': ('x.com', 'twitter.com'), 'reddit': ('reddit.com',)}[platform]
+        expected = IDENTITY_HOSTS[platform]
         source_ok = (identity['source_url'].startswith('https://')
                      and any(host == domain or host.endswith('.' + domain) for domain in expected))
         return (identity.get('verified') is True and identity.get('platform') == platform
@@ -80,7 +129,7 @@ def load_identities(local):
     path = Path(local) / 'brand-identities.json'
     if not path.exists():
         return {}
-    data = json.loads(path.read_text())
+    data = json.loads(path.read_text(encoding='utf-8'))
     if set(data) != {'product', 'identities'} or data['product'] != 'fulltime' or not isinstance(data['identities'], dict):
         raise ValueError('invalid product-scoped brand identity registry')
     return data['identities']
@@ -108,9 +157,13 @@ def errors(item, state=None):
         verified = identity_verified(identity, platform)
         if not verified and 'CHANNEL' not in pending:
             out.append('unverified brand identity must be held for CHANNEL')
-        if not release_open(state) and 'RELEASE' not in pending:
+        if release_needed(state) and 'RELEASE' not in pending:
             out.append('public acquisition must be held for RELEASE until separately verified')
-        if not any(m.get('fill', 0) >= 4 for m in state.get('rail') or []) and 'RAIL' not in pending:
+        if organic_in_force(state):
+            why = take_gate(item, state)
+            if why and 'RAIL' not in pending:
+                out.append(f'public work must be held for RAIL until it passes the per-take gate: {why}')
+        elif not any(m.get('fill', 0) >= RAIL_MIN for m in state.get('rail') or []) and 'RAIL' not in pending:
             out.append('public work must be held for RAIL while no eligible match exists')
         if not (state.get('rulings') or {}).get('D7', {}).get('in_force') and 'CONSENT' not in pending:
             out.append('public acquisition must be held for CONSENT until its product review is closed')
@@ -124,6 +177,8 @@ def errors(item, state=None):
             out.append('email must use the product inbox sender')
         if item.get('target_name') or re.search(r'@|mailto:', item.get('target_url', ''), re.I):
             out.append('private recipient details must stay outside packs')
+    if 'whole_match' in item and type(item['whole_match']) is not bool:
+        out.append('whole_match must be true or false')
     if platform not in INTERNAL and item.get('target_name'):
         out.append('recipient names and handles are not needed in the active growth plan')
     if item.get('estimated_minutes') is not None and (

@@ -1,15 +1,15 @@
 {
- "_about": "The seven decisions the 1,000-user playbook needs (knowledge/full-time-1000-users-playbook.md, section 9). A channel in 'unlocks' stays held until its ruling is in force. A ruling is in force only when it is 'approved' here AND its 'evidence' is a heading in full-time's decision log (docs/12-roadmap.md), because the full-time repository is the source of truth for product doctrine. To record one: Krish rules; a full-time session adds the decision-log entry; an interactive session here sets status 'approved', the date, Krish's words and the heading as evidence, and adds a dated line to CHANGES.md. python3 growth.py --self-test checks the shape.",
+ "_about": "The seven decisions the 1,000-user playbook needs (knowledge/full-time-1000-users-playbook.md, section 9). A channel in 'unlocks' stays held until its ruling is in force. A ruling is in force only when it is 'approved' here AND its 'evidence' is a heading in full-time's decision log (docs/12-roadmap.md), because the full-time repository is the source of truth for product doctrine. To record one: Krish rules; a full-time session adds the decision-log entry; an interactive session here sets status 'approved', the date, Krish's words and the heading as evidence, and adds a dated line to CHANGES.md. python3 growth.py --self-test checks the shape. Two entries from 27 October 2026 sit beside them: ORGANIC, Krish's exception that lets organic brand posts recruit pilot-beta testers before the December release, gated per take and needing D1, and RELEASE, the product's own release decision, which growth.py sync turns into marketing_release once it is approved here and its heading is in the decision log.",
  "rulings": {
   "D1": {
    "title": "Invite-led at scale: testers and every shared edition invite others; fan channels open",
    "recommendation": "Approve once the rail gate opens. Until a match has 4 of 6 AI Pundits, posting to fans spends the first impression on a near-empty rail.",
-   "unlocks": ["tiktok", "youtube", "instagram", "x", "reddit"],
+   "unlocks": ["tiktok", "youtube", "instagram", "x", "reddit", "threads", "facebook", "whatsapp_channel"],
    "requires": [],
-   "status": "pending",
-   "date": "",
-   "words": "",
-   "evidence": ""
+   "status": "approved",
+   "date": "2026-10-27",
+   "words": "Go now, per-take gate (Recommended). Reserve all, push three (Recommended).",
+   "evidence": "2026-10-27 - Organic brand posts may recruit pilot testers before release, per-take gate"
   },
   "D2": {
    "title": "Cover every Premier League match each weekend, not one a day",
@@ -64,6 +64,26 @@
   "D7": {
    "title": "Close the PostHog and Google Analytics consent item",
    "recommendation": "Approve, with counsel's check as full-time docs/11-legal.md requires. It blocks open marketing and any paid test.",
+   "unlocks": [],
+   "requires": [],
+   "status": "pending",
+   "date": "",
+   "words": "",
+   "evidence": ""
+  },
+  "ORGANIC": {
+   "title": "Organic brand posts recruit pilot-beta testers before the December release, gated per take",
+   "recommendation": "Approved. A post is eligible once the exact AI Pundit show it links to is published and its facts check; four of six applies only to whole-match posts; D7 consent closes first. It opens no paid, founder or excluded channel.",
+   "unlocks": [],
+   "requires": ["D1"],
+   "status": "approved",
+   "date": "2026-10-27",
+   "words": "Go now, per-take gate (Recommended). Reserve all, push three (Recommended).",
+   "evidence": "2026-10-27 - Organic brand posts may recruit pilot testers before release, per-take gate"
+  },
+  "RELEASE": {
+   "title": "The product release decision",
+   "recommendation": "Decide in full-time when the December release bar is met. Until its heading is in docs/12-roadmap.md, public work outside ORGANIC stays held for RELEASE.",
    "unlocks": [],
    "requires": [],
    "status": "pending",

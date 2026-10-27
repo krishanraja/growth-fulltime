@@ -348,14 +348,13 @@ class ChecklistTests(unittest.TestCase):
         self.assertTrue(all(f['must'] for f in fixes[:2]))
         self.assertTrue(all(set(f) == {'check', 'fix', 'points', 'minutes', 'must', 'action_id'} for f in fixes))
 
-    def test_an_untrackable_channel_says_so(self):
-        try:
-            growth.tracked(growth.SITE + '/', 'TH_TRIBE_POST_C01_H01_V1_20261101')
-        except (ValueError, KeyError):
-            fixes = profile_checklist('threads', profile('tiktok', link=None), now=NOW)
-            self.assertIn('growth.py has no TH creative ID code yet', ' '.join(f['fix'] for f in fixes))
-        else:
-            self.skipTest('growth.py tracks Threads creative IDs now')
+    def test_a_threads_profile_link_is_tracked_with_its_own_prefix(self):
+        # growth.py tracks TH creative IDs since 27 October, so Threads gets the same link rule as the rest.
+        own = growth.tracked(growth.SITE + '/', 'TH_TRIBE_POST_C01_H01_V1_20261101')
+        fixes = profile_checklist('threads', profile('tiktok', link=own), now=NOW)
+        self.assertFalse([f for f in fixes if f['check'] == 'link'])
+        fixes = profile_checklist('threads', profile('tiktok'), now=NOW)     # a TikTok-prefixed link
+        self.assertIn('TH_ creative ID', ' '.join(f['fix'] for f in fixes if f['check'] == 'link'))
 
     def test_a_personal_or_malformed_profile_is_refused(self):
         with self.assertRaisesRegex(ValueError, 'personal accounts are never audited'):
