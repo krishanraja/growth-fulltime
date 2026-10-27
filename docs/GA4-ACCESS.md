@@ -22,6 +22,14 @@ someone switches it on, and neither is on Krish's list.
 - One aggregate report: new users, sessions and engaged sessions, by session
   source, medium, campaign and manual ad content. Manual ad content is the
   `utm_content` on the engine's links, which carries the creative ID.
+- One more aggregate request for the same week: sessions by hostname. A property
+  that shows visits but none to fulltime.fm is not Full Time's, so nothing is kept
+  (`ga4_wrong_property`). Preview, local or translated-page hosts beside fulltime.fm
+  are fine.
+- Nothing is kept when the export would need a caveat it cannot carry: a property
+  that does not report in London time, counts Google hid by thresholding, or rows
+  Google folded into "(other)". Each has its own code below, and a report with no
+  landings is never shown as zero.
 - Counts only. It never asks for a user, client or device ID, and it cannot change
   anything in Google Analytics: the only permission it asks for is
   `analytics.readonly`.
@@ -122,8 +130,8 @@ least **Viewer** on the Full Time property. You already have it as the owner.
 In Google Analytics, Admin, **Property details**. The property ID is a number
 such as `123456789`. It is not the `G-W2QL8RKFJ1` measurement ID, which belongs to
 the web stream. While you are there, check that the reporting time zone is
-United Kingdom, so Google's days are London days. The report says so when they
-are not.
+United Kingdom, so Google's days are London days. When they are not, the report
+keeps nothing (`ga4_time_zone_not_london`).
 
 ### 7. Sign in once from your computer
 
@@ -139,10 +147,12 @@ keeps it out of your shell history. Your browser opens once. Sign in with the ac
 "See and download your Google Analytics data". The terminal then says it is signed
 in.
 
-It writes `local/ga4/oauth.json`, which only you can read where the system allows
-it (mode 600). `local/` is never committed. The file holds the client ID, the
-client secret, a refresh token and the property ID. If you left the property ID
-off, fill `property_id` in that file with the number from step 6.
+It writes `local/ga4/oauth.json`. `local/` is never committed. On macOS and Linux
+only you can read the file (mode 600). Windows has no such mode: the file takes its
+folder's permissions, so keep the repository inside your own user profile. The file
+holds the client ID, the client secret, a refresh token and the property ID. Copy
+none of them anywhere else. If you left the property ID off, fill `property_id` in
+that file with the number from step 6.
 
 ### 8. Check it
 
@@ -169,9 +179,13 @@ The commands answer with a code and a plain sentence, never a secret.
 | `missing_ga4_credentials` | Route A: check the three variables. Route B: do step 7 |
 | `missing_ga4_property_id`, `ga4_property_id_invalid` | Use the number from step 6, not the `G-` ID |
 | `ga4_credentials_exposed` | Run `chmod 600 local/ga4/oauth.json` |
-| `unauthorized` | Route A: check the reader is still a Viewer on the property. Route B: the sign-in was revoked or expired (see step 3 about Testing); run step 7 again |
+| `unauthorized` | Route A: check the reader is still a Viewer on the property. Route B: unset any `GA4_ACCESS_TOKEN`, which is used first; otherwise the sign-in was revoked or expired (see step 3 about Testing), so run step 7 again |
 | `forbidden` | Check step 2 and step 5 |
-| `ga4_unavailable` | Google did not answer; try later |
+| `ga4_wrong_property` | The property shows no visits to fulltime.fm: use Full Time's number from step 6 |
+| `ga4_time_zone_not_london` | Set the reporting time zone to United Kingdom (step 6) |
+| `ga4_thresholded` | Google hid small counts. Admin, Reporting identity set to Device-based usually lifts it |
+| `ga4_other_row` | Google folded rows into "(other)": use a shorter window, such as `--days 3` |
+| `ga4_unavailable` | Google did not answer, or answered with a broken reply; try later |
 
 To stop route B, remove the app at
 [myaccount.google.com/permissions](https://myaccount.google.com/permissions), or

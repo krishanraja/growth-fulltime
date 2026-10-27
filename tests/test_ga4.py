@@ -10,8 +10,10 @@ import json
 import logging
 import os
 from pathlib import Path
+import socket
 import tempfile
 import threading
+import time
 import types
 import unittest
 from unittest.mock import patch
@@ -43,8 +45,10 @@ class GoogleStandIn:
     """Google's token endpoint and the Data API's runReport, for one synthetic property."""
 
     def __init__(self):
-        self.calls, self.reports = [], []
+        self.calls, self.reports, self.host_checks = [], [], []
         self.rows = [ga4_row('tiktok', 'social', 'matchday', 'TT_CLASH_CLIP_C01_H01_V1_20261020', 3, 4, 2)]
+        self.hosts = [('fulltime.fm', 4)]   # what the hostName check answers
+        self.meta = {}                      # extra ResponseMetaData, such as subjectToThresholding
         self.page_cap = None          # serve fewer rows than asked, as a real server may
         self.refuse = {}              # route -> status
         self.redirect = set()         # routes answered with a 302
@@ -58,7 +62,7 @@ class GoogleStandIn:
                 pass
 
             def _send(self, status, payload, headers=()):
-                body = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
+                body = payload if isinstance(payload, bytes) else json.dumps(payload, separators=(',', ':')).encode()
                 self.send_response(status)
                 for name, value in headers:
                     self.send_header(name, value)
@@ -114,14 +118,17 @@ class GoogleStandIn:
             return h._send(401, {'error': {'code': 401, 'status': 'UNAUTHENTICATED'}})
         if path != f'/v1beta/properties/{PROPERTY_ID}:runReport':
             return h._send(404, {'error': {'code': 404}})
-        self.reports.append(body)
+        hosts = [d['name'] for d in body['dimensions']] == ['hostName']
+        (self.host_checks if hosts else self.reports).append(body)
+        source = [{'dimensionValues': [{'value': name}], 'metricValues': [{'value': str(n)}]}
+                  for name, n in self.hosts] if hosts else self.rows
         offset, limit = int(body.get('offset', 0)), int(body.get('limit', 10000))
         take = min(limit, self.page_cap or limit)
-        page = self.rows[offset:offset + take]
+        page = source[offset:offset + take]
         answer = {'dimensionHeaders': [{'name': d['name']} for d in body['dimensions']],
                   'metricHeaders': [{'name': m['name'], 'type': 'TYPE_INTEGER'} for m in body['metrics']],
-                  'rowCount': len(self.rows), 'metadata': {'currencyCode': 'GBP', 'timeZone': self.time_zone},
-                  'kind': 'analyticsData#runReport'}
+                  'rowCount': len(source), 'kind': 'analyticsData#runReport',
+                  'metadata': {'currencyCode': 'GBP', 'timeZone': self.time_zone, **self.meta}}
         if page:
             answer['rows'] = page
         return h._send(200, answer)
@@ -301,8 +308,11 @@ class ReportTests(Base):
         self.assertEqual(rows.pages, 3)
         self.assertEqual(rows.time_zone, 'Europe/London')
         self.assertEqual([r['offset'] for r in self.google.reports], [0, 3, 6])
+        self.assertEqual(self.google.host_checks, [ga4.host_request('2026-10-20', '2026-10-26')])
+        self.assertEqual(([d['name'] for d in self.google.host_checks[0]['dimensions']],
+                          [m['name'] for m in self.google.host_checks[0]['metrics']]), (['hostName'], ['sessions']))
         for body in self.google.reports:
-            self.assertEqual(body['limit'], 10000)
+            self.assertEqual(body['limit'], 3500)
             self.assertEqual(body['dateRanges'], [{'startDate': '2026-10-20', 'endDate': '2026-10-26'}])
             self.assertEqual([d['name'] for d in body['dimensions']],
                              ['sessionSource', 'sessionMedium', 'sessionCampaignName', 'sessionManualAdContent'])
@@ -313,13 +323,22 @@ class ReportTests(Base):
         self.assertEqual(rows[0], {'sessionSource': 'tiktok', 'sessionMedium': 'social',
                                    'sessionCampaignName': 'matchday', 'sessionManualAdContent': 'TT_TAKE_C00',
                                    'newUsers': '1', 'sessions': '2', 'engagedSessions': '1'})
-        self.assertEqual([c[2] for c in self.google.calls if c[0] == 'report'], ['prettyPrint=false'] * 3)
+        self.assertEqual([c[2] for c in self.google.calls if c[0] == 'report'], ['prettyPrint=false'] * 4)
 
-    def test_full_pages_of_ten_thousand(self):
-        self.google.rows = [ga4_row('s', 'm', 'c', str(i), 1, 1, 0) for i in range(10005)]
+    def test_full_pages_stay_under_the_size_cap(self):
+        # 60-character campaign labels made a 10,000-row page 2.3 MB, over the 2 MB cap.
+        self.google.rows = [ga4_row('newsletter.example.com', 'email', 'x' * 55 + f'{i:05d}', '(not set)', 12, 15, 9)
+                            for i in range(10001)]
         rows = ga4.run_report(self.creds, '2026-10-20', '2026-10-26', self.google.url, access=ACCESS)
-        self.assertEqual(len(rows), 10005)
-        self.assertEqual([r['offset'] for r in self.google.reports], [0, 10000])
+        self.assertEqual((len(rows), rows.pages), (10001, 3))
+        self.assertEqual([r['offset'] for r in self.google.reports], [0, 3500, 7000])
+        widest = [ga4_row(*['w' * 100] * 4, 9999999, 9999999, 9999999)] * ga4.PAGE
+        answer = {'dimensionHeaders': [{'name': n} for n in ga4.DIMENSIONS],
+                  'metricHeaders': [{'name': n, 'type': 'TYPE_INTEGER'} for n in ga4.METRICS],
+                  'rows': widest, 'rowCount': ga4.MAX_ROWS, 'kind': 'analyticsData#runReport',
+                  'metadata': {'currencyCode': 'GBP', 'timeZone': 'Europe/London'}}
+        self.assertLessEqual(len(json.dumps(answer, separators=(',', ':')).encode()), ga4.LIMIT)
+        self.assertLessEqual(ga4.report_request('2026-10-20', '2026-10-26')['limit'] * 560, ga4.LIMIT)
 
     def test_an_empty_window_is_zero_rows_not_an_error(self):
         self.google.rows = []
@@ -391,11 +410,11 @@ class ReportTests(Base):
 
 
 class CommandTests(Base):
-    def run_main(self, argv, env):
+    def run_main(self, argv, env, data_url=None):
         growth = types.SimpleNamespace(LOCAL=str(self.local))
         with patch.dict(os.environ, env, clear=True), \
                 patch.object(ga4, 'TOKEN_URL', self.google.url + '/token'), \
-                patch.object(ga4, 'DATA_URL', self.google.url), Captured() as seen:
+                patch.object(ga4, 'DATA_URL', data_url or self.google.url), Captured() as seen:
             try:
                 code = ga4.main(argv, growth)
             except SystemExit as stop:
@@ -437,7 +456,8 @@ class CommandTests(Base):
         code, out, _ = self.run_main(['doctor'], {'GA4_ACCESS_TOKEN': ACCESS, 'GA4_PROPERTY_ID': PROPERTY_ID})
         summary = json.loads(out)
         self.assertEqual((code, summary['credentials'], summary['token_refresh']), (0, ga4.KEYLESS, 'ok'), out)
-        self.assertEqual([call[0] for call in self.google.calls], ['report'])
+        self.assertEqual((len(self.google.reports), len(self.google.host_checks)), (1, 1))
+        self.assertNotIn('token', [call[0] for call in self.google.calls])
         target = self.local / 'ga4' / 'landings-latest.json'
         code, out, _ = self.run_main(['report', '--days', '7', '--out', str(target)],
                                      {'GA4_ACCESS_TOKEN': ACCESS, 'GA4_PROPERTY_ID': PROPERTY_ID})
@@ -478,11 +498,86 @@ class CommandTests(Base):
         self.assertEqual(len(self.google.calls), calls)
         self.assertNoSecretOnDisk()
 
-    def test_a_property_outside_london_time_is_noted(self):
-        self.google.time_zone = 'America/Los_Angeles'
-        code, out, _ = self.run_main(['report'], ENV)
+    def test_a_caveat_the_export_cannot_carry_keeps_no_export(self):
+        # The export has no field for these, so an uncaveated file must never reach Control Center.
+        target = self.local / 'ga4' / 'w.json'
+        cases = (('ga4_time_zone_not_london', {'time_zone': 'America/Los_Angeles'}),
+                 ('ga4_thresholded', {'meta': {'subjectToThresholding': True}}),
+                 ('ga4_other_row', {'meta': {'dataLossFromOtherRow': True}}))
+        for want, change in cases:
+            with self.subTest(want):
+                self.google.time_zone, self.google.meta = 'Europe/London', {}
+                for name, value in change.items():
+                    setattr(self.google, name, value)
+                code, out, _ = self.run_main(['report', '--out', str(target)], {'GA4_ACCESS_TOKEN': ACCESS,
+                                                                               'GA4_PROPERTY_ID': PROPERTY_ID})
+                summary = json.loads(out)
+                self.assertEqual((code, summary['error_code']), (1, want), out)
+                self.assertEqual(summary['message'], ga4.MESSAGES[want])
+                self.assertFalse(target.exists())
+        rows = ga4.Rows([{'sessionSource': 's', 'sessionMedium': 'm', 'sessionCampaignName': 'c',
+                          'sessionManualAdContent': 'a', 'newUsers': '1', 'sessions': '1', 'engagedSessions': '1'}])
+        rows.time_zone = 'America/Los_Angeles'
+        self.assertRaisesCode('ga4_time_zone_not_london', ga4.to_export, rows, '2026-10-20', '2026-10-26',
+                              '2026-10-27T06:00:00Z')
+        rows.time_zone = 'Europe/London'
+        self.assertEqual(len(ga4.to_export(rows, '2026-10-20', '2026-10-26', '2026-10-27T06:00:00Z')['rows']), 1)
+
+    def test_a_property_with_no_fulltime_fm_visits_is_refused(self):
+        target = self.local / 'ga4' / 'w.json'
+        keyless = {'GA4_ACCESS_TOKEN': ACCESS, 'GA4_PROPERTY_ID': PROPERTY_ID}
+        self.google.hosts = [('othersite.example', 40), ('(not set)', 2)]
+        code, out, _ = self.run_main(['report', '--out', str(target)], keyless)
+        self.assertEqual((code, json.loads(out)['error_code']), (1, 'ga4_wrong_property'), out)
+        self.assertFalse(target.exists())
+        self.assertEqual(len(self.google.host_checks), 1)
+        # Full Time's own property, with preview, local and translated-page hosts beside it.
+        self.google.hosts = [('full-time-git-x.vercel.app', 9), ('www.fulltime.fm', 5), ('localhost', 3),
+                             ('fulltime-fm.translate.goog', 1)]
+        code, out, _ = self.run_main(['report', '--out', str(target)], keyless)
         self.assertEqual(code, 0, out)
-        self.assertIn('America/Los_Angeles', ' '.join(json.loads(out)['notes']))
+        self.assertTrue(target.is_file())
+        self.assertEqual(len(self.google.host_checks), 2)
+        self.google.hosts = []   # an empty week has nothing to check against
+        code, out, _ = self.run_main(['report', '--out', str(target)], keyless)
+        self.assertEqual(code, 0, out)
+
+    def test_a_malformed_http_reply_is_a_code_not_a_traceback(self):
+        replies = {'chunked body cut off': b'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n'
+                                           b'Transfer-Encoding: chunked\r\n\r\n400\r\n{"rows": [',
+                   'garbage status line': b'HTTX/9 what\r\n\r\n',
+                   'header over 64 KiB': b'HTTP/1.1 200 OK\r\nX: ' + b'a' * 70000 + b'\r\n\r\n'}
+        target = self.local / 'ga4' / 'w.json'
+        for name, reply in replies.items():
+            with self.subTest(name):
+                listener = socket.create_server(('127.0.0.1', 0))
+                self.addCleanup(listener.close)
+
+                def answer(listener=listener, reply=reply):
+                    # Read the whole request and close cleanly, so the reader sees the reply, not a reset.
+                    with contextlib.suppress(OSError):
+                        connection, _ = listener.accept()
+                        with connection:
+                            connection.settimeout(5)
+                            seen = b''
+                            while b'\r\n\r\n' not in seen:
+                                seen += connection.recv(65536)
+                            head, _, body = seen.partition(b'\r\n\r\n')
+                            length = int(dict(line.split(b': ', 1) for line in head.split(b'\r\n')[1:])
+                                         .get(b'Content-Length', b'0'))
+                            while len(body) < length:
+                                body += connection.recv(65536)
+                            connection.sendall(reply)
+                            connection.shutdown(socket.SHUT_WR)
+                            while connection.recv(65536):
+                                pass
+                threading.Thread(target=answer, daemon=True).start()
+                code, out, err = self.run_main(['report', '--out', str(target)],
+                                               {'GA4_ACCESS_TOKEN': ACCESS, 'GA4_PROPERTY_ID': PROPERTY_ID},
+                                               data_url=f'http://127.0.0.1:{listener.getsockname()[1]}')
+                self.assertEqual((code, json.loads(out)['error_code']), (1, 'ga4_unavailable'), out + err)
+                self.assertNotIn('Traceback', err)
+                self.assertFalse(target.exists())
 
     def test_a_mistyped_flag_is_never_echoed(self):
         code, out, err = self.run_main(['authorize', '--client-secrt', CLIENT_SECRET], {})
@@ -536,8 +631,11 @@ class AuthorizeTests(Base):
                                  'refresh_token': NEW_REFRESH, 'property_id': None})
         if os.name == 'posix':
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
-        for name in ('GA4_CLIENT_ID', 'GA4_CLIENT_SECRET', 'GA4_REFRESH_TOKEN', 'GA4_PROPERTY_ID'):
-            self.assertIn(name, out)
+            self.assertIn('readable only by you', out)
+        # Nothing tells Krish to copy a value anywhere: no secret names, no cloud secrets step.
+        self.assertNotIn('GA4_', out)
+        self.assertNotIn('secret', out.lower())
+        self.assertEqual(set(result), {'saved', 'property_id_set'})
         self.assertFalse(result['property_id_set'])
         self.assertEqual(ga4.credentials(self.local, {})['refresh_token'], NEW_REFRESH)
         self.assertEqual([p.name for p in path.parent.iterdir()], ['oauth.json'])
@@ -564,6 +662,52 @@ class AuthorizeTests(Base):
             self.flow(lambda q: ['/?state=' + q['state'] + '&error=access_denied'])
         self.assertEqual(caught.exception.code, 'access_denied')
         self.assertFalse((self.local / 'ga4').exists())
+
+    def test_on_windows_it_never_claims_the_file_is_private(self):
+        class Windows:
+            name = 'nt'
+
+            def __getattr__(self, attr):
+                return getattr(os, attr)
+
+        chmods = []
+        windows = type('WindowsChmod', (Windows,), {'chmod': lambda self, *a: chmods.append(a)})()
+        with patch.object(ga4, 'os', windows):
+            _, _, out = self.flow(lambda q: ['/?state=' + q['state'] + '&code=standin-code'])
+        self.assertNotIn('readable only by you', out)
+        self.assertIn("folder's permissions", out)
+        self.assertIn('inside your own user profile', out)
+        self.assertEqual(chmods, [])
+        self.assertTrue((self.local / 'ga4' / 'oauth.json').is_file())
+
+    def test_an_idle_connection_cannot_hold_the_sign_in_past_its_deadline(self):
+        idle = []
+        self.addCleanup(lambda: [s.close() for s in idle])
+
+        def connect(port):
+            # Idle for 6 seconds, then closed, so a regression fails the timing below instead of hanging.
+            idle.append(socket.create_connection(('127.0.0.1', port)))
+            threading.Timer(6, idle[-1].close).start()
+
+        def hold(url):
+            connect(urllib.parse.urlsplit(dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(url).query))
+                                          ['redirect_uri']).port)
+        began = time.monotonic()
+        with self.assertRaises(ga4.GA4Error) as caught:
+            ga4.authorize(self.local, CLIENT_ID, CLIENT_SECRET, False, on_url=hold, out=io.StringIO(),
+                          token_url=self.google.url + '/token', timeout=2)
+        self.assertEqual(caught.exception.code, 'authorize_timeout')
+        self.assertLess(time.monotonic() - began, 5)
+
+        def preconnect(query):
+            # A browser may open a speculative connection first and leave it idle.
+            connect(urllib.parse.urlsplit(query['redirect_uri']).port)
+            return ['/?state=' + query['state'] + '&code=standin-code']
+        began = time.monotonic()
+        result, _, _ = self.flow(preconnect)
+        self.assertLess(time.monotonic() - began, 8)
+        self.assertEqual(ga4.credentials(self.local, {})['refresh_token'], NEW_REFRESH)
+        self.assertTrue(Path(result['saved']).is_file())
 
     def test_a_wrong_verifier_or_no_answer_saves_nothing(self):
         def wrong(q):

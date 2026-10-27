@@ -4,8 +4,9 @@ Ruling (Krish, 2026-10-27): "Direct read-only API". Google Analytics 4 runs on
 fulltime.fm (measurement ID G-W2QL8RKFJ1, page views only). This module reads
 one aggregate report through the Google Analytics Data API: new users, sessions
 and engaged sessions by session source, medium, campaign and manual ad content
-(the engine's utm_content, which carries the creative ID). It never asks for a
-user, client or device dimension, and it has no write verb. These are web
+(the engine's utm_content, which carries the creative ID), then one aggregate
+check of sessions by hostName that the property measures fulltime.fm. It never
+asks for a user, client or device dimension, and it has no write verb. These are web
 landings on fulltime.fm, never listeners, so the export stays apart from every
 listener number. Consent item D7 is still open; reading aggregates does not
 close it.
@@ -21,6 +22,7 @@ import base64
 import datetime as dt
 import getpass
 import hashlib
+import http.client
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
@@ -46,8 +48,10 @@ TOKEN_URL = 'https://oauth2.googleapis.com/token'
 DATA_URL = 'https://analyticsdata.googleapis.com'
 TIMEOUT = 20
 LIMIT = 2 * 1024 * 1024
-PAGE = 10000
+PAGE = 3500       # four 100-character labels and three counts are about 560 bytes a row: 3,500 stay under LIMIT
 MAX_ROWS = 100000
+HOST = 'fulltime.fm'
+HOST_ROWS = 1000
 FILE = Path('ga4') / 'oauth.json'
 ENV = {'client_id': 'GA4_CLIENT_ID', 'client_secret': 'GA4_CLIENT_SECRET',
        'refresh_token': 'GA4_REFRESH_TOKEN', 'property_id': 'GA4_PROPERTY_ID',
@@ -73,8 +77,9 @@ MESSAGES = {
                                  'authorize again. Nothing was read.',
     'ga4_credentials_exposed': 'local/ga4/oauth.json can be read by other users on this machine: run '
                                'chmod 600 on it. Nothing was read.',
-    'unauthorized': 'Google refused the credentials. The refresh token may be revoked or expired: run '
-                    'growth.py ga4 authorize again.',
+    'unauthorized': 'Google refused the credentials. GA4_ACCESS_TOKEN, when set, is used first: on GitHub '
+                    'Actions check the reader is still a Viewer on the property, and elsewhere unset it. '
+                    'Otherwise the sign-in may be revoked or expired: run growth.py ga4 authorize again.',
     'forbidden': 'Google refused access to that property: check that the signed-in account can view it and '
                  'that the Google Analytics Data API is enabled in the Cloud project.',
     'not_found': 'Google found no property with that ID: check the number in Admin, Property details.',
@@ -84,6 +89,15 @@ MESSAGES = {
     'response_too_large': 'The answer was over 2 MB, so it was not read. Try a shorter window.',
     'too_many_rows': 'The report has more than 100,000 rows, so it was not read. Try a shorter window.',
     'bad_response': "Google's answer was not the expected shape, so nothing was kept.",
+    'ga4_time_zone_not_london': 'The property does not report in London time, so its days are not London days '
+                                'and nothing was kept: set the reporting time zone to United Kingdom in Admin, '
+                                'Property details.',
+    'ga4_thresholded': 'Google hid small counts in this report (thresholding), so nothing was kept rather than '
+                       'an undercount. Setting Admin, Reporting identity to Device-based usually lifts it.',
+    'ga4_other_row': 'Google folded some rows into "(other)", so creatives may be hidden and nothing was kept. '
+                     'Try a shorter window.',
+    'ga4_wrong_property': "That property shows visits but none to fulltime.fm, so it is not Full Time's and "
+                          'nothing was kept: check the property ID in Admin, Property details.',
     'unexpected_status': 'Google answered with an unexpected status, so nothing was kept.',
     'bad_base_url': 'Google endpoints must be https origins with no credentials, query or fragment.',
     'state_mismatch': 'The sign-in answer did not match this request, so it was refused. Nothing was saved.',
@@ -203,11 +217,11 @@ def _post(url, data, headers, loopback):
         status = error.code
         try:
             raw = error.read(LIMIT + 1)
-        except OSError:
+        except (OSError, http.client.HTTPException):
             raw = b''
         finally:
             error.close()
-    except (urllib.error.URLError, OSError, ValueError):
+    except (urllib.error.URLError, OSError, ValueError, http.client.HTTPException):
         raise GA4Error('ga4_unavailable') from None
     if 300 <= status < 400:
         raise GA4Error('redirect_refused', status)
@@ -266,16 +280,27 @@ def _day(value):
         raise ValueError('window dates must be YYYY-MM-DD') from None
 
 
+def _body(start, end, dimensions, metrics, limit, offset=0):
+    return {'dateRanges': [{'startDate': _day(start).isoformat(), 'endDate': _day(end).isoformat()}],
+            'dimensions': [{'name': name} for name in dimensions],
+            'metrics': [{'name': name} for name in metrics],
+            'limit': limit, 'offset': offset, 'keepEmptyRows': False}
+
+
 def report_request(start, end, offset=0):
     """The exact runReport body: four session dimensions, three counts, one date range.
     No user, client or device dimension is ever asked for."""
-    return {'dateRanges': [{'startDate': _day(start).isoformat(), 'endDate': _day(end).isoformat()}],
-            'dimensions': [{'name': name} for name in DIMENSIONS],
-            'metrics': [{'name': name} for name in METRICS],
-            'limit': PAGE, 'offset': offset, 'keepEmptyRows': False}
+    return _body(start, end, DIMENSIONS, METRICS, PAGE, offset)
 
 
-def _page(payload):
+def host_request(start, end):
+    """The one check run_report adds: sessions by hostName for the same window, most first.
+    Aggregate and read-only, like the report."""
+    return {**_body(start, end, ('hostName',), ('sessions',), HOST_ROWS),
+            'orderBys': [{'metric': {'metricName': 'sessions'}, 'desc': True}]}
+
+
+def _page(payload, dimensions=DIMENSIONS, metrics=METRICS):
     if not isinstance(payload, dict):
         raise GA4Error('bad_response')
     found = payload.get('rows') or []
@@ -283,7 +308,7 @@ def _page(payload):
         raise GA4Error('bad_response')
     if found:
         names = lambda key: [h.get('name') if isinstance(h, dict) else None for h in payload.get(key) or []]
-        if names('dimensionHeaders') != list(DIMENSIONS) or names('metricHeaders') != list(METRICS):
+        if names('dimensionHeaders') != list(dimensions) or names('metricHeaders') != list(metrics):
             raise GA4Error('bad_response')
     rows = []
     for row in found:
@@ -292,9 +317,9 @@ def _page(payload):
             counts = [v['value'] for v in row['metricValues']]
         except (KeyError, TypeError):
             raise GA4Error('bad_response') from None
-        if len(dims) != len(DIMENSIONS) or len(counts) != len(METRICS):
+        if len(dims) != len(dimensions) or len(counts) != len(metrics):
             raise GA4Error('bad_response')
-        rows.append(dict(zip(list(DIMENSIONS) + list(METRICS), dims + counts)))
+        rows.append(dict(zip(list(dimensions) + list(metrics), dims + counts)))
     count = payload.get('rowCount')
     if count is not None and (type(count) is not int or count < 0):
         raise GA4Error('bad_response')
@@ -302,10 +327,21 @@ def _page(payload):
     return rows, count, meta
 
 
+def _check_host(status, payload):
+    """The export always names Full Time's stream, so a property that shows visits but none to
+    fulltime.fm is refused. Preview, localhost or translated-page hosts beside it are not."""
+    if status != 200:
+        raise _refused(status)
+    hosts = [str(row['hostName']).strip().lower() for row in _page(payload, ('hostName',), ('sessions',))[0]]
+    if hosts and not any(host == HOST or host.endswith('.' + HOST) for host in hosts):
+        raise GA4Error('ga4_wrong_property')
+
+
 def run_report(creds, start, end, base_url=DATA_URL, *, token_url=TOKEN_URL, access=None):
     """Every row of the landings-by-creative report for one inclusive date range, keyed by
     GA4's own names with GA4's string values. POST /v1beta/properties/<id>:runReport,
-    limit 10000, offset paging until rowCount is reached."""
+    PAGE rows a request, offset paging until rowCount is reached, then one host_request
+    to prove the property measures fulltime.fm."""
     start, end = _day(start), _day(end)
     if start > end:
         raise ValueError('the report window starts after it ends')
@@ -318,10 +354,10 @@ def run_report(creds, start, end, base_url=DATA_URL, *, token_url=TOKEN_URL, acc
     url = base_url.rstrip('/') + f'/v1beta/properties/{property_id}:runReport?prettyPrint=false'
     head = {'Authorization': 'Bearer ' + (access or creds.get('access_token') or access_token(creds, token_url)),
             'Content-Type': 'application/json'}
+    post = lambda body: _post(url, json.dumps(body, separators=(',', ':')).encode('utf-8'), head, loopback)
     rows, total = Rows(), None
     while True:
-        body = json.dumps(report_request(start, end, len(rows)), separators=(',', ':')).encode('utf-8')
-        status, payload = _post(url, body, head, loopback)
+        status, payload = post(report_request(start, end, len(rows)))
         if status != 200:
             raise _refused(status)
         page, count, meta = _page(payload)
@@ -335,9 +371,11 @@ def run_report(creds, start, end, base_url=DATA_URL, *, token_url=TOKEN_URL, acc
         rows.thresholded = rows.thresholded or meta.get('subjectToThresholding') is True
         rows.other_row = rows.other_row or meta.get('dataLossFromOtherRow') is True
         if len(rows) >= total:
-            return rows
+            break
         if not page:
             raise GA4Error('bad_response')
+    _check_host(*post(host_request(start, end)))
+    return rows
 
 
 def _label(value, name):
@@ -371,11 +409,19 @@ def to_export(rows, start, end, observed_at):
     counts to ints. A value that looks like a contact or credential becomes "(redacted)",
     and utm_content that is not one of the engine's creative IDs (another site's tag,
     "(other)", "(redacted)") becomes "(not set)", as MEASUREMENT.md asks of exporters, so
-    one stranger's link never stops the whole import. Rows identical after cleaning are summed."""
+    one stranger's link never stops the whole import. Rows identical after cleaning are summed.
+    The export has no field for a caveat, so rows from a property reporting outside Europe/London,
+    or that Google thresholded or folded into "(other)", are refused with a code instead."""
     import growth
     start, end = _day(start), _day(end)
     if start > end:
         raise ValueError('the export window starts after it ends')
+    if getattr(rows, 'time_zone', None) not in (None, 'Europe/London'):
+        raise GA4Error('ga4_time_zone_not_london')
+    if getattr(rows, 'thresholded', False):
+        raise GA4Error('ga4_thresholded')
+    if getattr(rows, 'other_row', False):
+        raise GA4Error('ga4_other_row')
     merged = {}
     for row in rows:
         if not isinstance(row, dict) or set(row) != set(DIMENSIONS) | set(METRICS):
@@ -419,6 +465,8 @@ def _same(given, expected):
 
 
 class _Callback(BaseHTTPRequestHandler):
+    timeout = 2   # seconds a connection may sit idle, so none can hold authorize past its deadline
+
     def log_message(self, *args):
         pass
 
@@ -444,7 +492,8 @@ class _Callback(BaseHTTPRequestHandler):
 
 
 def _save(path, data):
-    """Write the credential file readable only by its owner (mode 600 where supported)."""
+    """Write the credential file readable only by its owner: mode 600 on POSIX. Windows has no
+    mode, so there the file takes its folder's permissions."""
     path.parent.mkdir(parents=True, exist_ok=True)
     if os.name == 'posix':
         os.chmod(path.parent, 0o700)
@@ -466,7 +515,8 @@ def authorize(local_dir, client_id, client_secret, open_browser=True, *, propert
     """The installed-app OAuth flow, once, on Krish's own machine. Listens on 127.0.0.1 at a
     random port, asks only for read-only Analytics access with PKCE S256, refuses an answer
     whose state does not match, exchanges the code and writes local_dir/ga4/oauth.json.
-    Prints only success and the names of the secrets to add, never their values."""
+    Prints only where it saved the file. It never prints a value, and never asks for one to
+    be copied anywhere."""
     out = out or sys.stdout
     client_id, client_secret = str(client_id or '').strip(), str(client_secret or '').strip()
     if not PRINTABLE.fullmatch(client_id) or not PRINTABLE.fullmatch(client_secret):
@@ -528,13 +578,13 @@ def authorize(local_dir, client_id, client_secret, open_browser=True, *, propert
         raise GA4Error('scope_refused', status)
     _save(path, {'client_id': client_id, 'client_secret': client_secret, 'refresh_token': refresh,
                  'property_id': property_id})
-    print(f'Signed in with read-only access. Saved {path}, readable only by you.', file=out)
-    print('Add these names to the cloud environment\'s secrets, copying each value from that file yourself '
-          '(never into chat): ' + ', '.join(ENV.values()) + '.', file=out)
+    private = (', readable only by you.' if os.name == 'posix' else
+               ". Windows gives it its folder's permissions, so it must stay inside your own user profile.")
+    print(f'Signed in with read-only access. Saved {path}{private}', file=out)
     if property_id is None:
-        print('property_id is empty: fill it in that file, and in GA4_PROPERTY_ID, with the number in Admin, '
-              'Property details (not the G- measurement ID).', file=out)
-    return {'saved': str(path), 'property_id_set': property_id is not None, 'secret_names': list(ENV.values())}
+        print('property_id is empty: fill it in that file with the number in Admin, Property details '
+              '(not the G- measurement ID).', file=out)
+    return {'saved': str(path), 'property_id_set': property_id is not None}
 
 
 # ---------------------------------------------------------------------------
@@ -589,12 +639,6 @@ def _report(local, days, out):
     atomic_json(target, export)
     total = lambda key: sum(row[key] for row in export['rows'])
     notes = ['Web landings on fulltime.fm, never listeners: kept apart from every listener number.']
-    if rows.time_zone and rows.time_zone != 'Europe/London':
-        notes.append(f'The property reports in {rows.time_zone}, so its days are not London days.')
-    if rows.thresholded:
-        notes.append('Google applied thresholding, so small counts may be hidden.')
-    if rows.other_row:
-        notes.append('Google folded some rows into "(other)", so some creatives may be hidden.')
     return {'operation': 'report', 'status': 'succeeded', 'window_start': start.isoformat(),
             'window_end': end.isoformat(), 'rows': len(export['rows']), 'pages': rows.pages,
             'creatives': len({r['utm_content'] for r in export['rows']} - {'(not set)'}),
