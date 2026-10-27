@@ -65,7 +65,8 @@ class Budgets(unittest.TestCase):
 
 class EngineIndex(unittest.TestCase):
     def test_engine_md_is_an_index_of_at_most_6_kb(self):
-        self.assertLessEqual(len(ENGINE_MD.read_bytes()), 6 * 1024)
+        # Counted as LF, as scripts/verify_repository.py does: a Windows checkout adds CRs.
+        self.assertLessEqual(len(ENGINE_MD.read_bytes().replace(b'\r\n', b'\n')), 6 * 1024)
 
     def test_engine_md_is_plain_and_complete(self):
         text = ENGINE_MD.read_text(encoding='utf-8')
