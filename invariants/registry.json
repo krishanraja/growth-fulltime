@@ -1,0 +1,1050 @@
+{
+ "_about": "Every past failure, correction and rule, mapped to the code that enforces it and the test that proves it (docs/ENGINE-V2.md, section 4). docs/FAILURE-REGISTER.md is the readable copy. Status: enforced (code and a passing test), open (code-checkable, not all of it yet; remains says what is missing), product_item, owner_item or human_judgment. Ruling numbers follow AGENTS.md. Check it with python3 -c \"from engine import invariants; print(invariants.check())\". engine/invariants.py load() is the enforcement.",
+ "schema_version": 1,
+ "entries": [
+  {
+   "id": "R01",
+   "rule": "Every match on the rail had 1 of 6 AI Pundits, so the push gate read HOLD the whole time. Fix (ruling 1): a take may go once its own exact show is published; four of six applies only to a whole-match post.",
+   "origin": "R01",
+   "status": "enforced",
+   "enforced_by": "engine.policy.take_gate",
+   "test": "tests.test_policy_v2.OrganicGateTests.test_a_whole_match_post_still_needs_four_of_six",
+   "remains": "Supply is product side: no edition has published since 19 October (briefs/2026-10-27-rail-supply.md)."
+  },
+  {
+   "id": "R02",
+   "rule": "The playbook said approve all seven decisions. Corrected: a ruling is in force only when it is approved here and recorded in full-time's decision log.",
+   "origin": "R02",
+   "status": "enforced",
+   "enforced_by": "growth.rulings_state",
+   "test": "tests.test_policy_v2.RulingsFileTests.test_approved_is_not_in_force_until_the_decision_log_carries_the_heading",
+   "remains": null
+  },
+  {
+   "id": "R03",
+   "rule": "Timing corrections: D1 waits for the rail gate, D2 for one full weekend, D5 for D7 plus two open weekends.",
+   "origin": "R03",
+   "status": "open",
+   "enforced_by": "growth.rulings_state",
+   "test": "tests.test_invariants.RuleTests.test_r03_a_ruling_that_needs_another_waits_for_it",
+   "remains": "Only \"D5 needs D7\" is code. The weekend conditions on D2 and D5 are not lints yet. D1's rail wait was replaced by the per-take gate (ruling 1)."
+  },
+  {
+   "id": "R04",
+   "rule": "The playbook's $2.14 per run was wrong; the product's own figure is roughly $6. Fix: costs come only from a measured ledger.",
+   "origin": "R04",
+   "status": "open",
+   "enforced_by": "engine.formats.readiness",
+   "test": "tests.test_formats.ReadinessTests.test_a_failing_prelive_check_or_unmeasured_cost_breaks_the_streak",
+   "remains": "Readiness refuses a verdict without its unit cost recorded, but no code works out a cost from receipts yet. The price per credit is Phase 0 work; scripts/baseline.py measures tokens and minutes, not money."
+  },
+  {
+   "id": "R05",
+   "rule": "Personal invites must carry utm_source=beta, because the December bar counts testers by that tag.",
+   "origin": "R05",
+   "status": "enforced",
+   "enforced_by": "growth.tracked",
+   "test": "tests.test_invariants.RuleTests.test_r05_a_personal_invite_is_tagged_beta",
+   "remains": null
+  },
+  {
+   "id": "R06",
+   "rule": "Playbook sample copy had \"six AI pundits\" in the wrong case and too many emoji.",
+   "origin": "R06",
+   "status": "enforced",
+   "enforced_by": "growth.problems",
+   "test": "tests.test_invariants.RuleTests.test_r06_wrong_case_and_too_many_emoji_are_refused",
+   "remains": null
+  },
+  {
+   "id": "R07",
+   "rule": "A pack with planted faults had to be refused on every fault, not just the first.",
+   "origin": "R07",
+   "status": "enforced",
+   "enforced_by": "engine.pack.build",
+   "test": "tests.test_pack.PackShapeTests.test_build_refuses_with_every_error",
+   "remains": null
+  },
+  {
+   "id": "R08",
+   "rule": "Product docs had no vision, no December date and no feedback route, and product NOW.md said \"not sold\".",
+   "origin": "R08",
+   "status": "product_item",
+   "enforced_by": null,
+   "test": null,
+   "remains": "Fixed in full-time PR #80. Product docs are full-time's to keep."
+  },
+  {
+   "id": "R09",
+   "rule": "A pack would have been rejected as stale when only NOW.md changed, which happens every night.",
+   "origin": "R09",
+   "status": "enforced",
+   "enforced_by": "growth.freshness",
+   "test": "tests.test_policy_v2.RulingsFileTests.test_the_self_test_passes_with_the_new_entries",
+   "remains": "Proved by the self-test check \"fresh when only the steward rewrote NOW.md\", which that test runs."
+  },
+  {
+   "id": "R10",
+   "rule": "The RSS itunes:owner email is the Mindmake address, and the push sender uses an address on another domain (fulltime.app). Fix here: the only address in Full Time copy is krish@fulltime.fm.",
+   "origin": "R10",
+   "status": "enforced",
+   "enforced_by": "growth.problems",
+   "test": "tests.test_invariants.RuleTests.test_r10_only_the_product_inbox_appears_in_copy",
+   "remains": "The RSS owner email and the push sender's domain are the product's to change (full-time)."
+  },
+  {
+   "id": "R11",
+   "rule": "The hourly sync Action had not fired on the new repository.",
+   "origin": "R11",
+   "status": "owner_item",
+   "enforced_by": null,
+   "test": null,
+   "remains": "Resolved: 21 sync commits since 17 October. A scheduled run that did not happen is R21."
+  },
+  {
+   "id": "R12",
+   "rule": "The public repository exposes the playbook in knowledge/ (the Reddit approach, Krish's club).",
+   "origin": "R12",
+   "status": "owner_item",
+   "enforced_by": null,
+   "test": null,
+   "remains": "An open decision for Krish: keep it public, or move it to Growth Build and leave a pointer."
+  },
+  {
+   "id": "R13",
+   "rule": "The eight-job schedule was retired for two jobs; the self-checks dropped from 160 to 124.",
+   "origin": "R13",
+   "status": "enforced",
+   "enforced_by": "growth.self_test",
+   "test": "tests.test_policy_v2.RulingsFileTests.test_the_self_test_passes_with_the_new_entries",
+   "remains": "The self-test checks every job file has an automation; scripts/verify_repository.py checks exactly the two London jobs, in CI."
+  },
+  {
+   "id": "R14",
+   "rule": "Owner exclusions (no personal accounts, no cold email, close to free) apply to held drafts too.",
+   "origin": "R14",
+   "status": "enforced",
+   "enforced_by": "engine.policy.errors",
+   "test": "tests.test_engine.PolicyTests.test_excluded_channels_refused_even_when_held",
+   "remains": null
+  },
+  {
+   "id": "R15",
+   "rule": "Remote report writes were removed and Control Center made brief-only; the protocol superseded this on 19 October.",
+   "origin": "R15",
+   "status": "enforced",
+   "enforced_by": "growth.store_pack",
+   "test": "tests.test_engine.PolicyTests.test_store_has_no_remote_side_effect_even_with_token",
+   "remains": null
+  },
+  {
+   "id": "R16",
+   "rule": "Correction: verify existing access instead of asking again for credentials.",
+   "origin": "R16",
+   "status": "owner_item",
+   "enforced_by": "engine.control_center.load_token",
+   "test": "tests.test_control_center.EntryPointTests.test_missing_token_says_so_and_exits_non_zero",
+   "remains": "Session conduct. In code, a missing token stops with a code and says where it goes; it never asks."
+  },
+  {
+   "id": "R17",
+   "rule": "Control Center defects: growth_packs upserts on (pack_date, kind) with no product key, the parser drops IDs and holds, and paid-plan wording was stale.",
+   "origin": "R17",
+   "status": "product_item",
+   "enforced_by": "engine.reporting.verify_receipt",
+   "test": "tests.test_engine.ReportingAndRunnerTests.test_lossless_report_and_strict_receipt",
+   "remains": "The engine's side is tested. The upsert key and the parser are Control Center's to fix."
+  },
+  {
+   "id": "R18",
+   "rule": "An HTTP 200, a ventures list or a local pack was being treated as delivery.",
+   "origin": "R18",
+   "status": "enforced",
+   "enforced_by": "engine.control_center.Client.deliver",
+   "test": "tests.test_control_center.ClientTests.test_attempt_started_then_one_terminal_and_readback",
+   "remains": null
+  },
+  {
+   "id": "R19",
+   "rule": "The published Reporter share image had missing glyphs.",
+   "origin": "R19",
+   "status": "open",
+   "enforced_by": "engine.crew.glyph_readback",
+   "test": "tests.test_crew.CardMakerTests.test_glyph_readback_names_every_missing_character",
+   "remains": "The check exists and is tested, but no CLI step runs it on a Canva read-design result yet, so a glyph_readback pass is still self-reported. The product's own share image is full-time's."
+  },
+  {
+   "id": "R20",
+   "rule": "An edited caption must not inherit the old version's publication proof.",
+   "origin": "R20",
+   "status": "enforced",
+   "enforced_by": "engine.records.History.checkpoint",
+   "test": "tests.test_engine.HistoryTests.test_reruns_and_restart_preserve_publication",
+   "remains": null
+  },
+  {
+   "id": "R21",
+   "rule": "The hosted tasks never populated next_run_time: configured is not the same as executed.",
+   "origin": "R21",
+   "status": "open",
+   "enforced_by": null,
+   "test": null,
+   "remains": "No code compares the expected 06:15 and Monday 08:00 slots with the runs that happened, so a missed slot is not reported yet."
+  },
+  {
+   "id": "R22",
+   "rule": "A scheduler without the private workspace must not invent a fresh ledger.",
+   "origin": "R22",
+   "status": "enforced",
+   "enforced_by": "engine.control_center.workspace_work",
+   "test": "tests.test_control_center.EntryPointTests.test_scheduled_workspace_run_refuses_a_fresh_ledger",
+   "remains": null
+  },
+  {
+   "id": "R23",
+   "rule": "The protocol 1.1.0 copy linked ADR-038 by a relative path that does not exist.",
+   "origin": "R23",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.main",
+   "test": "tests.test_invariants.RuleTests.test_r23_a_missing_relative_link_is_refused",
+   "remains": null
+  },
+  {
+   "id": "R24",
+   "rule": "Control Center started serving 1.1.0 while Legibility and Mindmake required exactly 1.0.0, and they reported nothing for two days. Fix: send 1.1.0, take any 1.x, refuse 2.x.",
+   "origin": "R24",
+   "status": "enforced",
+   "enforced_by": "engine.control_center.version_supported",
+   "test": "tests.test_protocol_v11.VersionRefusalTests.test_any_1x_is_taken_and_another_major_is_refused",
+   "remains": null
+  },
+  {
+   "id": "R25",
+   "rule": "A 409 must be read back, never retried blindly.",
+   "origin": "R25",
+   "status": "enforced",
+   "enforced_by": "engine.control_center.Client.deliver",
+   "test": "tests.test_control_center.ClientTests.test_conflict_is_read_back_never_retried_blindly",
+   "remains": null
+  },
+  {
+   "id": "R26",
+   "rule": "The bearer token must never appear in output.",
+   "origin": "R26",
+   "status": "enforced",
+   "enforced_by": "engine.control_center.load_token",
+   "test": "tests.test_control_center.ClientTests.test_wrong_token_fails_locally_with_a_code_and_never_prints_it",
+   "remains": null
+  },
+  {
+   "id": "R27",
+   "rule": "Preserved corpus bytes could drift through edits or CRLF conversion.",
+   "origin": "R27",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.source_errors",
+   "test": "tests.test_knowledge.PreservedSources.test_one_changed_byte_is_caught",
+   "remains": null
+  },
+  {
+   "id": "R28",
+   "rule": "The Control Center brief's status line still said \"stand-in only\" after the first live success.",
+   "origin": "R28 (GET-GOING step 0)",
+   "status": "enforced",
+   "enforced_by": null,
+   "test": "tests.test_invariants.RuleTests.test_gg0_the_brief_status_line_names_the_live_run",
+   "remains": "Fixed on 27 October; the test keeps the status line from going back."
+  },
+  {
+   "id": "R29",
+   "rule": "Listening problems: dull source audio, a fast ad linked to a stiff edition, an audition taken as approval.",
+   "origin": "R29",
+   "status": "open",
+   "enforced_by": "engine.creative_system.System.artifact_gate",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_review_absence_holds_change",
+   "remains": "Krish's review is required, but no lint reads a recorded human listening verdict before a take or ad goes to G2; listening_verdict is only a named pre-live check in formats/match_ad/recipe.json."
+  },
+  {
+   "id": "R30",
+   "rule": "Only one published edition was recorded, so no video spend.",
+   "origin": "R30",
+   "status": "open",
+   "enforced_by": null,
+   "test": null,
+   "remains": "The video gate (a passed realism proof and an approved weekly spend) is named in formats/match_ad/recipe.json, but no code refuses a full video yet."
+  },
+  {
+   "id": "R31",
+   "rule": "The earlier North Star 0 (23 October) was not this week's measurement; urgency is U4. Fix: the NOW.md state line is checked, not only written.",
+   "origin": "R31",
+   "status": "enforced",
+   "enforced_by": "engine.invariants.now_state_errors",
+   "test": "tests.test_invariants.NowStateTests.test_the_real_now_md_passes",
+   "remains": null
+  },
+  {
+   "id": "R32",
+   "rule": "CI hung in apt for over 20 minutes after the self-test passed.",
+   "origin": "R32",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.v2_errors",
+   "test": "tests.test_invariants.RuleTests.test_r32_to_r34_ci_hardening_is_checked",
+   "remains": null
+  },
+  {
+   "id": "R33",
+   "rule": "CI on ubuntu-latest pulled 81 new FFmpeg dependencies and stalled on the Azure mirror.",
+   "origin": "R33",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.v2_errors",
+   "test": "tests.test_invariants.RuleTests.test_r32_to_r34_ci_hardening_is_checked",
+   "remains": null
+  },
+  {
+   "id": "R34",
+   "rule": "Both runner images stalled on the plain-HTTP Azure mirror fetching the same codec.",
+   "origin": "R34",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.v2_errors",
+   "test": "tests.test_invariants.RuleTests.test_r32_to_r34_ci_hardening_is_checked",
+   "remains": null
+  },
+  {
+   "id": "R35",
+   "rule": "The verifier failed on Windows with Unicode files because it used the default encoding.",
+   "origin": "R35",
+   "status": "open",
+   "enforced_by": null,
+   "test": "tests.test_invariants.RuleTests.test_r35_no_new_text_read_or_write_without_utf8",
+   "remains": "A Windows CI job runs the suite and new gaps are refused. Three known gaps remain: engine/runner.py reads an observation file without naming UTF-8, and engine/control_center.py and scripts/verify_repository.py read process output in the locale's encoding."
+  },
+  {
+   "id": "R36",
+   "rule": "Two-panel staging and locked ad-specific jokes leaked into unrelated creatives.",
+   "origin": "R36",
+   "status": "enforced",
+   "enforced_by": "engine.creative_system.applies",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_piece_specific_line_does_not_leak_into_another_ad",
+   "remains": null
+  },
+  {
+   "id": "R37",
+   "rule": "Growth kept duplicate persona prompts instead of pinning the product core, and risked following product main.",
+   "origin": "R37",
+   "status": "enforced",
+   "enforced_by": "engine.creative_system.System.import_product_core",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_product_core_file_is_pinned_not_followed_from_main",
+   "remains": null
+  },
+  {
+   "id": "R38",
+   "rule": "A technical or model pass was treated as creative approval.",
+   "origin": "R38",
+   "status": "enforced",
+   "enforced_by": "engine.creative_system.System.artifact_gate",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_technical_pass_never_substitutes_for_owner_review",
+   "remains": null
+  },
+  {
+   "id": "R39",
+   "rule": "Instruction dumps, and characters inheriting from each other.",
+   "origin": "R39",
+   "status": "enforced",
+   "enforced_by": "engine.creative_system.validate",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_character_rule_budget_prevents_an_instruction_dump",
+   "remains": null
+  },
+  {
+   "id": "R40",
+   "rule": "Restarting the creative baseline from a chat summary.",
+   "origin": "R40",
+   "status": "enforced",
+   "enforced_by": "engine.creative_system.System.load_release",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_missing_private_baseline_refuses_fallback",
+   "remains": null
+  },
+  {
+   "id": "R41",
+   "rule": "Running another full-video iteration just because a new session started.",
+   "origin": "R41",
+   "status": "open",
+   "enforced_by": null,
+   "test": null,
+   "remains": "The same gate as R30 and R47: no code refuses a full video without a passed realism proof and an approved spend yet. The Motion Maker card tells the session to refuse it."
+  },
+  {
+   "id": "R42",
+   "rule": "The switch-intent event fires on paused loads and navigation, so it cannot prove a comparison.",
+   "origin": "R42",
+   "status": "enforced",
+   "enforced_by": "engine.measurements.validate",
+   "test": "tests.test_invariants.RuleTests.test_r42_a_switch_event_is_never_a_metric",
+   "remains": null
+  },
+  {
+   "id": "R43",
+   "rule": "RELEASE could never open: policy.release_open reads marketing_release, but no code wrote it.",
+   "origin": "R43",
+   "status": "enforced",
+   "enforced_by": "growth.release_evidence",
+   "test": "tests.test_policy_v2.ReleaseEvidenceTests.test_sync_writes_marketing_release_from_the_decision_heading",
+   "remains": null
+  },
+  {
+   "id": "R44",
+   "rule": "The automations.json prompts hard-coded HANDOVER-2026-10-19.md while the newest handover was 26 October.",
+   "origin": "R44",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.v2_errors",
+   "test": "tests.test_invariants.RuleTests.test_r44_automations_name_the_newest_handover",
+   "remains": "The hosted copies of the two tasks are Krish's to update (GG5)."
+  },
+  {
+   "id": "R45",
+   "rule": "NOW.md front matter pointed to docs/history/LOG.md, which did not exist, and its head was stale.",
+   "origin": "R45",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.v2_errors",
+   "test": "tests.test_invariants.RuleTests.test_r45_front_matter_paths_must_exist",
+   "remains": "The head sha in the front matter is not compared with git."
+  },
+  {
+   "id": "R46",
+   "rule": "Ad mixes came out too dark, too late, too quiet or too loud.",
+   "origin": "R46",
+   "status": "open",
+   "enforced_by": null,
+   "test": null,
+   "remains": "The TV audio template's entry time, level curve and cue ID are not yet locked parameters with tolerance tests; tv_mix_tolerance is only a named pre-live check in formats/match_ad/recipe.json."
+  },
+  {
+   "id": "R47",
+   "rule": "Video was rejected for artificial faces, lip sync, excess smiles and banter edge.",
+   "origin": "R47",
+   "status": "open",
+   "enforced_by": "engine.creative_system.System.artifact_gate",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_owner_rejection_holds_even_when_all_technical_checks_pass",
+   "remains": "Krish's visual verdict holds a rejected video, but no code refuses a full video without a passed realism proof yet. Natural faces and lip sync stay his judgment."
+  },
+  {
+   "id": "R48",
+   "rule": "The Drive connector caps uploads at 100 MB.",
+   "origin": "R48",
+   "status": "enforced",
+   "enforced_by": "engine.library.bundle",
+   "test": "tests.test_library.Backups.test_bundle_refusals",
+   "remains": null
+  },
+  {
+   "id": "R49",
+   "rule": "Bytes in Drive were not hashed after upload.",
+   "origin": "R49",
+   "status": "enforced",
+   "enforced_by": "engine.library.assemble",
+   "test": "tests.test_library.Backups.test_a_tampered_part_is_refused_and_nothing_is_left_behind",
+   "remains": "assemble() hashes every part; a session must first download the parts from Drive to check them."
+  },
+  {
+   "id": "R50",
+   "rule": "Bespoke per-piece builders (the v6 and v8 review mixes, the review-candidate renderer, the Epidemic fetch) ran outside any gate.",
+   "origin": "R50",
+   "status": "open",
+   "enforced_by": "engine.formats.recipe_errors",
+   "test": "tests.test_invariants.RuleTests.test_r50_only_registered_steps_and_no_code_under_formats",
+   "remains": "Unregistered render steps and code under formats/ or specs/ are refused, but the three builders are not ported yet (tasks/match-ad-v8-mix-port.json)."
+  },
+  {
+   "id": "DOC01",
+   "rule": "The creative bar for a go-live: the doctrine it was checked against, at least two alternatives, and why this one wins.",
+   "origin": "doc rule 1",
+   "status": "enforced",
+   "enforced_by": "engine.pack.check",
+   "test": "tests.test_pack.MediaReviewTests.test_review_bar",
+   "remains": null
+  },
+  {
+   "id": "DOC02",
+   "rule": "The plan, go-live and check-in loop, with amended_sha256, checking in every other day.",
+   "origin": "doc rule 2",
+   "status": "open",
+   "enforced_by": "engine.reporting.protocol_errors",
+   "test": "tests.test_protocol_v11.StageTests.test_plan_go_live_and_check_in_are_valid_and_taken",
+   "remains": "Stages and amendments are code. Posting is handcrafted (ruling 3), so a go-live is an instruction for Krish. The every-other-day check-in is not scheduled in code."
+  },
+  {
+   "id": "DOC03",
+   "rule": "Record every amendment and decline where the next draft reads it.",
+   "origin": "doc rule 3",
+   "status": "open",
+   "enforced_by": "engine.gates.settle",
+   "test": "tests.test_integration_v2.GateLoop.test_a_queued_g2_rides_the_report_and_his_amendment_becomes_per_item_verdicts",
+   "remains": "G2 amendments, rejects and notes are written to local/engine/verdicts.jsonl. Declines of other asks (rulings, spend) are only counted in local/control-center/last.json."
+  },
+  {
+   "id": "DOC04",
+   "rule": "One ask per engine at a time, deferring to subject_ref.",
+   "origin": "doc rule 4",
+   "status": "enforced",
+   "enforced_by": "engine.reporting.one_ask",
+   "test": "tests.test_protocol_v11.OneAskTests.test_a_waiting_ask_is_kept_current_and_no_second_of_its_kind_is_added",
+   "remains": null
+  },
+  {
+   "id": "DOC05",
+   "rule": "Accept any protocol 1.x.",
+   "origin": "doc rule 5",
+   "status": "enforced",
+   "enforced_by": "engine.control_center.version_supported",
+   "test": "tests.test_protocol_v11.VersionRefusalTests.test_a_later_1x_directive_is_taken",
+   "remains": null
+  },
+  {
+   "id": "DOC06",
+   "rule": "COPY.md's take test, awareness and lead, edit passes A to E, the rubric bands, and Ethics and Action at 4.",
+   "origin": "doc rule 6",
+   "status": "enforced",
+   "enforced_by": "engine.pack.check",
+   "test": "tests.test_pack.MediaReviewTests.test_review_bar",
+   "remains": "Code holds the score bar: 38 of 48, Ethics and Action at 4. The take test, the awareness fit and the edit passes stay the reviewer's judgment."
+  },
+  {
+   "id": "DOC07",
+   "rule": "The listening standard: listen to the whole edition, keep the human verdict separate, hold when evidence is missing.",
+   "origin": "doc rule 7",
+   "status": "open",
+   "enforced_by": "engine.creative_system.System.artifact_gate",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_not_assessed_and_not_applicable_are_not_passes",
+   "remains": "Listening itself is Krish's. No lint holds a take whose listening evidence is missing yet (R29)."
+  },
+  {
+   "id": "DOC08",
+   "rule": "One concept per match morning, and a real mobile path, with Shorts links not assumed clickable.",
+   "origin": "doc rule 8",
+   "status": "human_judgment",
+   "enforced_by": null,
+   "test": null,
+   "remains": "The reviewer checks the mobile path on a phone (the Channel & Pack Steward's lens). The spec caps items per matchday, not concepts."
+  },
+  {
+   "id": "DOC09",
+   "rule": "The experiment test order, and guardrails that always include no extra marketing cash.",
+   "origin": "doc rule 9",
+   "status": "open",
+   "enforced_by": "engine.spec.validate",
+   "test": "tests.test_spec.ValidateTests.test_mode_and_objectives",
+   "remains": "The spec refuses any marketing cash target but 0, and History.experiment needs guardrails, but nothing checks that they name marketing cash. The test order is the What-Works Analyst's judgment."
+  },
+  {
+   "id": "DOC10",
+   "rule": "At most three public sources per run, and never quote a listener.",
+   "origin": "doc rule 10",
+   "status": "open",
+   "enforced_by": null,
+   "test": null,
+   "remains": "No code counts public sources per run or spots a listener quote; policy.sensitive_errors refuses contact data only."
+  },
+  {
+   "id": "DOC11",
+   "rule": "Krish's budget: 20 minutes a day and 30 a week.",
+   "origin": "doc rule 11",
+   "status": "open",
+   "enforced_by": "engine.session.budget_errors",
+   "test": "tests.test_session.Ledger.test_budget_errors_flag_a_day_over_20_minutes_and_sessions_over_budget",
+   "remains": "The daily 20 is summed from the session ledger; the weekly 30 is not summed yet."
+  },
+  {
+   "id": "DOC12",
+   "rule": "Re-read fixtures weekly.",
+   "origin": "doc rule 12",
+   "status": "open",
+   "enforced_by": "engine.crew.fixtures_fresh",
+   "test": "tests.test_crew.MatchClockTests.test_fixtures_must_be_read_today_in_london",
+   "remains": "The Match Clock's lint is stricter (read today, in London), but no fixtures reader exists for it to check yet."
+  },
+  {
+   "id": "DOC13",
+   "rule": "Read the newest handover.",
+   "origin": "doc rule 13",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.v2_errors",
+   "test": "tests.test_invariants.RuleTests.test_r44_automations_name_the_newest_handover",
+   "remains": null
+  },
+  {
+   "id": "DOC14",
+   "rule": "No engine-code changes in scheduled runs.",
+   "origin": "doc rule 14",
+   "status": "enforced",
+   "enforced_by": null,
+   "test": "tests.test_invariants.RuleTests.test_doc14_scheduled_runs_commit_only_state",
+   "remains": "The workflows can only commit state/. A scheduled run's working tree is not checked clean before it starts."
+  },
+  {
+   "id": "DOC15",
+   "rule": "Never run a paid pipeline to diagnose a failure.",
+   "origin": "doc rule 15",
+   "status": "human_judgment",
+   "enforced_by": null,
+   "test": null,
+   "remains": "A session's conduct. Spend needs Krish's approved spend decision, and dispatch.guard refuses Codex work over 80% of the allowance without one."
+  },
+  {
+   "id": "DOC16",
+   "rule": "The line you never cross in a signed-in browser: read and copy numbers only; never type into a post, press post, follow or pay, or change a setting.",
+   "origin": "doc rule 16",
+   "status": "human_judgment",
+   "enforced_by": "engine.audience.gate",
+   "test": "tests.test_audience.GateTests.test_publishing_is_never_automated_even_if_ruled",
+   "remains": "A browser session's conduct. In code nothing posts, and the Audience Builder's gate never automates publishing."
+  },
+  {
+   "id": "DOC17",
+   "rule": "North Star duties and urgency; the NOW.md state block was not validated.",
+   "origin": "doc rule 17",
+   "status": "enforced",
+   "enforced_by": "engine.invariants.now_state_errors",
+   "test": "tests.test_invariants.NowStateTests.test_each_break_is_named",
+   "remains": null
+  },
+  {
+   "id": "DOC18",
+   "rule": "Record each generation's venture, outcome and asset.",
+   "origin": "doc rule 18",
+   "status": "open",
+   "enforced_by": null,
+   "test": null,
+   "remains": "No generation record exists in code yet (the Motion Maker card says so)."
+  },
+  {
+   "id": "DOC19",
+   "rule": "A reviewer's identity is an assertion, not authenticated: reviewer_kind is self-declared.",
+   "origin": "doc rule 19",
+   "status": "open",
+   "enforced_by": "engine.creative_system.System.promote",
+   "test": "tests.test_creative_system.CreativeSystemTests.test_model_review_cannot_promote_creative",
+   "remains": "A model review cannot promote, but reviewer_kind is still self-declared. Only Krish's Control Center decisions are authenticated, and G2 verdicts come from them."
+  },
+  {
+   "id": "DOC20",
+   "rule": "Never attach private bundles to public artifacts; the self-test checked only one workflow.",
+   "origin": "doc rule 20",
+   "status": "enforced",
+   "enforced_by": "scripts.verify_repository.v2_errors",
+   "test": "tests.test_invariants.RuleTests.test_doc20_no_workflow_uploads_an_artifact",
+   "remains": null
+  },
+  {
+   "id": "DOC21",
+   "rule": "Hashtags from 2 to 5; the code checked only more than 5.",
+   "origin": "doc rule 21",
+   "status": "enforced",
+   "enforced_by": "engine.pack.check",
+   "test": "tests.test_pack.CopyTests.test_hashtags_two_to_five_each_starting_hash",
+   "remains": null
+  },
+  {
+   "id": "DOC22",
+   "rule": "COPY.md must stay under 250 lines.",
+   "origin": "doc rule 22",
+   "status": "enforced",
+   "enforced_by": null,
+   "test": "tests.test_knowledge.CopyDoctrine.test_doctrine_is_plain_and_keeps_its_overrides",
+   "remains": "COPY.md is at 247 lines, three from the limit."
+  },
+  {
+   "id": "GG0",
+   "rule": "Correct the status line of docs/CONTROL-CENTER-BRIEF.md: the first live run on 19 October succeeded.",
+   "origin": "GET-GOING step 0",
+   "status": "enforced",
+   "enforced_by": null,
+   "test": "tests.test_invariants.RuleTests.test_gg0_the_brief_status_line_names_the_live_run",
+   "remains": null
+  },
+  {
+   "id": "GG0.5",
+   "rule": "Media credits: propose about 10 Higgsfield pundit stills behind spend, stills before video, generating nothing before his yes.",
+   "origin": "GET-GOING step 0.5",
+   "status": "open",
+   "enforced_by": null,
+   "test": null,
+   "remains": "Folded into v2 phase 1 as the weekly spend proposal; no code builds that proposal yet. Nothing has been generated."
+  },
+  {
+   "id": "GG1",
+   "rule": "The autonomy loop on protocol 1.1.0: plan, go-live, the go-live step and check-ins.",
+   "origin": "GET-GOING step 1",
+   "status": "enforced",
+   "enforced_by": "engine.control_center.handcrafted_instruction",
+   "test": "tests.test_protocol_v11.HandcraftedTests.test_an_approved_go_live_is_an_instruction_never_an_action",
+   "remains": "Superseded for posts by ruling 3: an approved go-live is an instruction for Krish, never an action. The creative review part is DOC01."
+  },
+  {
+   "id": "GG2",
+   "rule": "Act on his rulings: record them in rulings.json and release the matching hold with the decision as evidence; keep the hold on a decline.",
+   "origin": "GET-GOING step 2",
+   "status": "owner_item",
+   "enforced_by": "growth.rulings_state",
+   "test": "tests.test_protocol_v11.OneAskTests.test_an_approved_ruling_is_never_asked_again",
+   "remains": "D1 and ORGANIC are recorded; they come into force when full-time's decision log carries their heading (a handoff). D2, D3 and D7 wait for Krish."
+  },
+  {
+   "id": "GG3",
+   "rule": "Build the attribution count: a shared take to a first finished show, its window and time zone, against what full-time exposes, naming the exact gap.",
+   "origin": "GET-GOING step 3",
+   "status": "product_item",
+   "enforced_by": "engine.attribution.objectives",
+   "test": "tests.test_attribution.Objectives.test_no_export_is_missing_with_a_reason_never_zero",
+   "remains": "The engine side is built and tested. The share token, its join to the first finished listen and the weekly export are product work (briefs/2026-10-27-share-attribution.md)."
+  },
+  {
+   "id": "GG4",
+   "rule": "Diagnose the thin rail from stored verdicts and propose the fix.",
+   "origin": "GET-GOING step 4",
+   "status": "product_item",
+   "enforced_by": null,
+   "test": null,
+   "remains": "Handed to full-time as briefs/2026-10-27-rail-supply.md."
+  },
+  {
+   "id": "GG5",
+   "rule": "Update the two hosted tasks so their prompts match automations.json, and make workspace runs stop loudly when the token is missing.",
+   "origin": "GET-GOING step 5",
+   "status": "owner_item",
+   "enforced_by": "engine.control_center.main",
+   "test": "tests.test_control_center.EntryPointTests.test_missing_token_says_so_and_exits_non_zero",
+   "remains": "automations.json names the newest handover (R44) and a missing token stops with a code. The hosted copies live in Krish's account and still need updating to match."
+  },
+  {
+   "id": "LIB1",
+   "rule": "One writer: only the Librarian files into Growth Build.",
+   "origin": "library rule 1",
+   "status": "enforced",
+   "enforced_by": "engine.library.reconcile",
+   "test": "tests.test_library.Reconcile.test_orphans_missing_rows_and_sizes",
+   "remains": "A write by another session is caught at the weekly reconcile as a file with no index row; it is not prevented."
+  },
+  {
+   "id": "LIB2",
+   "rule": "Fixed tree: only the numbered folders, nothing at the root, depth 4 or less.",
+   "origin": "library rule 2",
+   "status": "enforced",
+   "enforced_by": "engine.library.folder_errors",
+   "test": "tests.test_library.Names.test_folders_outside_the_tree_are_named",
+   "remains": null
+  },
+  {
+   "id": "LIB3",
+   "rule": "Names in one pattern: lowercase ASCII and hyphens.",
+   "origin": "library rule 3",
+   "status": "enforced",
+   "enforced_by": "engine.library.name_errors",
+   "test": "tests.test_library.Names.test_each_break_names_the_rule_it_breaks",
+   "remains": null
+  },
+  {
+   "id": "LIB4",
+   "rule": "Every file has exactly one INDEX.csv row and every row its file; bytes already filed link the existing copy.",
+   "origin": "library rule 4",
+   "status": "enforced",
+   "enforced_by": "engine.library.file_plan",
+   "test": "tests.test_library.Filing.test_the_same_bytes_link_the_copy_already_filed",
+   "remains": null
+  },
+  {
+   "id": "LIB5",
+   "rule": "Never overwrite, never delete: a new version is a new _v<n>, and old ones move to 99_Archive.",
+   "origin": "library rule 5",
+   "status": "enforced",
+   "enforced_by": "engine.library.archive_plan",
+   "test": "tests.test_library.Archive.test_archive_plans_only_move_and_never_delete",
+   "remains": null
+  },
+  {
+   "id": "LIB6",
+   "rule": "Never change sharing or permissions, never write outside Growth Build, and read 00_Brand-Assets read only.",
+   "origin": "library rule 6",
+   "status": "enforced",
+   "enforced_by": null,
+   "test": "tests.test_invariants.RuleTests.test_lib6_the_librarian_has_no_network_or_sharing_verb",
+   "remains": "The library code holds no network, sharing or permission call. The Drive connector calls are a Claude session's, which follows the Librarian card; Drive itself does not stop them."
+  },
+  {
+   "id": "LIB7",
+   "rule": "Weekly reconcile: zero files outside the tree, orphans, duplicates and misnamed files, or a LIBRARY hold leads the report. The sprawl test plants all three.",
+   "origin": "library rule 7",
+   "status": "enforced",
+   "enforced_by": "engine.library.hold",
+   "test": "tests.test_library.Reconcile.test_sprawl_is_reported_and_holds_the_report",
+   "remains": null
+  },
+  {
+   "id": "LIB8",
+   "rule": "Canva mirrors the tree: Growth/Templates and Growth/<week>, reconciled the same way.",
+   "origin": "library rule 8",
+   "status": "open",
+   "enforced_by": null,
+   "test": null,
+   "remains": "No Canva listing is reconciled yet."
+  },
+  {
+   "id": "LIB9",
+   "rule": "One source per artefact: git for public docs with a source stamp on the Drive copy, Drive for private assets, and a verified private backup each week.",
+   "origin": "library rule 9",
+   "status": "open",
+   "enforced_by": "engine.library.bundle",
+   "test": "tests.test_library.Backups.test_bundle_then_assemble_round_trips_with_tiny_parts",
+   "remains": "Backups are built and verified in code; the source stamp on Drive copies of public docs is not checked."
+  },
+  {
+   "id": "INV-NO-WRITE",
+   "rule": "No Buffer or platform write verb exists anywhere in the engine, and no code names a platform API host.",
+   "origin": "ruling 3 (handcrafted)",
+   "status": "enforced",
+   "enforced_by": null,
+   "test": "tests.test_invariants.RuleTests.test_inv_no_write_verb_or_platform_endpoint_in_engine_code",
+   "remains": "A new host in engine code fails the test until it has a reason and a read-only test."
+  },
+  {
+   "id": "INV-BUFFER-READ-ONLY",
+   "rule": "The Buffer reader has no write capability and opens no connection of its own.",
+   "origin": "ruling 3 (handcrafted)",
+   "status": "enforced",
+   "enforced_by": "engine.buffer_read.query",
+   "test": "tests.test_buffer_read.ReadOnlyTests.test_the_module_has_no_write_capability",
+   "remains": null
+  },
+  {
+   "id": "INV-BUFFER-ALLOWLIST",
+   "rule": "The Buffer reader is allowlist-only: it names only Full Time channel IDs and refuses an organisation-wide listing.",
+   "origin": "docs/ENGINE-V2.md section 4",
+   "status": "enforced",
+   "enforced_by": "engine.buffer_read.query",
+   "test": "tests.test_buffer_read.QueryTests.test_an_organisation_wide_listing_is_refused",
+   "remains": null
+  },
+  {
+   "id": "INV-NO-PERSONAL-POSTS",
+   "rule": "Krish's personal posts are never inspected: a post on a channel outside the allowlist is dropped before any field of it is read.",
+   "origin": "docs/ENGINE-V2.md section 4",
+   "status": "enforced",
+   "enforced_by": "engine.buffer_read.receipts",
+   "test": "tests.test_buffer_read.ReceiptTests.test_a_personal_channel_post_is_ignored_even_with_a_creative_id",
+   "remains": null
+  },
+  {
+   "id": "INV-MEDIA-HASH",
+   "rule": "Media bound by hash: every exact_payload carries the SHA-256 and size of each rendered file and Canva export.",
+   "origin": "docs/ENGINE-V2.md section 4",
+   "status": "enforced",
+   "enforced_by": "engine.pack.check",
+   "test": "tests.test_pack.MediaReviewTests.test_media_is_bound_by_hash_and_size",
+   "remains": null
+  },
+  {
+   "id": "INV-PAYLOAD-SIZE",
+   "rule": "An exact_payload stays within the protocol's 8,000 characters, counted as JavaScript counts them.",
+   "origin": "docs/ENGINE-V2.md section 4",
+   "status": "enforced",
+   "enforced_by": "engine.pack.size_errors",
+   "test": "tests.test_pack.SizeTests.test_exact_payload_at_most_8000_characters",
+   "remains": null
+  },
+  {
+   "id": "INV-EVIDENCE-LINKS",
+   "rule": "A proposal carries at most 12 evidence links.",
+   "origin": "docs/ENGINE-V2.md section 4",
+   "status": "enforced",
+   "enforced_by": "engine.pack.size_errors",
+   "test": "tests.test_pack.SizeTests.test_at_most_twelve_distinct_review_links",
+   "remains": null
+  },
+  {
+   "id": "INV-ONE-ASK",
+   "rule": "One ask at a time: a new strategy ask waits behind one already on Krish's list, and a ruling ask retires once ruled.",
+   "origin": "docs/ENGINE-V2.md section 5",
+   "status": "enforced",
+   "enforced_by": "engine.reporting.one_ask",
+   "test": "tests.test_protocol_v11.OneAskTests.test_a_new_strategy_ask_waits_behind_one_already_on_his_list",
+   "remains": null
+  },
+  {
+   "id": "INV-READINESS-COMPUTED",
+   "rule": "Readiness is computed from Krish's verdicts and pre-live checks only: three no-edit post its on three matches under one lock. No session ever writes ready.",
+   "origin": "ruling 6 (plan ruling 7)",
+   "status": "enforced",
+   "enforced_by": "engine.formats.readiness",
+   "test": "tests.test_formats.ReadinessTests.test_three_clean_post_its_on_three_matches_are_ready",
+   "remains": null
+  },
+  {
+   "id": "INV-READINESS-INPUTS",
+   "rule": "Post-live numbers (views, shares) are never inputs to readiness.",
+   "origin": "ruling 6 (plan ruling 7)",
+   "status": "enforced",
+   "enforced_by": "engine.formats.readiness",
+   "test": "tests.test_formats.ReadinessTests.test_post_live_metrics_are_never_inputs",
+   "remains": null
+  },
+  {
+   "id": "INV-PER-FORMAT",
+   "rule": "Each format goes live on its own readiness.",
+   "origin": "ruling 6 (plan ruling 12)",
+   "status": "enforced",
+   "enforced_by": "engine.formats.readiness_gate",
+   "test": "tests.test_formats.ReadinessTests.test_readiness_feeds_the_compile_gates",
+   "remains": null
+  },
+  {
+   "id": "INV-TODAY-LIVE",
+   "rule": "A match ad links to Today only while Today carries a published AI Pundit show, checked live.",
+   "origin": "ruling 7 (plan ruling 11)",
+   "status": "enforced",
+   "enforced_by": "engine.pack.check",
+   "test": "tests.test_pack.TodayGateTests.test_a_match_ad_links_to_today_while_it_is_live",
+   "remains": null
+  },
+  {
+   "id": "INV-NO-SHOW-CLAIM",
+   "rule": "A match ad's words never claim a show exists for its match.",
+   "origin": "ruling 7 (plan ruling 11)",
+   "status": "enforced",
+   "enforced_by": "engine.pack.check",
+   "test": "tests.test_pack.TodayGateTests.test_a_match_ad_never_claims_a_show",
+   "remains": null
+  },
+  {
+   "id": "INV-ORGANIC-SEPARATE",
+   "rule": "ORGANIC stays separate from RELEASE: under it, consent (D7) and a verified brand channel are still required.",
+   "origin": "ruling 1",
+   "status": "enforced",
+   "enforced_by": "engine.policy.errors",
+   "test": "tests.test_policy_v2.OrganicGateTests.test_consent_and_channel_stay_required",
+   "remains": null
+  },
+  {
+   "id": "INV-GA4-NOT-LISTENERS",
+   "rule": "Google Analytics 4 landings on fulltime.fm (G-W2QL8RKFJ1) are web sessions, never listeners: no GA4 row fills a listener objective. Krish: \"Make sure this is a part of your Measurement Specialist.\"",
+   "origin": "rulings 8 and 10 (27 October)",
+   "status": "enforced",
+   "enforced_by": "engine.attribution.objectives",
+   "test": "tests.test_attribution.NoPathToListeners.test_ga4_rows_never_fill_a_listener_objective",
+   "remains": "Consent item D7 is still open; reading aggregates does not close it."
+  },
+  {
+   "id": "INV-GA4-AGGREGATE",
+   "rule": "The GA4 export is aggregate only: a person-level field refuses the whole file, and only Full Time's property is read.",
+   "origin": "ruling 10",
+   "status": "enforced",
+   "enforced_by": "engine.attribution.ga4_rows",
+   "test": "tests.test_attribution.GA4Rows.test_person_level_fields_are_refused",
+   "remains": null
+  },
+  {
+   "id": "INV-GA4-FROM-CONTROL-CENTER",
+   "rule": "Google Analytics landings come from Control Center's daily directive (ga4_landings) first, else from the local export, and pass the same aggregate checks either way.",
+   "origin": "ruling 10 (\"just get google analytics data from control center\")",
+   "status": "enforced",
+   "enforced_by": "engine.control_center.measurement_lines",
+   "test": "tests.test_integration_v2.MeasurementLines.test_control_center_landings_in_the_directive_come_first",
+   "remains": "Control Center does not build the read yet, so until it does the line says no landings were sent."
+  },
+  {
+   "id": "INV-GA4-READ-ONLY",
+   "rule": "The fallback GA4 reader asks Google only for read-only Analytics access.",
+   "origin": "ruling 10 (the unused fallback)",
+   "status": "enforced",
+   "enforced_by": "engine.ga4.authorize",
+   "test": "tests.test_ga4.AuthorizeTests.test_loopback_flow_with_pkce_writes_a_private_file",
+   "remains": null
+  },
+  {
+   "id": "INV-NORTH-STAR-INTERVAL",
+   "rule": "A measured weekly count carries its rough 95% interval; a count nobody measured is null with its reason, never zero.",
+   "origin": "docs/ENGINE-V2.md section 3, crew 8",
+   "status": "enforced",
+   "enforced_by": "engine.attribution.objectives",
+   "test": "tests.test_attribution.Objectives.test_a_measured_week_carries_its_interval",
+   "remains": null
+  },
+  {
+   "id": "INV-WHAT-WORKS-BAR",
+   "rule": "A claim is confirmed only after pre-registration, no overlapping test, two matchweeks, 20 events per arm and |z| of 2 or more; anything less is directional.",
+   "origin": "ruling 8",
+   "status": "enforced",
+   "enforced_by": "engine.learning.judge",
+   "test": "tests.test_learning.Judge.test_confirmed_needs_every_part_of_the_bar",
+   "remains": null
+  },
+  {
+   "id": "INV-SPEC-LIVE-GATES",
+   "rule": "A live spec compiles only when its format is ready, ORGANIC and D7 are in force, and the brand identity is verified.",
+   "origin": "docs/ENGINE-V2.md section 1",
+   "status": "enforced",
+   "enforced_by": "engine.spec.compile",
+   "test": "tests.test_spec.DigestAndCompileTests.test_live_mode_compiles_only_with_every_gate_computed_from_evidence",
+   "remains": null
+  },
+  {
+   "id": "INV-SPEC-DIGEST",
+   "rule": "Krish's Clear binds the spec's canonical SHA-256, whatever the key order.",
+   "origin": "docs/ENGINE-V2.md section 1",
+   "status": "enforced",
+   "enforced_by": "engine.spec.digest",
+   "test": "tests.test_spec.DigestAndCompileTests.test_digest_is_the_canonical_sha256_and_ignores_key_order",
+   "remains": null
+  },
+  {
+   "id": "INV-CREW",
+   "rule": "Every crew member has a runner, a lint and a check that resolve to real code, a card of 3 KB at most and a lens of 1 KB at most.",
+   "origin": "docs/ENGINE-V2.md section 3",
+   "status": "enforced",
+   "enforced_by": "engine.crew.errors",
+   "test": "tests.test_crew.RegistryTests.test_the_registry_is_sound",
+   "remains": null
+  },
+  {
+   "id": "INV-SESSION-PACK",
+   "rule": "A session pack is 36 KB at most.",
+   "origin": "docs/ENGINE-V2.md section 5",
+   "status": "enforced",
+   "enforced_by": "engine.session.pack",
+   "test": "tests.test_session.Pack.test_a_pack_over_36_kb_is_refused_with_its_size",
+   "remains": null
+  },
+  {
+   "id": "INV-TASK-CARD",
+   "rule": "A task card is 6 KB at most, pins its model and effort, and never lets Codex near git, the network, connectors or publishing.",
+   "origin": "docs/ENGINE-V2.md section 6",
+   "status": "enforced",
+   "enforced_by": "engine.dispatch.validate_card",
+   "test": "tests.test_dispatch.ValidateCard.test_each_rule_is_refused_in_plain_words",
+   "remains": null
+  },
+  {
+   "id": "INV-ALLOWANCE-GUARD",
+   "rule": "A Codex card is refused when the allowance reading is unknown, stale or over 80%, unless a spend decision names it.",
+   "origin": "docs/ENGINE-V2.md section 6",
+   "status": "enforced",
+   "enforced_by": "engine.dispatch.guard",
+   "test": "tests.test_dispatch.Guard.test_unknown_stale_future_or_high_readings_are_refused",
+   "remains": null
+  },
+  {
+   "id": "INV-AUDIENCE-BANS",
+   "rule": "Follow automation, mass liking, unsolicited DMs, follow-for-follow, engagement bait and bought followers stay banned in code, even if ruled.",
+   "origin": "ruling 9",
+   "status": "enforced",
+   "enforced_by": "engine.audience.gate",
+   "test": "tests.test_audience.GateTests.test_a_banned_id_is_refused_even_if_ruled",
+   "remains": null
+  },
+  {
+   "id": "INV-HUMAN-VERDICT",
+   "rule": "The 11/10 verdict, humour, natural faces and lip sync stay Krish's judgment.",
+   "origin": "docs/ENGINE-V2.md section 4",
+   "status": "human_judgment",
+   "enforced_by": null,
+   "test": null,
+   "remains": "Code only makes sure his verdict is asked for and never replaced by a technical or model pass (R38)."
+  }
+ ]
+}
