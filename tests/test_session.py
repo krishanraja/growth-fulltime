@@ -135,6 +135,15 @@ class Pack(unittest.TestCase):
             self.assertIn('{"status":"held"}', text)
         self.assertIn('No crew member is in play.', session.pack('build', self.crew, []))
 
+    def test_a_windows_checkout_keeps_the_same_card_budget(self):
+        line = b'x' * 99 + b'\n'
+        fits = line * 30                       # 3,000 bytes with LF, 3,030 with CRLF
+        (self.crew / 'librarian' / 'card.md').write_bytes(fits.replace(b'\n', b'\r\n'))
+        self.assertIn('librarian', session.pack('production', self.crew, ['librarian']))
+        (self.crew / 'librarian' / 'card.md').write_bytes(line * 31)    # 3,100 bytes even with LF
+        with self.assertRaises(ValueError):
+            session.pack('production', self.crew, ['librarian'])
+
     def test_a_pack_over_36_kb_is_refused_with_its_size(self):
         findings = ['x' * 1000 for _ in range(40)]
         with self.assertRaises(ValueError) as caught:

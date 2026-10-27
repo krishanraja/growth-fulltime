@@ -101,7 +101,7 @@ def _crew_section(kind, crew_dir, names):
     for name in names:
         path = Path(crew_dir) / name / filename
         try:
-            raw = path.read_bytes()
+            raw = path.read_bytes().replace(b'\r\n', b'\n')   # the same budget on a Windows checkout
         except OSError:
             raise ValueError(f'{path}: is missing; every crew member in play needs its {filename}')
         if len(raw) > limit:

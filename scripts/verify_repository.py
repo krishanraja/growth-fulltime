@@ -49,7 +49,7 @@ def v2_errors(root=ROOT):
     errors = []
     for pattern, limit in LIMITS.items():
         for path in sorted(root.glob(pattern)):
-            size = len(path.read_bytes())
+            size = len(path.read_bytes().replace(b'\r\n', b'\n'))   # a Windows checkout adds CR; budgets count LF
             if size > limit:
                 errors.append(f'{path.relative_to(root)}: {size} bytes, over the {limit}-byte budget')
     for folder in ('specs', 'formats'):
