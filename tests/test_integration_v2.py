@@ -34,7 +34,7 @@ class MeasurementLines(unittest.TestCase):
         self.assertEqual(len(north), 1)
         self.assertIn('missing', north[0])
         self.assertNotIn(' 0 people', ' '.join(lines))
-        self.assertIn('Google Analytics: not read', lines[-1])
+        self.assertIn('Control Center sent no landings', lines[-1])
 
     def test_ga4_landings_are_named_by_creative_and_never_called_listeners(self):
         export = ga4.to_export([landing(CID, 5), landing('someone-elses-tag', 2)], '2026-10-20', '2026-10-26',
@@ -45,10 +45,23 @@ class MeasurementLines(unittest.TestCase):
         self.assertIn(CID, line)
         self.assertIn('never listeners', line)
 
+    def test_control_center_landings_in_the_directive_come_first(self):
+        mine = ga4.to_export([landing(CID, 1)], '2026-10-20', '2026-10-26',
+                             dt.datetime(2026, 10, 27, 6, tzinfo=dt.timezone.utc))
+        self.write_export(mine)
+        theirs = ga4.to_export([landing(CID, 9)], '2026-10-20', '2026-10-26',
+                               dt.datetime(2026, 10, 27, 6, tzinfo=dt.timezone.utc))
+        line = control_center.measurement_lines(self.local, TODAY,
+                                                directive={'directive': {'ga4_landings': theirs}})[-1]
+        self.assertIn('(from Control Center)', line)
+        self.assertIn('9 new web users', line)
+        bad = control_center.measurement_lines(self.local, TODAY, directive={'directive': {'ga4_landings': {}}})[-1]
+        self.assertIn('the export from Control Center was refused', bad)
+
     def test_a_refused_export_is_reported_not_counted(self):
         self.write_export({'product': 'fulltime', 'source': 'ga4', 'rows': []})
         line = control_center.measurement_lines(self.local, TODAY)[-1]
-        self.assertTrue(line.startswith('Google Analytics: the export was refused'), line)
+        self.assertTrue(line.startswith('Google Analytics: the export saved locally was refused'), line)
 
 
 LOCK = 'a' * 64

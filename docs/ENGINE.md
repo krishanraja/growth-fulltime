@@ -21,7 +21,7 @@ By 31 January 2027, most new Full Time listeners arrive because a fan shared an 
 7. A match ad may link to Today only while Today has a live show, and never claims a show exists for its match.
 8. What works is owned by the What-Works Analyst; measurement by the Measurement Analyst, including Google Analytics 4 landings by creative ID.
 9. The Audience Builder grows the Full Time brand profiles only, within platform rules: official APIs, every action type ruled by Krish first. Follow automation, mass liking and bought followers stay banned in code.
-10. Google Analytics is read directly with a read-only credential in the environment's secrets. Its landings never count as listeners.
+10. Google Analytics comes from Control Center's daily directive (`ga4_landings`); Krish sets nothing up. Landings never count as listeners.
 11. Everything the engine produces lives in Drive `Growth Build`, filed by the Librarian with no sprawl. A full Canva brand kit is built through Cowork.
 
 ## The crew
@@ -35,7 +35,7 @@ Each has `crew/<name>/card.md` (3 KB at most) and a reviewer's `lens.md` (1 KB).
 5. Motion Maker: renders offline, stills before video, credits only inside an approved `spend`.
 6. Card Maker: Canva cards from pinned brand templates.
 7. Channel & Pack Steward: Full Time allowlisted channels only; receipts from the read-only Buffer readback.
-8. Measurement Analyst (the Measurement Specialist): counts the number from the product export with a 95% interval, and reads Google Analytics 4 landings by creative ID directly and read-only (`engine/ga4.py`, `docs/GA4-ACCESS.md`) as a leading web signal, kept apart from listener numbers.
+8. Measurement Analyst (the Measurement Specialist): counts the number from the product export with a 95% interval, and reads Google Analytics 4 landings by creative ID, read-only, from Control Center (`docs/GA4-ACCESS.md`) as a leading web signal, kept apart from listener numbers.
 9. What-Works Analyst: a fresh session, never a maker. A claim is confirmed only after two matchweeks, 20 events per arm and |z| of 2 or more.
 10. Librarian: the only writer into Growth Build; no orphans, duplicates or misnamed files.
 11. Audience Builder: brand-profile visibility and followers, within platform rules.

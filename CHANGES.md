@@ -5,6 +5,12 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-27: Google Analytics comes from Control Center. Krish: "just get google
+  analytics data from control center, much easier". Read live that day, Control
+  Center has no Analytics read yet, so `briefs/2026-10-27-control-center-measurement.md`
+  asks it to carry the week's landings in the engine's directive (`ga4_landings`); the
+  engine reads that field now. The GitHub keyless route below stays as an unused
+  fallback and is off Krish's list.
 - 2026-10-27: Google Analytics moved off per-session access. Krish: "I need a
   more robust way of connecting Google Analytics than just in this session. That's
   so fragile. Can it not go in GitHub or Vercel?" The daily control center loop in

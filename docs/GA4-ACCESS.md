@@ -1,9 +1,21 @@
-# Google Analytics access: one-time setup
+# Google Analytics access
 
-Ruling (Krish, 2026-10-27): "Direct read-only API". The Measurement Analyst reads
-Google Analytics 4 on fulltime.fm (measurement ID `G-W2QL8RKFJ1`, page views only)
-through Google's Analytics Data API, with a read-only sign-in that Krish makes once.
-The reader is `engine/ga4.py`. This page is the setup, in order.
+Ruling (Krish, 2026-10-27): "just get google analytics data from control center,
+much easier". The Measurement Analyst reads Google Analytics 4 landings on fulltime.fm
+(measurement ID `G-W2QL8RKFJ1`, page views only) **from Control Center**. Krish has
+nothing to set up. Control Center holds the Google sign-in on its own server, as it
+does for its other keys, and hands the engine the week's landings in its daily
+directive (`ga4_landings`). The engine reads that today (`engine/control_center.py`,
+`measurement_lines`); until Control Center sends it, each report says no landings came.
+
+**Status, read live on 27 October:** Control Center cannot do this yet. Its gateway has
+no Google Analytics operation, and the only Analytics fact it holds for Full Time is
+that the tag is on the site. The build is briefed exactly in
+[`briefs/2026-10-27-control-center-measurement.md`](../briefs/2026-10-27-control-center-measurement.md),
+section 1, for a Control Center session.
+
+The two direct routes below stay in the repository as fallbacks. Neither runs unless
+someone switches it on, and neither is on Krish's list.
 
 ## What it reads, and what it never is
 
@@ -21,9 +33,9 @@ The reader is `engine/ga4.py`. This page is the setup, in order.
   it, and nothing here changes what fulltime.fm collects or asks visitors. D7 must
   still close in the product before the first public post.
 
-## Two routes: use route A
+## Fallback routes, not in use
 
-**Route A, GitHub Actions, keyless (recommended).** The daily control center loop
+**Route A, GitHub Actions, keyless.** The daily control center loop
 already runs in GitHub Actions. It proves who it is to Google with GitHub's own
 short-lived identity token, and Google answers with a ten-minute token that can only
 read Analytics. No key, client secret or refresh token exists anywhere, so there is
@@ -38,7 +50,7 @@ token in `local/ga4/oauth.json`, for running reports by hand on your machine.
 
 Why not Vercel: Vercel's settings serve the product's own runtime. Reading Analytics
 there would mean building and guarding a new endpoint on fulltime.fm just to hand the
-numbers back to this engine, whose scheduled runs already live in GitHub.
+numbers back to this engine.
 
 ## Route A: GitHub Actions, keyless (about 10 minutes, once)
 
