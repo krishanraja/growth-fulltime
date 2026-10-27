@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/krishanraja/growth-fulltime/blob/main/tasks/card.schema.json",
+  "title": "Full Time task card",
+  "description": "One build or production job for Codex or a fresh Claude session (docs/ENGINE-V2.md, section 6). Saved as tasks/<card_id>.json, at most 6 KB as canonical JSON. This file describes the shape for people and tooling; engine/dispatch.py validate_card() is the enforcement and also refuses what JSON Schema cannot say well: a worktree that is not ../growth-fulltime-wt/<card_id>, a write_allow glob that would match anything under .git, duplicate paths, and a card over 6 KB. guard() then refuses a Codex card when the allowance reading is unknown, more than one hour old, in the future or above 80%, unless Krish's spend decision names the card.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["card_id", "kind", "executor", "model", "effort", "max_minutes", "max_calls", "write_allow",
+               "read_files", "never", "interface", "acceptance", "return_shape"],
+  "properties": {
+    "card_id": {"type": "string", "pattern": "^[a-z0-9-]+$",
+                "description": "Also the file name: tasks/<card_id>.json, with its prompt in tasks/<card_id>.md."},
+    "kind": {"enum": ["build", "production"],
+             "description": "build runs in its own worktree; production runs in the main checkout with --require-existing-history."},
+    "executor": {"enum": ["codex", "claude"]},
+    "model": {"type": "string", "minLength": 1, "not": {"enum": ["default", "gpt-6-astra"]},
+              "description": "Pinned, never inherited. A Codex card names exactly gpt-6.1-sol; gpt-6-astra burns the shared allowance 2 to 2.6 times faster."},
+    "effort": {"enum": ["low", "medium", "high"], "description": "Pinned; medium unless the card says why."},
+    "max_minutes": {"type": "integer", "minimum": 1, "maximum": 120},
+    "max_calls": {"type": "integer", "minimum": 1, "maximum": 400},
+    "worktree": {"type": "string", "pattern": "^\\.\\./growth-fulltime-wt/[a-z0-9-]+$",
+                 "description": "Required for build, exactly ../growth-fulltime-wt/<card_id>. Forbidden for production."},
+    "goal": {"type": "string", "minLength": 1, "description": "Optional: what the card is for and how it is staged, in plain words."},
+    "write_allow": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "not": {"anyOf": [
+        {"pattern": "^(/|~|[A-Za-z]:)"}, {"pattern": "\\.\\."}, {"pattern": "\\\\"}, {"pattern": "(^|/)\\.git(/|$)"}]}},
+      "not": {"const": ["**"]},
+      "description": "Repo-relative fnmatch globs the card may write. Never absolute, never .., never .git, never the single pattern **."
+    },
+    "read_files": {
+      "type": "array", "maxItems": 5, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "not": {"anyOf": [
+        {"pattern": "^(/|~|[A-Za-z]:)"}, {"pattern": "\\.\\."}, {"pattern": "\\\\"}, {"pattern": "[*?\\[]"},
+        {"pattern": "(^|/)\\.git(/|$)"}]}},
+      "description": "At most five repo-relative files the card reads, named one by one."
+    },
+    "never": {
+      "type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1},
+      "allOf": [{"contains": {"const": "git"}}, {"contains": {"const": "network"}}, {"contains": {"const": "mcp"}},
+                {"contains": {"const": "publishing"}}, {"contains": {"const": "new_dependencies"}},
+                {"contains": {"const": "writes_outside_write_allow"}}],
+      "description": "What the card never does. These six are always present; more may be added."
+    },
+    "interface": {"type": "string", "minLength": 1, "description": "The interface, verbatim."},
+    "acceptance": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1},
+                   "description": "Shell commands, run from the repository root, that all exit 0 when the card is done. Claude reruns them outside the sandbox; the executor's report is never evidence."},
+    "return_shape": {"type": "object", "minProperties": 1,
+                     "description": "Each field of the answer and what it holds."}
+  },
+  "allOf": [
+    {"if": {"properties": {"kind": {"const": "build"}}}, "then": {"required": ["worktree"]}},
+    {"if": {"properties": {"kind": {"const": "production"}}}, "then": {"not": {"required": ["worktree"]}}},
+    {"if": {"properties": {"executor": {"const": "codex"}}}, "then": {"properties": {"model": {"const": "gpt-6.1-sol"}}}}
+  ]
+}

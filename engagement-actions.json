@@ -1,0 +1,104 @@
+{
+  "_about": "Every engagement action type the Audience Builder might ever automate on Full Time's own brand profiles, each pending until Krish rules on it, with the banned ones that engine/audience.py refuses even if they were ever ruled.",
+  "actions": {
+    "reply_to_comments_on_own_posts": {
+      "title": "Reply to fan comments on Full Time's own posts, each reply reviewed by Krish",
+      "platforms": ["youtube", "instagram", "facebook", "threads"],
+      "official_api": "YouTube Data API v3 commentThreads.list and comments.insert with snippet.parentId; Instagram Graph API POST /{ig-comment-id}/replies (business or creator account); Facebook Graph API POST /{comment-id}/comments (Page); Threads API POST /{threads-user-id}/threads with reply_to_id (threads_manage_replies)",
+      "rule_source": "https://developers.google.com/youtube/terms/developer-policies; https://developers.facebook.com/devpolicy/; https://developers.facebook.com/docs/threads. X is left out: its automation rules need X's prior written approval for AI replies (https://help.x.com/en/rules-and-policies/x-automation). TikTok is left out: no official comment reply API is confirmed.",
+      "rule_checked_on": "",
+      "status": "pending",
+      "ruling": {"date": "", "words": ""},
+      "daily_cap": 20,
+      "needs_review_each_time": true
+    },
+    "hide_or_report_abusive_comments_on_own_posts": {
+      "title": "Hide abusive comments on Full Time's own posts; reporting them to the platform stays a manual task",
+      "platforms": ["youtube", "instagram", "facebook", "threads", "x"],
+      "official_api": "YouTube Data API v3 comments.setModerationStatus; Instagram Graph API POST /{ig-comment-id} with hide=true; Facebook Graph API POST /{comment-id} with is_hidden=true; Threads API POST /{reply-id}/manage_reply with hide=true; X API v2 PUT /2/tweets/{id}/hidden",
+      "rule_source": "https://developers.google.com/youtube/terms/developer-policies; https://developers.facebook.com/devpolicy/; https://developers.facebook.com/docs/threads; https://help.x.com/en/rules-and-policies/x-automation",
+      "rule_checked_on": "",
+      "status": "pending",
+      "ruling": {"date": "", "words": ""},
+      "daily_cap": 20,
+      "needs_review_each_time": true
+    },
+    "pin_best_comment_on_own_post": {
+      "title": "Pin the best fan comment on a Full Time post",
+      "platforms": ["youtube", "tiktok", "instagram"],
+      "official_api": null,
+      "rule_source": "https://www.youtube.com/howyoutubeworks/policies/community-guidelines/; https://www.tiktok.com/community-guidelines; https://help.instagram.com/477434105621119. No official API to pin a comment is confirmed, so this is a manual task for Krish.",
+      "rule_checked_on": "",
+      "status": "pending",
+      "ruling": {"date": "", "words": ""},
+      "daily_cap": 3,
+      "needs_review_each_time": true
+    },
+    "update_profile_bio_and_links": {
+      "title": "Update a brand profile's bio and link from copy Krish has approved",
+      "platforms": ["youtube"],
+      "official_api": "YouTube Data API v3 channels.update (brandingSettings.channel.description)",
+      "rule_source": "https://developers.google.com/youtube/terms/developer-policies. Other platforms have no confirmed official API for bio or link edits, so there it is a manual task for Krish.",
+      "rule_checked_on": "",
+      "status": "pending",
+      "ruling": {"date": "", "words": ""},
+      "daily_cap": 1,
+      "needs_review_each_time": true
+    },
+    "rotate_pinned_post": {
+      "title": "Pin the best post of the last 14 days to the top of a brand profile",
+      "platforms": ["tiktok", "instagram", "x", "threads", "facebook"],
+      "official_api": null,
+      "rule_source": "https://www.tiktok.com/community-guidelines; https://help.instagram.com/477434105621119; https://help.x.com/en/rules-and-policies/x-automation; https://developers.facebook.com/devpolicy/. No official API to pin a post to a profile is confirmed, so this is a manual task for Krish.",
+      "rule_checked_on": "",
+      "status": "pending",
+      "ruling": {"date": "", "words": ""},
+      "daily_cap": 1,
+      "needs_review_each_time": true
+    },
+    "add_post_to_playlist_or_highlight": {
+      "title": "Add a Full Time post to an AI Pundit playlist or story highlight",
+      "platforms": ["youtube"],
+      "official_api": "YouTube Data API v3 playlistItems.insert",
+      "rule_source": "https://developers.google.com/youtube/terms/developer-policies. TikTok playlists and Instagram highlights have no confirmed official API, so there it is a manual task for Krish.",
+      "rule_checked_on": "",
+      "status": "pending",
+      "ruling": {"date": "", "words": ""},
+      "daily_cap": 10,
+      "needs_review_each_time": false
+    },
+    "schedule_story_or_community_post": {
+      "title": "Schedule a story or community post; publishing stays with Krish in Buffer (ruling 3), so the cap is 0",
+      "platforms": ["instagram"],
+      "official_api": "Instagram Graph API content publishing with media_type STORIES (business account)",
+      "rule_source": "https://developers.facebook.com/devpolicy/; Krish's ruling 3 of 27 October 2026 (AGENTS.md, Engine v2): he publishes in Buffer by hand. YouTube community posts and TikTok stories have no confirmed official API.",
+      "rule_checked_on": "",
+      "status": "pending",
+      "ruling": {"date": "", "words": ""},
+      "daily_cap": 0,
+      "needs_review_each_time": true
+    },
+    "crosslink_profiles": {
+      "title": "Link each Full Time brand profile to the others",
+      "platforms": ["youtube", "tiktok", "instagram", "threads", "x", "facebook", "whatsapp_channel"],
+      "official_api": null,
+      "rule_source": "Each platform's community guidelines. No official API for profile links is confirmed, so this is a manual task for Krish.",
+      "rule_checked_on": "",
+      "status": "pending",
+      "ruling": {"date": "", "words": ""},
+      "daily_cap": 1,
+      "needs_review_each_time": true
+    }
+  },
+  "banned": {
+    "automated_follow_or_unfollow": "X's automation rules ban automated following and unfollowing, and follow churn breaks every platform's spam rules.",
+    "mass_liking": "Bulk or automated likes are platform manipulation on every platform.",
+    "unsolicited_dms": "Krish's rule: no cold outreach. Unsolicited messages are spam on every platform.",
+    "comments_on_other_accounts_at_scale": "Commenting on other accounts at scale is spam, and X needs its written approval for any AI reply.",
+    "follow_for_follow": "Follow-for-follow inflates the count without fans and breaks platform spam rules.",
+    "engagement_bait": "Like-for-like and fake incentives can make TikTok posts ineligible for the For You feed.",
+    "buying_followers_or_engagement": "Bought followers or engagement are fake, break platform rules and the zero-cash rule.",
+    "any_personal_account_action": "Krish's ruling: Full Time brand profiles only, never his personal accounts.",
+    "any_action_without_official_api": "Krish's ruling: automate only through official APIs, for actions each platform allows."
+  }
+}

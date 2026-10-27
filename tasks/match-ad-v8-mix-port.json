@@ -1,0 +1,41 @@
+{
+  "card_id": "match-ad-v8-mix-port",
+  "kind": "build",
+  "executor": "codex",
+  "model": "gpt-6.1-sol",
+  "effort": "medium",
+  "max_minutes": 60,
+  "max_calls": 150,
+  "worktree": "../growth-fulltime-wt/match-ad-v8-mix-port",
+  "goal": "Port the private v8 TV-mix builder into the match_ad library part engine/formats/match_ad/tv_mix.py (the tv_mix render step in formats/match_ad/recipe.json), driven by a private mix recipe, so the next match ad is a recipe fill-in and not new per-piece code. Staging, by Claude outside the sandbox before dispatch: copy into the worktree's ignored local/reference/ the v8 review-mix builder from the restored ad-finishing package as v8-builder.py, the files it reads as v8-inputs/ (same relative layout), and the existing v8 TV mix from the session archive as v8-tv-mix.mp3. Done when the port, run on its recipe, reproduces v8-tv-mix.mp3 byte for byte. No tracked file names or quotes private creative content.",
+  "write_allow": [
+    "engine/formats/match_ad/tv_mix.py",
+    "tests/test_match_ad_tv_mix.py",
+    "local/reference/v8.mix.json"
+  ],
+  "read_files": [
+    "docs/ENGINE.md",
+    "local/reference/v8-builder.py",
+    "formats/match_ad/recipe.json",
+    "engine/assets.py",
+    "tests/test_assets.py"
+  ],
+  "never": ["git", "network", "mcp", "publishing", "new_dependencies", "writes_outside_write_allow",
+            "model_or_generation_calls", "edits_to_engine_formats_py"],
+  "interface": "engine/formats/match_ad/tv_mix.py: Python 3.9+ standard library only; FFmpeg and FFprobe only through subprocess with an argv list, never a shell. It is a plain file loaded by path (python3 engine/formats/match_ad/tv_mix.py, or importlib in tests): never create engine/formats/__init__.py, because engine/formats.py stays the module of that name. load(recipe_path) -> dict: reads a mix recipe JSON whose inputs are paths relative to the recipe's folder, each with its SHA-256, and every gain, offset, cue point, filter and encoder flag the v8 builder used, in its order; ValueError in plain English for a missing field, a missing input or a hash mismatch. steps(recipe) -> list of argv lists, pure, no I/O. build(recipe_path, out_path) -> {out_path, sha256, bytes, ffmpeg_version}; refuses an out_path outside local/. CLI: tv_mix.py RECIPE --out FILE prints that result as JSON and exits 1 with the reason on any refusal. local/reference/v8.mix.json is the v8 builder's exact parameters as that recipe. tests/test_match_ad_tv_mix.py uses synthetic tones made by FFmpeg in a temporary folder, skips without FFmpeg like tests/test_assets.py, and never reads local/.",
+  "acceptance": [
+    "python3 -m py_compile engine/formats/match_ad/tv_mix.py tests/test_match_ad_tv_mix.py",
+    "python3 -m unittest tests.test_match_ad_tv_mix -v",
+    "python3 engine/formats/match_ad/tv_mix.py local/reference/v8.mix.json --out local/reference/v8-port.mp3",
+    "python3 -c \"import hashlib,sys; h=[hashlib.sha256(open(p,'rb').read()).hexdigest() for p in sys.argv[1:]]; sys.exit(h[0] != h[1])\" local/reference/v8-port.mp3 local/reference/v8-tv-mix.mp3"
+  ],
+  "return_shape": {
+    "files": "the paths written, each inside write_allow",
+    "tests_run": "how many tests ran in tests/test_match_ad_tv_mix.py",
+    "tests_passed": "how many passed",
+    "port_sha256": "SHA-256 of local/reference/v8-port.mp3, or null when it was not built",
+    "reference_sha256": "SHA-256 of local/reference/v8-tv-mix.mp3",
+    "ffmpeg_version": "the FFmpeg version line the build used",
+    "notes": "anything not done, and any v8 behaviour the port could not reproduce"
+  }
+}
