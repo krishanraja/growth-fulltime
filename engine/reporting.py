@@ -1,7 +1,12 @@
 """Reports. The version 2 envelope is the private local checkpoint; the protocol
 report is what Control Center receives (docs/control-center/ENGINE-PROTOCOL.md).
 This module builds and checks reports. It has no HTTP path: the transport is
-engine/control_center.py."""
+engine/control_center.py.
+
+Reports go as protocol 1.1.0, which adds a proposal's stage (plan, go_live,
+check_in) and parent_proposal_id; 1.2.0 only when a proposal names a subject.
+Krish sees one ask per engine at a time: an answered ruling is never asked
+again, and no second walled ask of a kind already waiting is added."""
 import copy
 import datetime as dt
 import hashlib
@@ -25,6 +30,13 @@ REPO_URL = 'https://github.com/krishanraja/growth-fulltime'
 HOLD_ORDER = ['RAIL', 'RELEASE', 'CHANNEL', 'CONSENT', 'DATA', 'ASSETS', 'APPROVAL',
               'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7']
 POSTABLE = policy.BRAND_CHANNELS | {'whatsapp'}
+PROTOCOL_VERSION = '1.1.0'
+STAGES = ('plan', 'go_live', 'check_in')
+GO_LIVE_WALLS = ('send', 'post', 'spend')
+ASK_KINDS = STAGES + GO_LIVE_WALLS + ('strategy',)
+NEWER_FIELDS = {'stage': (1, 1), 'parent_proposal_id': (1, 1), 'subject_ref': (1, 2)}
+PROPOSAL_ID = r'[A-Za-z0-9][A-Za-z0-9:._-]{0,119}'
+RULING_PREFIX = SLUG + ':ruling:'
 
 
 def envelope(pack, receipt):
@@ -92,7 +104,71 @@ def seal(report):
 # at every depth, because Control Center refuses unknown fields.
 # ---------------------------------------------------------------------------
 def load_schema():
-    return json.loads(SCHEMA_PATH.read_text())
+    return json.loads(SCHEMA_PATH.read_text(encoding='utf-8'))
+
+
+def version_numbers(version):
+    """(major, minor) of a protocol version such as '1.1.0', or None when it is not one."""
+    match = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)', version) if isinstance(version, str) else None
+    return (int(match.group(1)), int(match.group(2))) if match else None
+
+
+def report_version(proposals):
+    """1.1.0, which carries stages, or 1.2.0 only when a proposal uses subject_ref.
+    A version is raised only for a field in use."""
+    used = any(isinstance(p, dict) and p.get('subject_ref') is not None for p in proposals or [])
+    return '1.2.0' if used else PROTOCOL_VERSION
+
+
+def protocol_errors(report):
+    """The protocol rules the JSON schema cannot say: a field newer than the report's
+    version is refused, and each stage sits behind the wall ENGINE-PROTOCOL.md gives it.
+    A plan is behind a wall with the plan in exact_payload; a go-live is a send, post or
+    spend naming its plan; a check-in is a strategy call naming its plan, with its
+    progress in exact_payload. parent_proposal_id belongs on those two only."""
+    if not isinstance(report, dict) or not isinstance(report.get('proposals'), list):
+        return []
+    out = []
+    version = version_numbers(report.get('schema_version'))
+    proposals = [p for p in report['proposals'] if isinstance(p, dict)]
+    stage_of = {p['proposal_id']: p.get('stage') for p in proposals if isinstance(p.get('proposal_id'), str)}
+    for i, p in enumerate(proposals):
+        path = f'report.proposals[{i}]'
+        for field, needs in NEWER_FIELDS.items():
+            if field in p and version is not None and version < needs:
+                out.append(f'{path}: {field} needs protocol {needs[0]}.{needs[1]}.0 or later, '
+                           f'and this report is {report["schema_version"]}')
+        stage, parent, wall = p.get('stage'), p.get('parent_proposal_id'), p.get('wall')
+        if p.get('kind') == 'autonomous' and wall != 'none':
+            out.append(f'{path}: an autonomous proposal cannot be behind a wall')
+        if wall == 'spend' and p.get('amount_usd') is None:
+            out.append(f'{path}: a spend needs amount_usd')
+        if wall in ('send', 'post') and not p.get('exact_payload'):
+            out.append(f'{path}: a {wall} needs its exact_payload')
+        if stage == 'plan':
+            if wall == 'none':
+                out.append(f'{path}: a plan must be behind a wall')
+            if not p.get('exact_payload'):
+                out.append(f'{path}: a plan carries the plan itself in exact_payload, so Krish can amend it')
+        elif stage == 'go_live' and wall not in GO_LIVE_WALLS:
+            out.append(f'{path}: a go-live must be behind send, post or spend')
+        elif stage == 'check_in':
+            if wall != 'strategy':
+                out.append(f'{path}: a check-in must be behind strategy')
+            if not p.get('exact_payload'):
+                out.append(f'{path}: a check-in carries its progress against the plan in exact_payload')
+        if stage in ('go_live', 'check_in'):
+            if not isinstance(parent, str) or not parent:
+                out.append(f'{path}: a {stage.replace("_", "-")} needs parent_proposal_id, the plan it belongs to')
+            elif not re.fullmatch(PROPOSAL_ID, parent):
+                out.append(f'{path}: parent_proposal_id is not a proposal id')
+            elif parent == p.get('proposal_id'):
+                out.append(f'{path}: parent_proposal_id cannot name the proposal itself')
+            elif parent in stage_of and stage_of[parent] != 'plan':
+                out.append(f'{path}: parent_proposal_id must name a plan, and {parent} is not one')
+        elif parent is not None:
+            out.append(f'{path}: parent_proposal_id belongs only on a go-live or a check-in')
+    return out
 
 
 def _is_datetime(value):
@@ -103,8 +179,11 @@ def _is_datetime(value):
 
 
 def schema_errors(value, schema=None, path='report'):
-    schema = load_schema() if schema is None else schema
-    out = []
+    """Every way a value breaks the schema. Called with the report schema itself (no
+    schema given), it also applies protocol_errors, so a whole report is checked whole."""
+    whole = schema is None
+    schema = load_schema() if whole else schema
+    out = protocol_errors(value) if whole else []
     kinds = schema.get('type')
     if kinds is not None:
         kinds = kinds if isinstance(kinds, list) else [kinds]
@@ -113,7 +192,7 @@ def schema_errors(value, schema=None, path='report'):
                   'integer': lambda v: type(v) is int,
                   'number': lambda v: type(v) in (int, float) and math.isfinite(v)}
         if not any(checks[k](value) for k in kinds):
-            return [f'{path}: expected {"/".join(kinds)}']
+            return out + [f'{path}: expected {"/".join(kinds)}']
     if 'const' in schema and value != schema['const']:
         out.append(f'{path}: must be {schema["const"]!r}')
     if 'enum' in schema and value not in schema['enum']:
@@ -222,12 +301,16 @@ def objectives(today, rows=None, runs=None, workspace=True):
 
 def _proposal(proposal_id, title, why, kind, wall, payload, close_event, reference,
               objective_key='attributed_new_completers', channel=None, exact_payload=None,
-              evidence=None, expires_at=None):
-    return {'proposal_id': proposal_id, 'title': title[:160], 'why': why[:1000], 'kind': kind, 'wall': wall,
-            'amount_usd': None, 'channel': channel, 'objective_key': objective_key,
-            'exact_payload': exact_payload, 'payload_sha256': canonical_sha256(payload),
-            'evidence': evidence or [], 'close_condition': {'event': close_event, 'reference': reference},
-            'expires_at': expires_at}
+              evidence=None, expires_at=None, amount_usd=None, stage=None, parent_proposal_id=None):
+    """One proposal. stage and parent_proposal_id (1.1.0) are written only when used."""
+    out = {'proposal_id': proposal_id, 'title': title[:160], 'why': why[:1000], 'kind': kind, 'wall': wall,
+           'amount_usd': amount_usd, 'channel': channel, 'objective_key': objective_key,
+           'exact_payload': exact_payload, 'payload_sha256': canonical_sha256(payload),
+           'evidence': evidence or [], 'close_condition': {'event': close_event, 'reference': reference},
+           'expires_at': expires_at}
+    if stage is not None or parent_proposal_id is not None:
+        out.update(stage=stage, parent_proposal_id=parent_proposal_id)
+    return out
 
 
 def action_proposal(item):
@@ -333,35 +416,89 @@ def merge_holds(entries, held_items):
     return out[:40]
 
 
+def ruled(rulings_file, rid):
+    """True when rulings.json records Krish's yes on this ruling."""
+    return ((rulings_file or {}).get(rid) or {}).get('status') == 'approved'
+
+
+def release_retired(state, rulings_file):
+    """The release ask is answered once the release is open, or once rulings.json
+    approves ruling 1 of 27 October (D1, with ORGANIC) or a release entry. The RELEASE
+    hold itself still lifts only on the product's own decision (policy.release_open)."""
+    return policy.release_open(state) or any(ruled(rulings_file, r) for r in ('release', 'RELEASE', 'D1', 'ORGANIC'))
+
+
+def ask_kind(proposal):
+    """What Krish's one list orders an ask by: its stage, or else its wall."""
+    return proposal.get('stage') or proposal.get('wall')
+
+
+def one_ask(proposals, waiting=None):
+    """One ask at a time (ENGINE-PROTOCOL.md). `waiting` maps each proposal_id already on
+    Krish's list and unanswered to its kind. An ask that waits is kept, and so kept
+    current. No ask is added beside another of its kind that waits, and only one new ask
+    of each kind is added per report. The standing ruling asks are each their own
+    question, so they are not capped against each other, but they too wait behind an
+    ask of their kind already on his list. Returns (kept, deferred)."""
+    waiting = waiting or {}
+    kinds_waiting = set(waiting.values())
+    kept, deferred, added = [], [], set()
+    for p in proposals:
+        pid, kind = p['proposal_id'], ask_kind(p)
+        standing = pid.startswith(RULING_PREFIX)
+        if p.get('wall') == 'none' or pid in waiting:
+            kept.append(p)
+        elif kind in kinds_waiting or (kind in added and not standing):
+            deferred.append(p)
+        else:
+            kept.append(p)
+            if not standing:
+                added.add(kind)
+    return kept, deferred
+
+
 def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list, activity,
-          held_items=(), events=(), identity_known=None, kill_list=(), degraded=(), max_actions=3):
-    """The whole protocol report, sealed. `degraded` names sources that were missing."""
+          held_items=(), events=(), identity_known=None, kill_list=(), degraded=(), max_actions=3,
+          waiting=None):
+    """The whole protocol report, sealed. `degraded` names sources that were missing.
+    `waiting` is what is already on Krish's list (proposal_id to kind), from the last
+    live delivery; unknown is None, and then nothing is taken to be waiting."""
     state = state or {}
     proposals, release_done = [], False
-    for item in [x for x in items if not holds(x)][:max(0, min(3, max_actions))]:
+    retired = release_retired(state, rulings_file)
+    ready = [x for x in items if not holds(x) and not (retired and x.get('why') == 'release')]
+    for item in ready[:max(0, min(3, max_actions))]:
         if item.get('why') == 'release':
             proposals.append(release_proposal()); release_done = True
         else:
             proposals.append(action_proposal(item))
-    if not release_done and not policy.release_open(state):
+    if not release_done and not retired:
         proposals.append(release_proposal())
     for rid, ruling in sorted(rulings_file.items()):
         unlocks = set(ruling.get('unlocks') or [])
+        # Only a pending ruling is asked: one approved in rulings.json is never asked again.
         if ruling.get('status') == 'pending' and not (unlocks and unlocks <= policy.EXCLUDED):
             proposals.append(ruling_proposal(rid, ruling))
     proposals += [kill_proposal(line) for line in kill_list]
+    proposals, deferred = one_ask(proposals, waiting)
     entries = gate_holds(state, rulings_file, identity_known)
     entries += [('DATA', reason) for reason in degraded]
     hold_list = merge_holds(entries, list(held_items) + [x for x in items if holds(x)])
     status = 'degraded' if degraded else ('held' if hold_list else 'ready')
     source = {'revision': str(state.get('sha') or 'unknown')[:128],
               'captured_at': state.get('synced_at') or observed_at}
-    report = {'schema_version': '1.0.0', 'engine_id': ENGINE_ID, 'product_slug': PRODUCT_SLUG,
+    lines = [{'line': a[0][:500], 'evidence_url': a[1]} if isinstance(a, tuple)
+             else {'line': a[:500], 'evidence_url': None} for a in activity]
+    if deferred:
+        lines = lines[:39] + [{'line': ('One ask at a time: these wait until the ask of their kind already '
+                                        "on Krish's list is answered: "
+                                        + ', '.join(p['proposal_id'] for p in deferred) + '.')[:500],
+                               'evidence_url': None}]
+    proposals = proposals[:10]
+    report = {'schema_version': report_version(proposals), 'engine_id': ENGINE_ID, 'product_slug': PRODUCT_SLUG,
               'run_id': run_id, 'mode': mode, 'observed_at': observed_at, 'source': source,
-              'status': status, 'objectives': objectives_list,
-              'activity': [{'line': a[0][:500], 'evidence_url': a[1]} if isinstance(a, tuple)
-                           else {'line': a[:500], 'evidence_url': None} for a in activity][:40],
-              'proposals': proposals[:10], 'events': list(events)[:40], 'holds': hold_list}
+              'status': status, 'objectives': objectives_list, 'activity': lines[:40],
+              'proposals': proposals, 'events': list(events)[:40], 'holds': hold_list}
     return seal(report)
 
 

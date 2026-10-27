@@ -6,7 +6,12 @@ Each run journals a started attempt before reading any source, pulls the
 directive, does the engine's own work, reports with an Idempotency-Key and
 reads the digest back, reads Krish's decisions, and journals one terminal
 attempt. Nothing here sends, posts, publishes or spends: an approval only
-records that Krish said yes to exactly that payload.
+records that Krish said yes to exactly that payload, or to his amended version
+once its amended_sha256 checks. Full Time is handcrafted (ruling 3 of 27
+October): an approved go-live becomes a recorded instruction for Krish, in
+local/control-center/instructions.jsonl, never an action. Any protocol 1.x is
+taken from Control Center; a directive or decision declaring another major
+version is refused.
 
 The bearer comes from CONTROL_CENTER_ENGINE_TOKEN or the ignored file
 local/control-center/token. It is never printed, logged or written.
@@ -85,6 +90,14 @@ def base_url(value=None):
 
 STATUS_CODES = {400: 'bad_request', 401: 'unauthorized', 403: 'forbidden', 404: 'not_found',
                 409: 'conflict', 413: 'report_too_large', 429: 'rate_limited'}
+VERSION_REFUSED = 'protocol_version_unsupported'
+BY_HAND = {'post': 'post it yourself', 'send': 'send it yourself', 'spend': 'spend it yourself'}
+
+
+def version_supported(value):
+    """Any 1.x is taken: within 1.x Control Center only adds. Another major version,
+    or a version that is not one, is refused. An undeclared version is not checked."""
+    return value is None or (reporting.version_numbers(value) or (None,))[0] == 1
 
 
 class Client:
@@ -154,6 +167,9 @@ class Client:
     def directive(self):
         status, payload = self._call('GET', 'directive')
         if status == 200 and isinstance(payload, dict) and isinstance(payload.get('directive'), dict):
+            if not (version_supported(payload.get('schema_version'))
+                    and version_supported(payload['directive'].get('schema_version'))):
+                raise ControlCenterError(VERSION_REFUSED, status)
             return payload
         raise self._refuse(status, payload) if status >= 300 else ControlCenterError('bad_response', status)
 
@@ -172,6 +188,8 @@ class Client:
         query = '?since=' + urllib.parse.quote(since, safe='') if since else ''
         status, payload = self._call('GET', 'decisions' + query)
         if status == 200 and isinstance(payload, dict) and isinstance(payload.get('decisions'), list):
+            if not version_supported(payload.get('schema_version')):
+                raise ControlCenterError(VERSION_REFUSED, status)
             return [d for d in payload['decisions'] if isinstance(d, dict)]
         raise self._refuse(status, payload) if status >= 300 else ControlCenterError('bad_response', status)
 
@@ -222,21 +240,122 @@ class Client:
                 'replayed': bool(payload.get('replayed')), 'readback': True, 'report': body}
 
 
+def amended_digest(decision):
+    """His version's digest, as Control Center computes amended_sha256: the canonical
+    JSON of exactly {amount_usd, exact_payload}, each null when absent."""
+    return reporting.canonical_sha256({'amount_usd': decision.get('amount_usd'),
+                                       'exact_payload': decision.get('exact_payload')})
+
+
+def handcrafted_instruction(proposal, approved):
+    """Handcrafted (ruling 3): what Krish does by hand with an approved go-live. It is
+    a record for him, never an action: the engine does not post, send or spend."""
+    wall, channel = proposal.get('wall'), proposal.get('channel')
+    amount = approved.get('amount_usd')
+    line = (f'Approved {proposal["proposal_id"]}: {BY_HAND.get(wall, "carry it out yourself")}'
+            + (f' on {channel}' if channel else '')
+            + (f', {amount} USD' if amount is not None else '')
+            + (', using your amended version' if approved['amended'] else ', exactly as approved')
+            + f' (sha256 {approved["sha256"][:12]}). The engine does not post, send or spend.')
+    return {'proposal_id': proposal['proposal_id'], 'stage': approved['stage'], 'wall': wall,
+            'channel': channel, 'amount_usd': amount, 'sha256': approved['sha256'],
+            'amended': approved['amended'], 'by': 'krish', 'line': line}
+
+
 def classify(decisions, proposals):
-    """His yes counts only on the payload it was made on. The engine still never acts
-    on one by sending or posting; a ruling is recorded by an interactive session."""
-    current = {p['proposal_id']: p['payload_sha256'] for p in proposals}
-    out = {'approved_current': [], 'approved_changed': [], 'declined': [], 'done': [], 'not_in_report': []}
+    """His yes counts only on the payload it was made on (payload_sha256). When he amended
+    it, amended_sha256 is recomputed from his version; on a match his words and amount
+    are what he approved, never the engine's, and on a mismatch the decision is unverified
+    and counts for nothing. A decision declaring a protocol major other than 1 is refused.
+    The engine still never acts on a yes by sending, posting or spending: an approved
+    go-live becomes an instruction for Krish, and a ruling is recorded by an
+    interactive session."""
+    current = {p['proposal_id']: p for p in proposals}
+    out = {'approved_current': [], 'approved_amended': [], 'approved_changed': [], 'amended_unverified': [],
+           'declined': [], 'done': [], 'not_in_report': [], 'refused': [], 'approved': {}, 'instructions': []}
     for decision in decisions:
         pid = decision.get('proposal_id')
-        if pid not in current:
+        if not version_supported(decision.get('schema_version')):
+            out['refused'].append({'proposal_id': pid, 'code': VERSION_REFUSED})
+            continue
+        if not isinstance(pid, str) or pid not in current:
             out['not_in_report'].append(pid)
-        elif decision.get('decision') == 'approved':
-            same = decision.get('payload_sha256') == current[pid]
-            out['approved_current' if same else 'approved_changed'].append(pid)
-        elif decision.get('decision') in ('declined', 'done'):
-            out[decision['decision']].append(pid)
+            continue
+        proposal, verdict = current[pid], decision.get('decision')
+        if verdict in ('declined', 'done'):
+            out[verdict].append(pid)
+            continue
+        if verdict != 'approved':
+            continue
+        amended = decision.get('amended') is True
+        if amended:
+            try:
+                verified = decision.get('amended_sha256') == amended_digest(decision)
+            except ValueError:
+                verified = False
+            if not verified:
+                out['amended_unverified'].append(pid)
+                continue
+        if decision.get('payload_sha256') != proposal['payload_sha256']:
+            out['approved_changed'].append(pid)
+            continue
+        source = decision if amended else proposal
+        approved = {'amended': amended, 'stage': proposal.get('stage') or decision.get('stage'),
+                    'exact_payload': source.get('exact_payload'), 'amount_usd': source.get('amount_usd'),
+                    'sha256': decision['amended_sha256'] if amended else proposal['payload_sha256']}
+        out['approved_amended' if amended else 'approved_current'].append(pid)
+        out['approved'][pid] = approved
+        if approved['stage'] == 'go_live' or proposal.get('wall') in reporting.GO_LIVE_WALLS:
+            out['instructions'].append(handcrafted_instruction(proposal, approved))
     return out
+
+
+def still_waiting(report, decided):
+    """What a live report leaves on Krish's list: its walled asks he has not answered on
+    their current digest. An ask approved on an older digest comes back to him, so it
+    still waits. A synthetic report puts nothing on his list, so it returns None."""
+    if report.get('mode') != 'live':
+        return None
+    answered = set()
+    for key in ('approved_current', 'approved_amended', 'amended_unverified', 'declined', 'done'):
+        answered.update(decided[key])
+    return {p['proposal_id']: reporting.ask_kind(p) for p in report['proposals']
+            if p.get('wall') != 'none' and p['proposal_id'] not in answered}
+
+
+def waiting_from(value):
+    """A saved waiting map, or None when it is missing or not of the right shape."""
+    if not isinstance(value, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and v in reporting.ASK_KINDS for k, v in value.items()):
+        return None
+    return dict(value)
+
+
+def record_instructions(local, instructions, at):
+    """Append each new instruction once (by proposal and digest) to the ignored
+    local/control-center/instructions.jsonl. Returns how many were new."""
+    path = Path(local) / 'control-center' / 'instructions.jsonl'
+    seen = set()
+    if path.is_file():
+        for row in path.read_text(encoding='utf-8').splitlines():
+            try:
+                entry = json.loads(row)
+            except ValueError:
+                continue
+            if isinstance(entry, dict):
+                seen.add((entry.get('proposal_id'), entry.get('sha256')))
+    new = []
+    for item in instructions or []:
+        key = (item.get('proposal_id'), item.get('sha256'))
+        if key not in seen:
+            seen.add(key)
+            new.append({**item, 'recorded_at': at})
+    if new:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open('a', encoding='utf-8') as handle:
+            for item in new:
+                handle.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + '\n')
+    return len(new)
 
 
 def execute(client, command, run_id, work, since):
@@ -245,7 +364,8 @@ def execute(client, command, run_id, work, since):
     attempt_id = f'{run_id}:{started.strftime("%Y%m%dT%H%M%SZ")}:{uuid.uuid4().hex[:6]}'
     summary = {'command': command, 'attempt_id': attempt_id, 'run_id': None, 'status': None,
                'phase': None, 'error_code': None, 'report_sha256': None, 'readback': False,
-               'replayed': None, 'next_action': None, 'decisions': None, 'decisions_read_at': None}
+               'replayed': None, 'next_action': None, 'decisions': None, 'decisions_read_at': None,
+               'waiting': None}
 
     def finish(status, phase, code=None, delivered=None):
         record = {'attempt_id': attempt_id, 'command': command, 'run_id': delivered, 'status': status,
@@ -291,6 +411,7 @@ def execute(client, command, run_id, work, since):
         return finish('failed', 'decisions', error.code, delivery['run_id'])
     summary['decisions'] = classify(decisions, delivery['report']['proposals'])
     summary['decisions_read_at'] = read_at
+    summary['waiting'] = still_waiting(delivery['report'], summary['decisions'])
     code = notes.get('error_code')
     return finish('failed' if code else 'succeeded', notes.get('phase', 'decisions') if code else 'decisions',
                   code, delivery['run_id'])
@@ -316,8 +437,9 @@ def max_actions(directive):
     return min(3, value) if type(value) is int and value >= 0 else 3
 
 
-def workspace_work(growth, mode, report_mode, offline, observations, require_existing):
-    """The morning batch or weekly review in the persistent workspace, mapped to a report."""
+def workspace_work(growth, mode, report_mode, offline, observations, require_existing, waiting=None):
+    """The morning batch or weekly review in the persistent workspace, mapped to a report.
+    `waiting` is what the last live delivery left on Krish's list (one ask at a time)."""
     def work(directive):
         from .runner import run
         journal = History(Path(growth.LOCAL) / 'engine')
@@ -363,14 +485,15 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             activity, held_items=held, events=reporting.publication_events(saved['creatives'], start),
             identity_known=identity_known,
             kill_list=record['native_weekly_review']['kill_list'] if mode == 'weekly' else (),
-            degraded=degraded, max_actions=max_actions(directive))
+            degraded=degraded, max_actions=max_actions(directive), waiting=waiting)
         return report, {}
     return work
 
 
-def runner_work(growth, report_mode, dispatched=None):
+def runner_work(growth, report_mode, dispatched=None, waiting=None):
     """What a clean runner can see: the checks, the committed rulings and contracts,
-    and the public sources the hourly sync reads. No private history."""
+    and the public sources the hourly sync reads. No private history. `waiting` is as
+    for workspace_work; a clean runner has no ledger, so it is usually None."""
     def work(directive):
         from .measurements import scorecard
         from .runner import constraints
@@ -425,7 +548,7 @@ def runner_work(growth, report_mode, dispatched=None):
         report = reporting.build(
             reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
             items, growth.load_rulings(), reporting.objectives(today, workspace=False), activity,
-            identity_known=None, degraded=degraded, max_actions=max_actions(directive))
+            identity_known=None, degraded=degraded, max_actions=max_actions(directive), waiting=waiting)
         return report, notes
     return work
 
@@ -444,9 +567,11 @@ def main(args, growth):
     del token
     report_mode = 'synthetic' if args.synthetic else 'live'
     ledger = Path(growth.LOCAL) / 'control-center' / 'last.json'
-    previous = None
+    previous, waiting = None, None
     try:
-        previous = json.loads(ledger.read_text()).get('decisions_read_at')
+        saved = json.loads(ledger.read_text(encoding='utf-8'))
+        previous = saved.get('decisions_read_at')
+        waiting = waiting_from(saved.get('waiting'))
     except (OSError, ValueError, AttributeError):
         pass
     since = previous or reporting.iso(reporting.utc_now() - dt.timedelta(days=7))
@@ -454,16 +579,24 @@ def main(args, growth):
     if args.target == 'dispatch':
         dispatched = os.environ.get('CC_DIRECTIVE_ID', '').strip()[:120] or None
         summary = execute(client, 'dispatch', reporting.run_id_for(today, 'dispatch'),
-                          runner_work(growth, report_mode, dispatched), since)
+                          runner_work(growth, report_mode, dispatched, waiting), since)
     else:
         kind = 'report' if args.target == 'weekly' else 'daily'
         summary = execute(client, args.target, reporting.run_id_for(today, kind),
                           workspace_work(growth, args.target, report_mode, args.offline, args.observations,
-                                         args.require_existing_history), since)
+                                         args.require_existing_history, waiting), since)
     summary['mode'] = report_mode
     summary['decisions_read_at'] = summary.get('decisions_read_at') or previous
+    if summary.get('waiting') is None:   # a synthetic or failed run leaves his list as it was
+        summary['waiting'] = waiting
+    instructions = (summary.get('decisions') or {}).get('instructions') or []
+    record_instructions(growth.LOCAL, instructions, summary['decisions_read_at'])
     atomic_json(ledger, summary)
     shown = dict(summary)
     if shown.get('decisions'):
         shown['decisions'] = {k: len(v) for k, v in shown['decisions'].items()}
+    if isinstance(shown.get('waiting'), dict):
+        shown['waiting'] = len(shown['waiting'])
+    if instructions:
+        shown['instructions'] = [x['line'] for x in instructions]
     return shown, 0 if summary['status'] == 'succeeded' else 1
