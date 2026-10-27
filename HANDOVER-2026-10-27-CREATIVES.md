@@ -1,5 +1,7 @@
 # Two-ad creative closeout, 27 October 2026
 
+> **Moved, 27 October 2026 (afternoon):** the Librarian filed this handoff's 17 files, unrenamed and with the same Drive file IDs, into [`Growth Build/06_Reference/creative-handoff/2026-10-27`](https://drive.google.com/drive/folders/13757xAy95wRIGNdnQeJYRMdwO7j-JVHC). Start from `Growth Build/00_START-HERE/START-HERE.md`. Every ID and hash below still holds.
+
 Read this after `AGENTS.md`, `docs/NORTH_STAR.md` and `NOW.md`. It supersedes the creative next action in `HANDOVER-2026-10-26.md`; that file remains the implementation record. The current private creative state is in the [canonical Growth Build folder](https://drive.google.com/drive/folders/1Pn_ibUcfpcyWzi4w1ryDMZMF-8m1gT_M). The repo is public; source voices, music, scripts, auditions and mixes live in Drive, not Git.
 
 ## Start anywhere

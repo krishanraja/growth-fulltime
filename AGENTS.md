@@ -36,7 +36,23 @@ natural faces or lip sync. Respect component-scoped approvals and active creativ
 rejections. This offline standards command authorises no generation or go-live.
 
 
+## Engine v2 (Rulings, Krish, 2026-10-27)
+
+Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "approved, do it all". It is the build plan; its phases are the steps in `docs/GET-GOING.md`. Its rulings, in his words where he gave them:
+
+1. **Go now, per-take gate.** Organic brand posts may recruit pilot-beta testers before the December release. A post is eligible once the exact AI Pundit show it links to is published and its facts check; four of six applies only to whole-match posts. D7 consent must be closed first. In `rulings.json` this is D1 (approved) and ORGANIC; both come into force when full-time's decision log carries their heading.
+2. **"Reserve all, push three."** Krish creates Full Time handles on YouTube, TikTok, Instagram, Threads, X, Facebook and a WhatsApp Channel; the engine pushes daily on TikTok, Reels and Shorts from one vertical master, with derived cards elsewhere.
+3. **Handcrafted posting.** Krish: "i will do it in Buffer, but not until the voices, scripts and the video/image ad creatives are ready to be replicated easily and reliably." The engine prepares exact packs and never posts, schedules or writes to Buffer. This replaces step 3 of the Autonomy section below for posts.
+4. **Roles.** Claude plans, sets strategy and orchestrates; Codex does creative production and social media management, never touching the network, connectors or any account, and never certifying its own work.
+5. **Four formats** carry the 11/10 bar: the remote-switch match ad, AI Pundit take clips, AI Pundit vs AI Pundit rows and match-morning cards. Production runs on Krish's machine.
+6. **A format is ready** after three no-edit "post it" verdicts on three different matches, computed from his decisions, never written. Each format goes live on its own readiness.
+7. **Brand match ads may link to Today**, never claiming a show exists for their match, and only when Today has a live show.
+8. **What works is owned** by the What-Works Analyst; **measurement** by the Measurement Analyst, which includes Google Analytics 4 landings by creative ID ("make sure this is a part of your Measurement Specialist"), kept apart from listener numbers.
+9. **Everything the engine produces lives in Drive** in `Ventures/Full Time/Growth Build`, kept findable by the Librarian with no sprawl. A full Canva brand kit is built through Cowork on Krish's PC (`briefs/2026-10-27-cowork-canva-brand-kit.md`).
+
 ## Autonomy (Ruling, Krish, 2026-10-19)
+
+For posts, ruling 3 of 27 October above replaces step 3 below: Krish publishes in Buffer himself and the engine records his permalink as the receipt.
 
 Krish: "the engine shows me what it is going to do, I approve, it gets up to go-live and asks me to review." This engine runs autonomously under Control Center protocol 1.1.0 (`docs/control-center/ENGINE-PROTOCOL.md`, "Autonomy" and "Amend"), in steps Krish answers on his one list in Control Center:
 
@@ -86,6 +102,11 @@ Centre brief. No implementation work in Control Centre.
 - No cold press or creator pitches, ads, paid creators, prizes, new SaaS or
   paid generation. The active first public channel is branded YouTube, after
   release and channel decisions. Other brand channels are expansion options.
+  Since 27 October (Krish, rulings 1 and 2 above): every Full Time handle is
+  reserved and TikTok, Reels and Shorts are pushed daily once a format is ready,
+  under the per-take gate. The Higgsfield and Runway credits already placed
+  with Full Time are used only for match ads, inside an approved weekly
+  `spend` proposal with its amount; scheduled runs stay generation-free.
 - Target zero incremental marketing cash. Record known model/audio usage,
   hosting and agent costs separately; unknown costs stay null. Never run a paid
   production pipeline to diagnose a failure. Read stored verdicts first.
@@ -105,16 +126,23 @@ nothing else here sends, posts, spends or publishes. The bearer is
 1. Draft and analyse. Never send, post, upload, comment, like, follow, DM,
    subscribe, sign up, boost, buy, or change external accounts or settings.
    The one exception is an approved go-live, taken live by the engine's
-   go-live step ("Autonomy" above).
+   go-live step ("Autonomy" above). Since 27 October posts are handcrafted:
+   Krish publishes in Buffer and the engine only reads back his permalink.
    Human publication evidence can be recorded without performing the action.
 2. Product truth comes from the synced full-time canon and the live site.
    Do not change full-time, PostHog, Vercel, Supabase or another product.
 3. No promotion to a match below four published AI Pundits. Validate the
    exact drop and published AI Pundit in every show link. A held draft still
-   needs a real destination and accurate facts.
+   needs a real destination and accurate facts. Since 27 October (ORGANIC, once
+   in force): a single take may be promoted when the exact AI Pundit show it
+   links to is published; the four-of-six rule stays for whole-match posts; a
+   brand match ad links to Today, only when Today has a live show, and never
+   claims a show exists for its match.
 4. Public acquisition also needs the product's separate release decision,
    verified brand identity and channel rulings. D1 alone does not waive the
    December release bar. Never mark a ruling approved from a plan or test.
+   The one exception is ORGANIC (Krish, 2026-10-27): organic brand posts, per
+   take, before release. It opens no paid, founder or excluded channel.
 5. Full Time is a free pilot beta. No promises of daily or every-match shows,
    personalisation, predictions, prices or a guaranteed release date.
 6. Reuse published audio, exact transcript quotations and Full Time's own

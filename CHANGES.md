@@ -5,6 +5,25 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-27: approved engine v2 and recorded nine rulings.
+  Ruling (Krish, 2026-10-27): "approved, do it all" for [docs/ENGINE-V2.md](docs/ENGINE-V2.md).
+  His decisions that day, in his words where given: going live "Go now, per-take
+  gate (Recommended)" (D1 approved, new ORGANIC entry; in force once full-time's
+  decision log carries the heading); accounts "Reserve all, push three
+  (Recommended)"; publishing "i will do it in Buffer, but not until the voices,
+  scripts and the video/image ad creatives are ready to be replicated easily and
+  reliably"; roles "Claude handles planning, strategy, orchestration, whilst codex
+  handles creative production and social media management"; the 11/10 bar built
+  against the remote-switch ad, take clips, rows and match-morning cards;
+  production on his machine; ready after "3 in a row, no edits"; brand match ads
+  may link to Today; each format goes live on its own readiness; "knowing what
+  works and what doesnt is CRITICAL"; a full Canva brand kit; every asset and
+  strategy in the Drive Growth folder with no sprawl; Google Analytics as part of
+  measurement. The Drive library `Ventures/Full Time/Growth Build` now has its
+  fixed tree, START-HERE and INDEX, and the 27 October creative handoff moved,
+  unrenamed and with its file IDs intact, into `06_Reference/creative-handoff/`.
+  Nothing was posted, sent, scheduled or spent.
+
 - 2026-10-26: connected creative releases to the product-owned personality core.
   Exact committed exports are verified and imported without activation; linked
   character variants receive only their selected core identity plus shared

@@ -1,4 +1,4 @@
-> **Status, 2026-10-19: adopted.** `python3 growth.py cc` runs the protocol loop at the end of both workspace tasks and on every `cc-growth-directive` dispatch (`.github/workflows/control-center.yml`); see README, "The Control Center loop".
+> **Status, 2026-10-19: adopted and live.** The first live run on 2026-10-19 succeeded, and every daily dispatch from then to 2026-10-27 succeeded (Actions runs 1 to 10). `python3 growth.py cc` runs the protocol loop at the end of both workspace tasks and on every `cc-growth-directive` dispatch (`.github/workflows/control-center.yml`); see README, "The Control Center loop".
 
 # Control Center brief: growth-fulltime
 

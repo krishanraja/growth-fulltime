@@ -54,13 +54,23 @@ Today's live report (2026-10-19) was `held`:
 
 ## The build
 
-- [ ] **Step 0.** Correct the status line at the top of docs/CONTROL-CENTER-BRIEF.md: the first live run on 2026-10-19 succeeded, so it is no longer only tested against a local stand-in.
-- [ ] **Step 0.5 (added 2026-10-22).** Pick up briefs/2026-10-22-media-credits.md: propose about 10 Higgsfield pundit stills (about 30 credits) as a `stage: "plan"` behind `spend`, and confirm editions are publishing before any video. Generate nothing before his yes.
-- [ ] **Step 1.** The autonomy loop above (plan, go-live, the go-live step, check-ins) on protocol 1.1.0, proved against the stand-in: an approved plan never goes live, an approved go-live goes live once with exactly its payload, an amended one goes live in his words, a declined check-in stops its plan. Then the creative review every go-live passes: the doctrine it was checked against, at least two alternatives made, and why this one wins, in its evidence. Krish has a low tolerance for poor creative output, so a weak go-live is held, not proposed.
-- [ ] **Step 2.** Act on his rulings. When he clears the release decision or D1, D2, D3 or D7 on his list, record it where the engine reads its rulings (`rulings.json`) and release the matching hold on the next run, with the decision as evidence. When he declines one, keep the hold and say so.
-- [ ] **Step 3.** Build `attributed_new_completers`: define the query (a shared take to a first finished show), its window and timezone, and implement it against what full-time exposes. Where the data is not there, name the exact gap.
-- [ ] **Step 4.** Diagnose the thin rail from stored verdicts and propose the fix.
-- [ ] **Step 5.** Update the two hosted tasks so their prompts match `automations.json`, and make the workspace runs stop loudly when the token is missing (`local/control-center/token` or `CONTROL_CENTER_ENGINE_TOKEN`).
+- [x] **Step 0.** (Done 2026-10-27: the status line now records the live runs.) Correct the status line at the top of docs/CONTROL-CENTER-BRIEF.md: the first live run on 2026-10-19 succeeded, so it is no longer only tested against a local stand-in.
+- [ ] **Step 0.5 (added 2026-10-22; folded into v2 phase 1 as the weekly `spend` proposal, stills before video).** Pick up briefs/2026-10-22-media-credits.md: propose about 10 Higgsfield pundit stills (about 30 credits) as a `stage: "plan"` behind `spend`, and confirm editions are publishing before any video. Generate nothing before his yes.
+- [ ] **Step 1 (superseded for posts by the 27 October handcrafted ruling; the plan, check-in and amendment parts are v2 phase 1).** The autonomy loop above (plan, go-live, the go-live step, check-ins) on protocol 1.1.0, proved against the stand-in: an approved plan never goes live, an approved go-live goes live once with exactly its payload, an amended one goes live in his words, a declined check-in stops its plan. Then the creative review every go-live passes: the doctrine it was checked against, at least two alternatives made, and why this one wins, in its evidence. Krish has a low tolerance for poor creative output, so a weak go-live is held, not proposed.
+- [ ] **Step 2 (v2 phase 0 records D1 and ORGANIC; the full-time decision-log heading is a handoff).** Act on his rulings. When he clears the release decision or D1, D2, D3 or D7 on his list, record it where the engine reads its rulings (`rulings.json`) and release the matching hold on the next run, with the decision as evidence. When he declines one, keep the hold and say so.
+- [ ] **Step 3 (v2 phase 1: `engine/attribution.py` and `briefs/2026-10-27-share-attribution.md`).** Build `attributed_new_completers`: define the query (a shared take to a first finished show), its window and timezone, and implement it against what full-time exposes. Where the data is not there, name the exact gap.
+- [ ] **Step 4 (v2 phase 1: handed to full-time as `briefs/2026-10-27-rail-supply.md`).** Diagnose the thin rail from stored verdicts and propose the fix.
+- [ ] **Step 5 (v2 phase 1: `automations.json` now names the newest handover; the hosted copies still need updating to match).** Update the two hosted tasks so their prompts match `automations.json`, and make the workspace runs stop loudly when the token is missing (`local/control-center/token` or `CONTROL_CENTER_ENGINE_TOKEN`).
+
+## The v2 build (approved 2026-10-27)
+
+Ruling (Krish, 2026-10-27): "approved, do it all". The plan is [ENGINE-V2](ENGINE-V2.md). Each phase is done when its acceptance in that file is met with evidence, never when a session says so.
+
+- [ ] **Phase 0.** Baseline, inventory, rulings and brand kit. Done so far (27 October): the Drive library tree, START-HERE and INDEX; the creative handoff moved into `06_Reference`; the Canva `Growth/Templates` folder; rulings recorded here and in `rulings.json`. Waiting on Krish: run the Cowork prompt (`briefs/2026-10-27-cowork-canva-brand-kit.md`), switch Full Time to handcrafted, create the handles, and let `scripts/baseline.py` read the Codex and Claude logs on his machine.
+- [ ] **Phase 1.** Product briefs (share attribution, rail supply), the Control Center brief (Google Analytics, objectives, handcrafted), engine truth (protocol 1.1.0, RELEASE fix, ORGANIC gate), proof zero on the published editions, and the creative track from the Liverpool v8 listening.
+- [ ] **Phase 2.** Spec, ten crew members, invariants, session packs, dispatch guard, the Librarian, the Buffer reader, the format locks and the six Canva templates.
+- [ ] **Phase 3.** Proof on real matches until the first format reaches three in a row.
+- [ ] **Phase 4.** Live, per format, published by Krish in Buffer.
 
 ## Checks
 
