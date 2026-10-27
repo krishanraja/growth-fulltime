@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `975360d07a` and from fulltime.fm on 2026-10-26T13:19:33+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `b27280fe84` and from fulltime.fm on 2026-10-27T05:13:49+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -20,9 +20,7 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 Read these again before drafting anything:
 
-- changed: `AGENTS.md`
 - changed: `NOW.md`
-- changed: `docs/product-state.json`
 
 ## Rulings the playbook needs
 
@@ -67,12 +65,8 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `975360d07a` 2026-10-26 Merge pull request #100 from krishanraja/docs/personality-system-closeout
-- `522c0a28bc` 2026-10-26 Record merged personality core and verified release boundaries
-- `43c4ae2084` 2026-10-26 Merge pull request #99 from krishanraja/build/pundit-personality-system
-- `a79be6ee79` 2026-10-26 Keep the closeout ruling on its required standalone line
-- `c5d4600e52` 2026-10-26 Own versioned pundit personalities in the product pipeline
+- `b27280fe84` 2026-10-26 docs(steward): 2026-10-26 flatten NOW.md frontmatter lists, stamp head
 
 ## Work in flight (open pull requests)
 
-- #97 Sync the canon block (`harness/canon-sync`, updated 2026-10-24)
+- #97 Sync the canon block (`harness/canon-sync`, updated 2026-10-27)

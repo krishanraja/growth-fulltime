@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "61b3e89764732995",
-    "NOW.md": "fc23829851f3a242",
+    "NOW.md": "4a7f4198d5b78f38",
     "docs/00-product.md": "7948356c0178f0dd",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -17,35 +17,13 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "AGENTS.md",
-    "NOW.md",
-    "docs/product-state.json"
+    "NOW.md"
   ],
   "commits": [
     {
-      "date": "2026-10-26T11:58:51Z",
-      "sha": "975360d07a",
-      "subject": "Merge pull request #100 from krishanraja/docs/personality-system-closeout"
-    },
-    {
-      "date": "2026-10-26T11:56:43Z",
-      "sha": "522c0a28bc",
-      "subject": "Record merged personality core and verified release boundaries"
-    },
-    {
-      "date": "2026-10-26T11:52:57Z",
-      "sha": "43c4ae2084",
-      "subject": "Merge pull request #99 from krishanraja/build/pundit-personality-system"
-    },
-    {
-      "date": "2026-10-26T11:51:30Z",
-      "sha": "a79be6ee79",
-      "subject": "Keep the closeout ruling on its required standalone line"
-    },
-    {
-      "date": "2026-10-26T11:50:27Z",
-      "sha": "c5d4600e52",
-      "subject": "Own versioned pundit personalities in the product pipeline"
+      "date": "2026-10-26T23:57:09Z",
+      "sha": "b27280fe84",
+      "subject": "docs(steward): 2026-10-26 flatten NOW.md frontmatter lists, stamp head"
     }
   ],
   "decisions": [
@@ -74,10 +52,10 @@
       "branch": "harness/canon-sync",
       "number": 97,
       "title": "Sync the canon block",
-      "updated": "2026-10-24T22:43:38Z"
+      "updated": "2026-10-27T00:04:27Z"
     }
   ],
-  "previous_sha": "d05c8d1d74d073351ff3e98890acc931aa5fe1fc",
+  "previous_sha": "975360d07a47e3b8e1b116dd80467c6cba4bb87d",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -192,6 +170,6 @@
       "status": "pending"
     }
   },
-  "sha": "975360d07a47e3b8e1b116dd80467c6cba4bb87d",
-  "synced_at": "2026-10-26T13:19:33+00:00"
+  "sha": "b27280fe8408cde9d5d310867b1ba9489bf30175",
+  "synced_at": "2026-10-27T05:13:49+00:00"
 }
