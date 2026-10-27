@@ -55,14 +55,19 @@ jobs:
           create_credentials_file: false
           export_environment_variables: false
       - name: Read Google Analytics landings (aggregate, kept on the runner)
+        # This repository is public, so its run logs are too: print only whether the
+        # read worked and its error code, never a count.
         if: steps.google.outputs.access_token != ''
         continue-on-error: true
         env:
           GA4_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
           GA4_PROPERTY_ID: ${{ vars.GA4_PROPERTY_ID }}
         run: |
-          python3 growth.py ga4 doctor
-          python3 growth.py ga4 report --days 7 --out local/ga4/landings-latest.json
+          mkdir -p local/ga4
+          status=0
+          python3 growth.py ga4 report --days 7 --out local/ga4/landings-latest.json > local/ga4/last-report.json || status=$?
+          python3 -c "import json; r = json.load(open('local/ga4/last-report.json', encoding='utf-8')); print('Google Analytics read:', r.get('status'), r.get('error_code') or '')"
+          exit $status
       - name: Run the protocol loop
         env:
           CONTROL_CENTER_ENGINE_TOKEN: ${{ secrets.CONTROL_CENTER_ENGINE_TOKEN }}

@@ -55,9 +55,11 @@ numbers back to this engine, whose scheduled runs already live in GitHub.
    **Variables** (not secrets), add the three the script printed:
    `GA4_WIF_PROVIDER`, `GA4_SERVICE_ACCOUNT` and `GA4_PROPERTY_ID` (the number from
    Admin, Property details, not the `G-` ID).
-5. Check it: Actions, **control center loop**, Run workflow. The "Read Google
-   Analytics landings" step prints `ga4 doctor` and the week's counts, never a
-   token. From then on every morning's loop reads it on its own.
+5. Check it: Actions, **control center loop**, Run workflow on `main`. The "Read
+   Google Analytics landings" step prints only whether the read worked, or its
+   error code: this repository is public, so its run logs are too, and counts never
+   go there. From then on every morning's loop reads it on its own. It starts once
+   this work is merged into `main`, because the morning loop runs from `main`.
 
 To stop it, delete the three variables, or remove the reader from Property access
 management. Either takes effect at the next run.
