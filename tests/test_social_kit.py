@@ -77,7 +77,8 @@ class LockTests(unittest.TestCase):
                 shutil.copy(KIT / name, Path(folder) / name)
             kit_lock(folder)
             crlf = Path(folder) / 'spec.md'
-            crlf.write_bytes(crlf.read_bytes().replace(b'\n', b'\r\n'))   # a Windows checkout still matches
+            # A Windows checkout still matches (normalised first: on Windows it is CRLF already).
+            crlf.write_bytes(crlf.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
             kit_lock(folder)
             changed = Path(folder) / 'templates.js'
             changed.write_text(text('templates.js').replace('#3F607C', '#3F607D'), encoding='utf-8')
