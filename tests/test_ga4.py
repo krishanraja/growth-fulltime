@@ -44,7 +44,7 @@ class GoogleStandIn:
 
     def __init__(self):
         self.calls, self.reports = [], []
-        self.rows = [ga4_row('tiktok', 'social', 'matchday', 'TT_TAKE_C01', 3, 4, 2)]
+        self.rows = [ga4_row('tiktok', 'social', 'matchday', 'TT_CLASH_CLIP_C01_H01_V1_20261020', 3, 4, 2)]
         self.page_cap = None          # serve fewer rows than asked, as a real server may
         self.refuse = {}              # route -> status
         self.redirect = set()         # routes answered with a 302
@@ -329,13 +329,13 @@ class ReportTests(Base):
 
     def test_mapping_to_the_export_shape(self):
         rows = [{'sessionSource': 'tiktok', 'sessionMedium': 'social', 'sessionCampaignName': 'matchday',
-                 'sessionManualAdContent': 'TT_TAKE_C02', 'newUsers': '5', 'sessions': '7', 'engagedSessions': '4'},
+                 'sessionManualAdContent': 'TT_CLASH_CLIP_C02_H01_V1_20261020', 'newUsers': '5', 'sessions': '7', 'engagedSessions': '4'},
                 {'sessionSource': '(direct)', 'sessionMedium': '(none)', 'sessionCampaignName': '(not set)',
                  'sessionManualAdContent': '', 'newUsers': '2', 'sessions': '3', 'engagedSessions': '1'},
                 {'sessionSource': 'fan@example.invalid', 'sessionMedium': 'referral', 'sessionCampaignName': 'x',
-                 'sessionManualAdContent': 'TT_TAKE_C02', 'newUsers': '1', 'sessions': '1', 'engagedSessions': '0'},
+                 'sessionManualAdContent': 'TT_CLASH_CLIP_C02_H01_V1_20261020', 'newUsers': '1', 'sessions': '1', 'engagedSessions': '0'},
                 {'sessionSource': 'other@example.invalid', 'sessionMedium': 'referral', 'sessionCampaignName': 'x',
-                 'sessionManualAdContent': 'TT_TAKE_C02', 'newUsers': '1', 'sessions': '2', 'engagedSessions': '1'}]
+                 'sessionManualAdContent': 'TT_CLASH_CLIP_C02_H01_V1_20261020', 'newUsers': '1', 'sessions': '2', 'engagedSessions': '1'}]
         export = ga4.to_export(rows, dt.date(2026, 10, 20), '2026-10-26',
                                dt.datetime(2026, 10, 27, 6, 0, 5, 123, tzinfo=dt.timezone.utc))
         self.assertEqual(set(export), {'product', 'source', 'property', 'query_ref', 'window_start', 'window_end',
@@ -348,12 +348,26 @@ class ReportTests(Base):
             {'utm_source': '(direct)', 'utm_medium': '(none)', 'utm_campaign': '(not set)',
              'utm_content': '(not set)', 'new_users': 2, 'sessions': 3, 'engaged_sessions': 1},
             {'utm_source': '(redacted)', 'utm_medium': 'referral', 'utm_campaign': 'x',
-             'utm_content': 'TT_TAKE_C02', 'new_users': 2, 'sessions': 3, 'engaged_sessions': 1},
+             'utm_content': 'TT_CLASH_CLIP_C02_H01_V1_20261020', 'new_users': 2, 'sessions': 3, 'engaged_sessions': 1},
             {'utm_source': 'tiktok', 'utm_medium': 'social', 'utm_campaign': 'matchday',
-             'utm_content': 'TT_TAKE_C02', 'new_users': 5, 'sessions': 7, 'engaged_sessions': 4}])
+             'utm_content': 'TT_CLASH_CLIP_C02_H01_V1_20261020', 'new_users': 5, 'sessions': 7, 'engaged_sessions': 4}])
         self.assertNotIn('example.invalid', json.dumps(export))
         for row in export['rows']:
             self.assertTrue(all(type(row[k]) is int for k in ('new_users', 'sessions', 'engaged_sessions')))
+
+    def test_content_that_is_not_a_creative_id_folds_into_not_set_and_passes_attribution(self):
+        from engine import attribution
+        row = lambda content, n: {'sessionSource': 'newsletter', 'sessionMedium': 'email', 'sessionCampaignName': 'x',
+                                  'sessionManualAdContent': content, 'newUsers': str(n), 'sessions': str(n),
+                                  'engagedSessions': '0'}
+        rows = [row('someone-elses-tag', 1), row('(other)', 2), row('fan@example.invalid', 4),
+                row('TT_CLASH_CLIP_C01_H01_V1_20261020', 8)]
+        export = ga4.to_export(rows, '2026-10-20', '2026-10-26', dt.datetime(2026, 10, 27, 6, tzinfo=dt.timezone.utc))
+        contents = {r['utm_content']: r['new_users'] for r in export['rows']}
+        self.assertEqual(contents, {'(not set)': 7, 'TT_CLASH_CLIP_C01_H01_V1_20261020': 8})
+        landings = attribution.by_creative(export)
+        self.assertEqual(landings['TT_CLASH_CLIP_C01_H01_V1_20261020']['new_users'], 8)
+        self.assertEqual(landings.untagged['new_users'], 7)
 
     def test_rows_outside_the_aggregate_shape_are_refused(self):
         good = {'sessionSource': 's', 'sessionMedium': 'm', 'sessionCampaignName': 'c',
@@ -442,8 +456,8 @@ class CommandTests(Base):
         self.assertEqual(len(self.google.calls), calls)
 
     def test_report_writes_under_local_only_and_prints_counts_and_the_path(self):
-        self.google.rows = [ga4_row('tiktok', 'social', 'matchday', 'TT_TAKE_C01', 3, 4, 2),
-                            ga4_row('youtube', 'social', 'matchday', 'YT_TAKE_C01', 1, 2, 2)]
+        self.google.rows = [ga4_row('tiktok', 'social', 'matchday', 'TT_CLASH_CLIP_C01_H01_V1_20261020', 3, 4, 2),
+                            ga4_row('youtube', 'social', 'matchday', 'YT_CLASH_SHORT_C01_H01_V1_20261020', 1, 2, 2)]
         target = self.local / 'ga4' / 'week.json'
         code, out, _ = self.run_main(['report', '--days', '7', '--out', str(target)], ENV)
         summary = json.loads(out)

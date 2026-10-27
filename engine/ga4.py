@@ -368,8 +368,11 @@ def _observed(value):
 
 def to_export(rows, start, end, observed_at):
     """The aggregate export engine/attribution.py reads: GA4 names mapped to utm_ names and
-    counts to ints. Rows identical after cleaning are summed; a value that looks like a
-    contact or credential becomes "(redacted)"."""
+    counts to ints. A value that looks like a contact or credential becomes "(redacted)",
+    and utm_content that is not one of the engine's creative IDs (another site's tag,
+    "(other)", "(redacted)") becomes "(not set)", as MEASUREMENT.md asks of exporters, so
+    one stranger's link never stops the whole import. Rows identical after cleaning are summed."""
+    import growth
     start, end = _day(start), _day(end)
     if start > end:
         raise ValueError('the export window starts after it ends')
@@ -377,7 +380,10 @@ def to_export(rows, start, end, observed_at):
     for row in rows:
         if not isinstance(row, dict) or set(row) != set(DIMENSIONS) | set(METRICS):
             raise ValueError('a GA4 row must carry exactly the four session dimensions and three counts')
-        key = tuple(_label(row[k], DIMENSIONS[k]) for k in DIMENSIONS)
+        labels = {k: _label(row[k], DIMENSIONS[k]) for k in DIMENSIONS}
+        if not growth.CREATIVE_ID.fullmatch(labels['sessionManualAdContent']):
+            labels['sessionManualAdContent'] = '(not set)'
+        key = tuple(labels[k] for k in DIMENSIONS)
         counts = [_count(row[k], METRICS[k]) for k in METRICS]
         merged[key] = [a + b for a, b in zip(merged.get(key, [0] * len(METRICS)), counts)]
     out = [{**dict(zip(DIMENSIONS.values(), key)), **dict(zip(METRICS.values(), merged[key]))}
@@ -591,7 +597,7 @@ def _report(local, days, out):
         notes.append('Google folded some rows into "(other)", so some creatives may be hidden.')
     return {'operation': 'report', 'status': 'succeeded', 'window_start': start.isoformat(),
             'window_end': end.isoformat(), 'rows': len(export['rows']), 'pages': rows.pages,
-            'creatives': len({r['utm_content'] for r in export['rows']} - {'(not set)', '(redacted)'}),
+            'creatives': len({r['utm_content'] for r in export['rows']} - {'(not set)'}),
             'new_users': total('new_users'), 'sessions': total('sessions'),
             'engaged_sessions': total('engaged_sessions'), 'out': str(target), 'notes': notes}, 0
 

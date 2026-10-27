@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "product": "fulltime",
+  "observations": [
+    {
+      "metric": "share_arrived_new_listeners",
+      "value": 7,
+      "source": "synthetic-example",
+      "query_ref": "synthetic-example:share-token-first-listen-7d:v0",
+      "window_start": "2026-10-19",
+      "window_end": "2026-10-25",
+      "observed_at": "2026-10-26T07:30:00+00:00",
+      "status": "measured",
+      "note": "Synthetic example of the export shape; not a measurement."
+    },
+    {
+      "metric": "untokenised_new_listeners",
+      "value": 4,
+      "source": "synthetic-example",
+      "query_ref": "synthetic-example:untokenised-first-listen:v0",
+      "window_start": "2026-10-19",
+      "window_end": "2026-10-25",
+      "observed_at": "2026-10-26T07:30:00+00:00",
+      "status": "measured",
+      "note": "Synthetic example of the export shape; not a measurement."
+    },
+    {
+      "metric": "shares_created",
+      "value": 31,
+      "source": "synthetic-example",
+      "query_ref": "synthetic-example:share-tokens-minted:v0",
+      "window_start": "2026-10-19",
+      "window_end": "2026-10-25",
+      "observed_at": "2026-10-26T07:30:00+00:00",
+      "status": "measured",
+      "note": "Synthetic example of the export shape; not a measurement."
+    },
+    {
+      "metric": "brand_post_new_listeners",
+      "value": 2,
+      "source": "synthetic-example",
+      "query_ref": "synthetic-example:brand-post-utm-content-first-listen:v0",
+      "window_start": "2026-10-19",
+      "window_end": "2026-10-25",
+      "observed_at": "2026-10-26T07:30:00+00:00",
+      "status": "measured",
+      "note": "Synthetic example of the export shape; not a measurement."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "product": "fulltime",
+  "source": "ga4",
+  "property": "G-W2QL8RKFJ1",
+  "query_ref": "synthetic-example:ga4-landings-by-creative:v0",
+  "window_start": "2026-10-19",
+  "window_end": "2026-10-25",
+  "observed_at": "2026-10-26T07:30:00+00:00",
+  "rows": [
+    {
+      "utm_source": "(direct)",
+      "utm_medium": "(none)",
+      "utm_campaign": "(not set)",
+      "utm_content": "(not set)",
+      "new_users": 40,
+      "sessions": 55,
+      "engaged_sessions": 21
+    },
+    {
+      "utm_source": "instagram",
+      "utm_medium": "organic_video",
+      "utm_campaign": "ft_growth_202610",
+      "utm_content": "IG_CLASH_CLIP_C01_H01_V1_20261020",
+      "new_users": 6,
+      "sessions": 7,
+      "engaged_sessions": 4
+    },
+    {
+      "utm_source": "tiktok",
+      "utm_medium": "organic_video",
+      "utm_campaign": "ft_growth_202610",
+      "utm_content": "TT_CLASH_CLIP_C01_H01_V1_20261020",
+      "new_users": 12,
+      "sessions": 14,
+      "engaged_sessions": 9
+    }
+  ]
+}

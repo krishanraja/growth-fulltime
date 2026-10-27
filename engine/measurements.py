@@ -6,7 +6,9 @@ METRICS = {'unique_visitors', 'unique_players', 'unique_completers', 'reachable_
            'mature_completers', 'returners_7d', 'returners_playing_second_pundit',
            'survey_respondents', 'very_disappointed', 'shares_attempted', 'attributed_new_completers',
            'ga4_users', 'ga4_sessions', 'posthog_active_users', 'pageviews', 'events',
-           'wrong_fact_reports', 'marketing_cash_gbp', 'model_spend_usd', 'founder_minutes'}
+           'wrong_fact_reports', 'marketing_cash_gbp', 'model_spend_usd', 'founder_minutes',
+           'share_arrived_new_listeners', 'brand_post_new_listeners', 'untokenised_new_listeners',
+           'shares_created', 'ga4_landing_new_users', 'ga4_landing_sessions'}
 COUNTS = METRICS - {'marketing_cash_gbp', 'model_spend_usd', 'founder_minutes'}
 RATIOS = {'play_rate': ('unique_players', 'unique_visitors'),
           'finish_rate': ('unique_completers', 'unique_players'),
