@@ -1,4 +1,5 @@
 import copy
+import datetime as dt
 import json
 import unittest
 from pathlib import Path
@@ -132,6 +133,12 @@ def week(mode='proof', **formats_over):
     """The synthetic week spec with every format pinned to LOCK; formats_over edits a format by id."""
     data = json.loads(EXAMPLE.read_text(encoding='utf-8'))
     data['mode'] = mode
+    # The packs here are for matchday 2026-11-01 (DAY), so the week is the London
+    # week holding it, W44, with the example's fixtures moved back a week.
+    data['run_id'], data['window'] = 'fulltime:2026-W44', {**data['window'], 'start': '2026-10-26', 'end': '2026-11-01'}
+    for fixture in data['fixtures']:
+        moved = dt.datetime.fromisoformat(fixture['kickoff']) - dt.timedelta(days=7)
+        fixture['kickoff'] = moved.isoformat()
     for item in data['formats']:
         item['lock_version'] = LOCK
         item.update(formats_over.get(item['format_id'], {}))
@@ -509,7 +516,7 @@ class SpecTests(unittest.TestCase):
 
     def test_each_item_sits_inside_the_week_spec(self):
         self.assertTrue(has(errors(take(fixture_ref='synthetic-fixture-009'), campaign=week()),
-                            "fixture_ref 'synthetic-fixture-009' is not a fixture in the week spec fulltime:2026-W45"))
+                            "fixture_ref 'synthetic-fixture-009' is not a fixture in the week spec fulltime:2026-W44"))
         self.assertTrue(has(errors(take(lock_version='b' * 64), campaign=week()),
                             'is not the take_clip lock in the week spec'))
         self.assertTrue(has(errors(take(lock_version='unlocked'), campaign=week()), 'is not the take_clip lock'))
@@ -546,6 +553,12 @@ class SpecTests(unittest.TestCase):
         self.assertEqual(check(second, state(), allowlist(), False, tight), [])
         found = check(second, state(), allowlist(), False, tight, [first])
         self.assertTrue(has(found, 'take_clip: 2 masters on matchday 2026-11-01'))
+
+    def test_a_pack_outside_its_week_is_refused(self):
+        outside = pack_of(take(), run='fulltime:2026-11-10:g2', day='2026-11-10')
+        found = check(outside, state(), allowlist(), False, week())
+        self.assertTrue(has(found, 'matchday 2026-11-10 is outside the week spec fulltime:2026-W44'))
+        self.assertFalse(has(errors(take(), campaign=week()), 'is outside the week spec'))
 
     def test_a_refused_spec_checks_nothing(self):
         self.assertTrue(has(errors(take(), campaign={}), 'the week spec is refused'))
@@ -695,7 +708,7 @@ class ProposalTests(unittest.TestCase):
     def test_only_a_live_ask_says_post_by_hand_in_buffer(self):
         ask = proposal(self.built(take(), ad(), campaign=week('live')), EXPIRES, mode='live')
         self.assertEqual(ask['title'], 'Matchday 2026-11-01: 2 posts to make by hand (tiktok)')
-        self.assertIn('Live, under the signed spec fulltime:2026-W45', ask['why'])
+        self.assertIn('Live, under the signed spec fulltime:2026-W44', ask['why'])
         self.assertIn('you post each item yourself in Buffer', ask['why'])
         self.assertIn('Before posting a match ad, check Today carries a published AI Pundit show', ask['why'])
         self.assertEqual(ask['why'], ask['why'][:1000])
@@ -719,7 +732,7 @@ class ProposalTests(unittest.TestCase):
         built = self.built(take())
         self.assertIn('Checked when the pack was built: every item links', proposal(built, EXPIRES)['why'])
         spec_checked = proposal(self.built(take(), campaign=week()), EXPIRES)['why']
-        self.assertIn('Checked when the pack was built against the week spec fulltime:2026-W45', spec_checked)
+        self.assertIn('Checked when the pack was built against the week spec fulltime:2026-W44', spec_checked)
         unchecked = proposal(pack_of(take(channel_ref='personal-tiktok')), EXPIRES)['why']
         self.assertIn('Not checked: pack.check has not passed on exactly this pack', unchecked)
         self.assertNotIn('Checked when', unchecked)

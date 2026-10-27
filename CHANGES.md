@@ -5,6 +5,14 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-27: approved the Full Time social kit, "The Switch, revision 1". Krish,
+  shown the rendered kit cold: "I like it. Looks good." Each AI Pundit is a channel
+  in its own paper; the default post is one channel and never claims a disagreement,
+  and the cut and Pundit v Pundit render only when two real shows exist for the
+  match. It lives in `brand/social-kit/`, pinned by `LOCK.json`; a change is a new
+  revision he approves. The approval record, with every frame's SHA-256, is in
+  Drive `Growth Build/05_Brand-Kit`. Posting, Canva uploads and spend each still
+  need their own yes.
 - 2026-10-27: Google Analytics comes from Control Center. Krish: "just get google
   analytics data from control center, much easier". Read live that day, Control
   Center has no Analytics read yet, so `briefs/2026-10-27-control-center-measurement.md`

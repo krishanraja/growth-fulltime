@@ -35,12 +35,12 @@ Steps:
    - graphics: all six AI Pundit covers, the match seal and its textures;
    - brand voice: the exact term "AI Pundit", UK English, simple words, no em dashes, and AI always disclosed.
 3. In Canva go to Brand, then Brand Kit, and create a kit named "Full Time". Add everything above to it.
-4. Templates. Put them in the existing Growth/Templates folder above. Do not create another Growth or Templates folder. In Templates, make six designs named template_<size>_<use>:
-   - 1080x1920 vertical cover
-   - 1080x1350 card
-   - 1080x1080 card
-   - 1200x630 share card
-   - a ten-page 1080x1350 carousel
+4. Templates. They follow the social kit Krish approved on 27 October 2026 ("The Switch, revision 1"): its rules are in C:\Users\krish\dev\mindmake\growth-fulltime\brand\social-kit\spec.md, and its reference frames are rendered on this PC into C:\Users\krish\dev\mindmake\growth-fulltime\local\brand-kit\frames\ (brand\social-kit\README.md says how). Match those frames: the six-channel strip, each AI Pundit's paper as the ground, the AI Pundit's name as the hero, the match seal as the score, lime only on the mark, play and progress. Add the six papers to the kit's colours: The Reporter #3F607C, The Gaffer #4E6B3C, The Numbers Guy #2E6463, The Romantic #9B6269, The Doomer #4F4868, The Wind-Up #A3542E. Put the templates in the existing Growth/Templates folder above. Do not create another Growth or Templates folder. Make six designs named template_<size>_<use>:
+   - 1080x1920 vertical cover (the take clip's first frame)
+   - 1080x1350 card (the morning card)
+   - 1080x1080 card (the morning card, square)
+   - 1200x630 share card (the six channel bands)
+   - a ten-page 1080x1350 carousel (page 1 the morning card, then one page per channel)
    - a 1280x720 thumbnail
    Every template uses the kit's fonts and colours and carries a fixed, visible "AI Pundit" label. Publish each one as a brand template inside my own Canva only. Put one text box on each template for each of these fields, labelled with exactly this text as placeholder copy: quote, pundit, home, away, score, date, cta. Claude will connect the autofill fields through the Canva connector afterwards. If brand templates are not available on my plan, keep them as normal designs in that folder and record brand_template: false.
    Never use league or broadcaster marks, club crests, player images, or anything that looks like a real pundit.

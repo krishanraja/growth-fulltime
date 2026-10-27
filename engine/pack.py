@@ -570,6 +570,11 @@ def check(pack, state, allowlist, today_live, campaign=None, earlier=None):
         if refused:
             out.append('the week spec is refused, so no item is checked against it: ' + '; '.join(refused))
             campaign = None
+        elif matchday:
+            window = campaign['window']
+            if not window['start'] <= matchday <= window['end']:
+                out.append(f'matchday {matchday} is outside the week spec {campaign["run_id"]} '
+                           f'({window["start"]} to {window["end"]}); a pack sits inside its own week')
     items = pack.get('items')
     if not isinstance(items, list) or not items or not all(isinstance(x, dict) for x in items):
         return out + ['items must be a non-empty list of pack items']
