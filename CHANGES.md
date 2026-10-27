@@ -5,6 +5,15 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-27: added the Audience Builder and a direct Google Analytics reader.
+  Krish: "there needs to be a social media specialist working relentlessly: not
+  necessarily to publish content, but to make sure that my profile is as visible
+  as possible, with as many followers as possible, through all the different
+  tactics". Profiles: "Full Time brand profiles (Recommended)". Growth work:
+  "Automate within platform rules": official APIs only, each action type ruled by
+  him first, in `engagement-actions.json`, with the risky types banned in code.
+  Google Analytics: "Happy to let you read Google Analytics directly", then
+  "Direct read-only API (Recommended)"; setup in `docs/GA4-ACCESS.md`.
 - 2026-10-27: approved engine v2 and recorded nine rulings.
   Ruling (Krish, 2026-10-27): "approved, do it all" for [docs/ENGINE-V2.md](docs/ENGINE-V2.md).
   His decisions that day, in his words where given: going live "Go now, per-take

@@ -38,7 +38,7 @@ rejections. This offline standards command authorises no generation or go-live.
 
 ## Engine v2 (Rulings, Krish, 2026-10-27)
 
-Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "approved, do it all". It is the build plan; its phases are the steps in `docs/GET-GOING.md`. Its rulings, in his words where he gave them:
+Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "approved, do it all". It is the build plan; its phases are the steps in `docs/GET-GOING.md`. Its rulings, in his words where he gave them (eleven in all; 9 and 10 were added later the same day):
 
 1. **Go now, per-take gate.** Organic brand posts may recruit pilot-beta testers before the December release. A post is eligible once the exact AI Pundit show it links to is published and its facts check; four of six applies only to whole-match posts. D7 consent must be closed first. In `rulings.json` this is D1 (approved) and ORGANIC; both come into force when full-time's decision log carries their heading.
 2. **"Reserve all, push three."** Krish creates Full Time handles on YouTube, TikTok, Instagram, Threads, X, Facebook and a WhatsApp Channel; the engine pushes daily on TikTok, Reels and Shorts from one vertical master, with derived cards elsewhere.
@@ -48,7 +48,9 @@ Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "appro
 6. **A format is ready** after three no-edit "post it" verdicts on three different matches, computed from his decisions, never written. Each format goes live on its own readiness.
 7. **Brand match ads may link to Today**, never claiming a show exists for their match, and only when Today has a live show.
 8. **What works is owned** by the What-Works Analyst; **measurement** by the Measurement Analyst, which includes Google Analytics 4 landings by creative ID ("make sure this is a part of your Measurement Specialist"), kept apart from listener numbers.
-9. **Everything the engine produces lives in Drive** in `Ventures/Full Time/Growth Build`, kept findable by the Librarian with no sprawl. A full Canva brand kit is built through Cowork on Krish's PC (`briefs/2026-10-27-cowork-canva-brand-kit.md`).
+9. **A social growth specialist, the Audience Builder,** works relentlessly on the Full Time brand profiles only ("Full Time brand profiles (Recommended)"): visibility and followers through every legitimate tactic, not necessarily by publishing. Krish: "Automate within platform rules": only official APIs, only actions each platform allows, and every action type needs his ruling first, recorded in `engagement-actions.json`. Follow or unfollow automation, mass liking, unsolicited DMs, follow-for-follow, engagement bait and bought followers stay banned in code.
+10. **Google Analytics is read directly** ("Direct read-only API"), with a read-only credential Krish adds to the environment's secrets (`docs/GA4-ACCESS.md`). Its landings stay apart from listener numbers.
+11. **Everything the engine produces lives in Drive** in `Ventures/Full Time/Growth Build`, kept findable by the Librarian with no sprawl. A full Canva brand kit is built through Cowork on Krish's PC (`briefs/2026-10-27-cowork-canva-brand-kit.md`).
 
 ## Autonomy (Ruling, Krish, 2026-10-19)
 

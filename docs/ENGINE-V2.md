@@ -58,6 +58,9 @@ AGENTS.md lines amended to match these rulings:
     - the ad's words never claim a show exists for its match;
     - Today must carry at least one published AI Pundit show at post time, checked live; otherwise the ad is held, so a tap never lands on "No match to cover today".
 12. **Each format goes live on its own readiness.** `take_clip` or `morning_card` can start posting while `match_ad` is still working toward its bar.
+13. **A social growth specialist, the Audience Builder (crew #11),** works relentlessly on brand-profile visibility and followers, Full Time brand profiles only.
+14. **"Automate within platform rules."** Official APIs only, actions each platform allows, every action type ruled by Krish first in `engagement-actions.json`; follow or unfollow automation, mass liking, unsolicited DMs, follow-for-follow, engagement bait and bought followers are banned in code.
+15. **Google Analytics is read directly** through the read-only Data API (`engine/ga4.py`, `docs/GA4-ACCESS.md`), with credentials in the environment's secrets.
 
 Public copy keeps the product's term, "free pilot beta".
 
@@ -169,7 +172,7 @@ Growth Build/
 
 **Mechanics.** On Krish's PC the H drive is assumed to be Google Drive for Desktop. Phase 0 verifies this. If it holds, the stdlib CLI copies files into the mounted path, at zero tokens, and Claude reads back through the Drive connector (`search_files` by `parentId`) to check names, sizes and the index. In the cloud, the Drive connector writes directly.
 
-## 3. The crew: ten specialists
+## 3. The crew: eleven specialists
 
 Each specialist has:
 - a lint (zero tokens) before acting;
@@ -188,10 +191,10 @@ Lints reuse existing code.
 | 5 | **Motion Maker** (Codex offline; Claude calls Higgsfield and Runway) | Renderer checks (hashes, quotes, bounds, captions, label); credits within the approved `spend`; stills before video; a full video refused without a passed realism proof (R47); for posting, Today live at post time (ruling 11); a generation record | ffprobe and output hashes; caption alignment from Krish's verdict (no longer self-declared); live 3-second hold | Muted, then with sound: does the first second stop the thumb? |
 | 6 | **Card Maker** (Claude through the Canva connector) | Pinned brand template; "AI Pundit" visible; no league or broadcaster marks; dimensions per channel | Export hash and dimensions; the text read back from the design equals the slot text, with every glyph present (R19) | At thumbnail size, does a ten-year-old get it in one second? |
 | 7 | **Channel & Pack Steward** (Codex builds; Claude reads Buffer) | Targets in the Full Time allowlist only (personal and makeyourmindup channel IDs refused; IDs held in ignored `local/`); identity verified within 30 days; rules re-checked within 90 days; AI labels set; caps; never the same asset twice on one channel | Read-only Buffer readback of Full Time channels: the post matches the pack's caption hash and creative ID, giving a permalink receipt (`History.mark`) | Is it native to its platform, or a cross-post? |
-| 8 | **Measurement Analyst** (Claude): counts the number | Every link carries its creative ID (`tracked()`); every export is an aggregate with no person-level fields | Weekly counts with a Poisson 95% interval from the product export (share-token arrivals, brand-post arrivals by creative ID); Google Analytics 4 landings by creative ID (property G-W2QL8RKFJ1, page views only, read as an aggregate export through Control Center) as a leading web signal that never counts as listeners; untokenised arrivals reported separately | Would this number survive "how was it counted"? |
+| 8 | **Measurement Analyst** (Claude): counts the number | Every link carries its creative ID (`tracked()`); every export is an aggregate with no person-level fields | Weekly counts with a Poisson 95% interval from the product export (share-token arrivals, brand-post arrivals by creative ID); Google Analytics 4 landings by creative ID (property G-W2QL8RKFJ1, page views only, read directly through the read-only Data API with `engine/ga4.py`, ruling 15) as a leading web signal that never counts as listeners; untokenised arrivals reported separately | Would this number survive "how was it counted"? |
 | 9 | **What-Works Analyst** (Claude, a fresh session, never a maker): owns what works | A claim is "confirmed" only after pre-registration, no overlapping test, **at least two matchweeks and at least 20 events per arm**, and \|z\| of 2 or more with z = (a−b)/√(a+b). Anything less is "directional" | Weekly learning report. Pre-live: which of Krish's edits and rejects repeat, and why. Live: format, AI Pundit, hook, channel and time against the control. Then the kill and double-down list | What would we stop doing tomorrow, and what evidence flips it? |
-
 | 10 | **Librarian** (CLI files; Claude reads back): owns findability | Name matches the pattern, path is inside the fixed tree, not a duplicate SHA-256, index row prepared | Drive and Canva readback equals the manifest; reconcile finds zero files outside the tree, zero orphans, zero duplicates and zero misnamed files | From START-HERE, can Krish find this in ten seconds? |
+| 11 | **Audience Builder** (Claude plans; Codex prepares profile copy; automated only through an approved official-API adapter): owns brand-profile visibility and followers | `engine.audience.gate`: the action type is approved by Krish's ruling, has an official API, a rule check within 90 days, a brand allowlisted account and room under its daily cap; banned types refused | `engine.audience.followers_check`: weekly followers and profile visits per brand channel, missing distinct from zero; a diagnostic of reach, never the North Star | Would a fan who lands on this profile follow it within three seconds, and why? |
 
 **The learning register** (`learnings` in `local/engine/history.json`; exported each week to `Growth Build/04_Learning/register.csv`, immutable and versioned like experiments) is the Assumption Ledger in code. Each entry holds:
 - the claim;
