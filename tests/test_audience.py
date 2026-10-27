@@ -625,8 +625,9 @@ class SafetyTests(unittest.TestCase):
     def test_the_public_files_are_plain_uk_english_within_size(self):
         card = ROOT / 'crew' / 'audience_builder' / 'card.md'
         lens = ROOT / 'crew' / 'audience_builder' / 'lens.md'
-        self.assertLessEqual(len(card.read_bytes()), 3072)
-        self.assertLessEqual(len(lens.read_bytes()), 1024)
+        lf = lambda path: len(path.read_bytes().replace(b'\r\n', b'\n'))   # a Windows checkout adds CR
+        self.assertLessEqual(lf(card), 3072)
+        self.assertLessEqual(lf(lens), 1024)
         self.assertIn('Would a fan who lands on this profile follow it within three seconds, and why?',
                       lens.read_text(encoding='utf-8'))
         for path in (card, lens, audience.ACTIONS_FILE, Path(audience.__file__), Path(__file__)):

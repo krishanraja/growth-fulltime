@@ -417,8 +417,8 @@ class HandcraftedTests(ServedTests):
         self.assertIn('post it yourself on youtube', instruction['line'])
         self.assertIn('does not post, send or spend', instruction['line'])
         routes = {(c[0], c[1].split('/')[0]) for c in self.server.calls}
-        self.assertEqual(routes, {('POST', 'attempts'), ('GET', 'directive'), ('GET', 'reports'),
-                                  ('POST', 'reports'), ('GET', 'decisions')})
+        self.assertEqual(routes, {('POST', 'attempts'), ('GET', 'directive'), ('GET', 'capabilities'),
+                                  ('GET', 'reports'), ('POST', 'reports'), ('GET', 'decisions')})
         self.assertEqual(len(self.report_posts()), 1)
 
     def test_instructions_are_recorded_once_each(self):

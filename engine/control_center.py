@@ -173,6 +173,18 @@ class Client:
             return payload
         raise self._refuse(status, payload) if status >= 300 else ControlCenterError('bad_response', status)
 
+    def capabilities(self):
+        """What Control Center takes (ENGINE-PROTOCOL.md: check that the version you send is
+        in schema_versions). None when an older server has no such route."""
+        status, payload = self._call('GET', 'capabilities')
+        if status == 404:
+            return None
+        if status == 200 and isinstance(payload, dict):
+            if not version_supported(payload.get('schema_version')):
+                raise ControlCenterError(VERSION_REFUSED, status)
+            return payload
+        raise self._refuse(status, payload) if status >= 300 else ControlCenterError('bad_response', status)
+
     def get_report(self, run_id):
         status, payload = self._call('GET', 'reports/' + urllib.parse.quote(run_id, safe=''))
         if status == 404:
@@ -398,6 +410,15 @@ def execute(client, command, run_id, work, since):
         return finish('failed', 'plan', 'run_failed')
     if reporting.schema_errors(report):
         return finish('failed', 'report', 'report_invalid')
+    try:
+        offered = client.capabilities()
+    except ControlCenterError as error:
+        return finish('failed', 'report', error.code)
+    if offered is not None:
+        summary['autonomy'] = offered.get('autonomy')        # ruling 3: Full Time should read handcrafted
+        versions = offered.get('schema_versions')
+        if isinstance(versions, list) and report['schema_version'] not in versions:
+            return finish('failed', 'report', 'version_not_offered')
     try:
         delivery = client.deliver(report)
     except ControlCenterError as error:

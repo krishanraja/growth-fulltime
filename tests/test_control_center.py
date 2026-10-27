@@ -37,6 +37,9 @@ class StandIn:
     def __init__(self):
         self.attempts, self.reports, self.calls = {}, {}, []
         self.decisions = []
+        self.capabilities = {'schema_version': '1.1.0', 'schema_versions': ['1.0.0', '1.1.0', '1.2.0'],
+                             'autonomy': 'handcrafted', 'engine_id': 'growth-fulltime', 'product_slug': 'full-time',
+                             'idempotency': True}
         self.refuse = {}          # (method, route) -> status
         self.force_conflict = False
         outer = self
@@ -95,6 +98,11 @@ class StandIn:
             return h._send(400, {'error': 'finished_at'})
         self.attempts[body['attempt_id']] = body
         return h._send(200, {'ok': True, 'attempt': body})
+
+    def get_capabilities(self, h, route, query, body):
+        if self.capabilities is None:
+            return h._send(404, {'error': 'not_found'})
+        return h._send(200, self.capabilities)
 
     def get_directive(self, h, route, query, body):
         return h._send(200, {'ok': True, 'chosen_by': 'rule', 'directive': {

@@ -206,5 +206,34 @@ class WeeklyLibrary(unittest.TestCase):
         self.assertIn('not reconciled', line)
 
 
+class Capabilities(unittest.TestCase):
+    def setUp(self):
+        from tests.test_control_center import StandIn, TOKEN, sample_report
+        self.server = StandIn()
+        self.addCleanup(self.server.close)
+        self.client = control_center.Client(self.server.url, TOKEN, loopback_for_tests=True)
+        self.report = sample_report()
+
+    def run_once(self):
+        return control_center.execute(self.client, 'morning', self.report['run_id'],
+                                      lambda directive: (self.report, {}), None)
+
+    def test_a_version_control_center_does_not_offer_is_never_sent(self):
+        self.server.capabilities['schema_versions'] = ['1.0.0']
+        summary = self.run_once()
+        self.assertEqual((summary['status'], summary['error_code']), ('failed', 'version_not_offered'))
+        self.assertEqual(self.server.reports, {})
+
+    def test_the_mode_is_read_and_an_older_server_without_the_route_still_gets_its_report(self):
+        summary = self.run_once()
+        self.assertEqual((summary['status'], summary['autonomy']), ('succeeded', 'handcrafted'))
+        self.server.capabilities = None
+        self.report = {**self.report, 'run_id': 'fulltime:2026-10-20:daily'}
+        self.report = reporting.seal({k: v for k, v in self.report.items() if k != 'payload_sha256'})
+        summary = self.run_once()
+        self.assertEqual(summary['status'], 'succeeded')
+        self.assertNotIn('autonomy', summary)
+
+
 if __name__ == '__main__':
     unittest.main()
