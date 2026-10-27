@@ -1,0 +1,23 @@
+{
+  "format_id": "row",
+  "title": "AI Pundit v AI Pundit row",
+  "creative_system_format": null,
+  "published_pundits_min": 2,
+  "links_to": "exact_show",
+  "whole_match_claims_allowed": false,
+  "master": {"width": 1080, "height": 1920},
+  "cuts": {
+    "tiktok": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "ig_reels": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "yt_shorts": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "ig_feed": {"width": 1080, "height": 1350, "max_seconds": 60},
+    "threads": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "x": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "facebook": {"width": 1080, "height": 1920, "max_seconds": 60}
+  },
+  "slots": ["fixture_ref", "pundit_a", "pundit_b", "quote_a", "quote_b", "hook", "caption", "link"],
+  "render_steps": ["ffmpeg_row_render", "ffmpeg_cut"],
+  "prelive_checks": ["show_published", "two_pundits_published", "link_live", "exact_quote", "copy_checks",
+                     "ai_label", "captions_aligned", "media_hashes", "dimensions"],
+  "cost_class": "zero_generation"
+}

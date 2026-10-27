@@ -1,0 +1,23 @@
+{
+  "format_id": "match_ad",
+  "title": "Remote-switch match ad",
+  "creative_system_format": "two_pundit_remote",
+  "published_pundits_min": 0,
+  "links_to": "today",
+  "whole_match_claims_allowed": false,
+  "master": {"width": 1080, "height": 1920},
+  "cuts": {
+    "tiktok": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "ig_reels": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "yt_shorts": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "ig_feed": {"width": 1080, "height": 1350, "max_seconds": 60},
+    "x": {"width": 1080, "height": 1920, "max_seconds": 60},
+    "facebook": {"width": 1080, "height": 1920, "max_seconds": 60}
+  },
+  "slots": ["fixture_ref", "rivalry_beat", "cast", "script_ref", "cue_ref", "caption", "cta", "link"],
+  "render_steps": ["tv_mix", "ffmpeg_ad_render", "ffmpeg_cut"],
+  "prelive_checks": ["today_live", "no_show_claim", "fact_check", "copy_checks", "ai_label", "listening_verdict",
+                     "tv_mix_tolerance", "realism_proof", "spend_approved", "captions_aligned", "media_hashes",
+                     "dimensions"],
+  "cost_class": "credits"
+}

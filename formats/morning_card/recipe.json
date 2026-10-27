@@ -1,0 +1,21 @@
+{
+  "format_id": "morning_card",
+  "title": "Match-morning card",
+  "creative_system_format": null,
+  "published_pundits_min": 1,
+  "links_to": "exact_show",
+  "whole_match_claims_allowed": true,
+  "master": {"width": 1080, "height": 1350},
+  "cuts": {
+    "ig_feed": {"width": 1080, "height": 1350, "max_seconds": null},
+    "threads": {"width": 1080, "height": 1350, "max_seconds": null},
+    "x": {"width": 1080, "height": 1350, "max_seconds": null},
+    "facebook": {"width": 1080, "height": 1350, "max_seconds": null},
+    "whatsapp_channel": {"width": 1080, "height": 1350, "max_seconds": null}
+  },
+  "slots": ["fixture_ref", "pundits", "headline", "kicker", "caption", "link"],
+  "render_steps": ["canva_autofill", "canva_export"],
+  "prelive_checks": ["show_published", "link_live", "whole_match_four_of_six", "copy_checks", "ai_label",
+                     "brand_template_pinned", "no_league_marks", "glyph_readback", "media_hashes", "dimensions"],
+  "cost_class": "zero_marginal"
+}

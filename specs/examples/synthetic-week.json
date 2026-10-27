@@ -1,0 +1,47 @@
+{
+  "spec_version": "2.0.0",
+  "run_id": "fulltime:2026-W45",
+  "window": {"start": "2026-11-02", "end": "2026-11-08", "tz": "Europe/London"},
+  "mode": "proof",
+  "objectives": [
+    {"key": "share_arrived_new_listeners", "target": 16},
+    {"key": "marketing_cash_gbp", "target": 0}
+  ],
+  "fixtures": [
+    {"fixture_ref": "synthetic-fixture-001", "kickoff": "2026-11-07T12:30:00+00:00",
+     "home": "Northgate", "away": "Southmere", "rivalry": true, "rank": 1},
+    {"fixture_ref": "synthetic-fixture-002", "kickoff": "2026-11-08T16:30:00+00:00",
+     "home": "Eastfield", "away": "Westbrook", "rivalry": false, "rank": 2}
+  ],
+  "formats": [
+    {"format_id": "take_clip", "lock_version": "unlocked", "max_per_matchday": 3,
+     "channels": ["tiktok", "ig_reels", "yt_shorts", "threads", "x", "facebook"],
+     "pundits_allowed": ["zen", "gaffer", "stats", "romantic", "doomer", "banter"]},
+    {"format_id": "morning_card", "lock_version": "unlocked", "max_per_matchday": 1,
+     "channels": ["ig_feed", "threads", "x", "facebook", "whatsapp_channel"],
+     "pundits_allowed": ["zen", "gaffer", "stats", "romantic", "doomer", "banter"]},
+    {"format_id": "row", "lock_version": "unlocked", "max_per_matchday": 1,
+     "channels": ["tiktok", "ig_reels", "yt_shorts"],
+     "pundits_allowed": ["zen", "gaffer", "stats", "romantic", "doomer", "banter"]},
+    {"format_id": "match_ad", "lock_version": "unlocked", "max_per_matchday": 1,
+     "channels": ["tiktok", "ig_reels", "yt_shorts"],
+     "pundits_allowed": ["zen", "gaffer", "stats", "romantic", "doomer", "banter"]}
+  ],
+  "channels": [
+    {"channel": "tiktok", "role": "push", "identity_ref": "local/identity/tiktok.json", "cap_per_day": 3},
+    {"channel": "ig_reels", "role": "push", "identity_ref": "local/identity/instagram.json", "cap_per_day": 3},
+    {"channel": "yt_shorts", "role": "push", "identity_ref": "local/identity/youtube.json", "cap_per_day": 3},
+    {"channel": "ig_feed", "role": "derived", "identity_ref": "local/identity/instagram.json", "cap_per_day": 1},
+    {"channel": "threads", "role": "derived", "identity_ref": "local/identity/threads.json", "cap_per_day": 2},
+    {"channel": "x", "role": "derived", "identity_ref": "local/identity/x.json", "cap_per_day": 2},
+    {"channel": "facebook", "role": "derived", "identity_ref": "local/identity/facebook.json", "cap_per_day": 1},
+    {"channel": "whatsapp_channel", "role": "derived", "identity_ref": "local/identity/whatsapp_channel.json",
+     "cap_per_day": 1}
+  ],
+  "experiments": [
+    {"experiment_id": "synthetic-hook-first-second", "arm_unit": "matchweek",
+     "metric": "share_arrived_new_listeners", "min_matchweeks": 2,
+     "stop_rule": "Stop after two matchweeks with at least 20 events in each arm, or at the first owner reject that names the hook."}
+  ],
+  "learnings_applied": ["synthetic-learning-001"]
+}

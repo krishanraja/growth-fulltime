@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/krishanraja/growth-fulltime/blob/main/specs/campaign.schema.json",
+  "title": "Full Time weekly campaign spec 2.0.0",
+  "description": "The one artefact Krish signs each matchweek (docs/ENGINE-V2.md, section 1). It carries judgment only. This file describes the shape for people and tooling; engine/spec.py validate() is the enforcement and also refuses what JSON Schema cannot say well: a window start outside the run_id's week, a window of more than 7 days, a channel a format names but the channels list leaves out, a channel the format's recipe has no cut for, an unregistered format, duplicate keys or ranks, and any key at any depth containing do_not, avoid or never (rules belong in invariants/registry.json, not the spec).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_version", "run_id", "window", "mode", "objectives", "fixtures", "formats", "channels",
+               "experiments", "learnings_applied"],
+  "propertyNames": {"not": {"pattern": "(do_not|avoid|never)"}},
+  "properties": {
+    "spec_version": {"const": "2.0.0"},
+    "run_id": {"type": "string", "pattern": "^fulltime:\\d{4}-W\\d{2}$",
+               "description": "The ISO week, Monday to Sunday, London time."},
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "tz"],
+      "properties": {
+        "start": {"type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "end": {"type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "After start, and at most 7 days after it."},
+        "tz": {"const": "Europe/London"}
+      }
+    },
+    "mode": {"enum": ["proof", "live"],
+             "description": "live is refused unless every format is ready, ORGANIC and D7 are in force and every channel identity is verified."},
+    "objectives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "target"],
+        "properties": {
+          "key": {"enum": ["share_arrived_new_listeners", "brand_post_new_listeners", "marketing_cash_gbp",
+                           "attributed_new_completers"]},
+          "target": {"type": "number", "minimum": 0,
+                     "description": "marketing_cash_gbp must be exactly 0. Each key appears once."}
+        }
+      }
+    },
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fixture_ref", "kickoff", "home", "away", "rivalry", "rank"],
+        "properties": {
+          "fixture_ref": {"type": "string", "minLength": 1},
+          "kickoff": {"type": "string", "format": "date-time",
+                      "description": "An ISO date and time with its UTC offset."},
+          "home": {"type": "string", "minLength": 1},
+          "away": {"type": "string", "minLength": 1},
+          "rivalry": {"type": "boolean"},
+          "rank": {"type": "integer", "minimum": 1, "description": "Unique within the spec."}
+        }
+      }
+    },
+    "formats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["format_id", "lock_version", "max_per_matchday", "channels", "pundits_allowed"],
+        "properties": {
+          "format_id": {"enum": ["take_clip", "morning_card", "row", "match_ad"],
+                        "description": "Must have a registered recipe in formats/<format_id>/recipe.json."},
+          "lock_version": {"type": "string", "pattern": "^([0-9a-f]{64}|unlocked)$"},
+          "max_per_matchday": {"type": "integer", "minimum": 1, "maximum": 6},
+          "channels": {
+            "type": "array", "minItems": 1, "uniqueItems": true,
+            "items": {"$ref": "#/definitions/channel"}
+          },
+          "pundits_allowed": {
+            "type": "array", "minItems": 1, "uniqueItems": true,
+            "items": {"enum": ["zen", "gaffer", "stats", "romantic", "doomer", "banter"]}
+          }
+        }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["channel", "role", "identity_ref", "cap_per_day"],
+        "properties": {
+          "channel": {"$ref": "#/definitions/channel"},
+          "role": {"enum": ["push", "derived"]},
+          "identity_ref": {"type": "string", "minLength": 1,
+                           "description": "Where the private identity proof is kept, never the channel ID itself."},
+          "cap_per_day": {"type": "integer", "minimum": 1, "maximum": 5}
+        }
+      }
+    },
+    "experiments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["experiment_id", "arm_unit", "metric", "min_matchweeks", "stop_rule"],
+        "properties": {
+          "experiment_id": {"type": "string", "minLength": 1},
+          "arm_unit": {"enum": ["matchweek", "match"], "description": "Never a sharer."},
+          "metric": {"enum": ["share_arrived_new_listeners", "brand_post_new_listeners", "marketing_cash_gbp",
+                              "attributed_new_completers"]},
+          "min_matchweeks": {"type": "integer", "minimum": 2},
+          "stop_rule": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "learnings_applied": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1},
+      "description": "IDs from the learning register that this week's choices rely on."
+    }
+  },
+  "definitions": {
+    "channel": {"enum": ["tiktok", "ig_reels", "yt_shorts", "ig_feed", "threads", "x", "facebook",
+                         "whatsapp_channel"]}
+  }
+}

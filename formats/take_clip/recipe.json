@@ -1,0 +1,24 @@
+{
+  "format_id": "take_clip",
+  "title": "AI Pundit take clip",
+  "creative_system_format": null,
+  "published_pundits_min": 1,
+  "links_to": "exact_show",
+  "whole_match_claims_allowed": false,
+  "master": {"width": 1080, "height": 1920},
+  "cuts": {
+    "tiktok": {"width": 1080, "height": 1920, "max_seconds": 45},
+    "ig_reels": {"width": 1080, "height": 1920, "max_seconds": 45},
+    "yt_shorts": {"width": 1080, "height": 1920, "max_seconds": 45},
+    "ig_feed": {"width": 1080, "height": 1350, "max_seconds": 45},
+    "threads": {"width": 1080, "height": 1920, "max_seconds": 45},
+    "x": {"width": 1080, "height": 1920, "max_seconds": 45},
+    "facebook": {"width": 1080, "height": 1920, "max_seconds": 45},
+    "whatsapp_channel": {"width": 1080, "height": 1920, "max_seconds": 45}
+  },
+  "slots": ["fixture_ref", "pundit", "quote", "quote_start", "quote_end", "hook", "caption", "link"],
+  "render_steps": ["ffmpeg_take_render", "ffmpeg_cut"],
+  "prelive_checks": ["show_published", "link_live", "exact_quote", "copy_checks", "ai_label",
+                     "captions_aligned", "media_hashes", "dimensions"],
+  "cost_class": "zero_generation"
+}
