@@ -43,5 +43,5 @@
      "metric": "share_arrived_new_listeners", "min_matchweeks": 2,
      "stop_rule": "Stop after two matchweeks with at least 20 events in each arm, or at the first owner reject that names the hook."}
   ],
-  "learnings_applied": ["synthetic-learning-001"]
+  "learnings_applied": []
 }

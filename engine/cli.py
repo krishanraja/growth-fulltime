@@ -53,6 +53,22 @@ def _add_v2(commands):
     audience.add_argument('--minutes', type=float, default=10)
 
 
+def _learning_errors(growth, campaign):
+    """A spec may rely only on learnings the register holds, and never on a refuted one."""
+    from . import learning
+    applied = campaign.get('learnings_applied') or [] if isinstance(campaign, dict) else []
+    if not applied:
+        return []
+    register = learning.read(growth.LOCAL)['learnings']
+    out = []
+    for name in applied:
+        if name not in register:
+            out.append(f'spec.learnings_applied: {name} is not in the learning register')
+        elif learning.status(register[name]) == 'refuted':
+            out.append(f'spec.learnings_applied: {name} was refuted; stop relying on it')
+    return out
+
+
 def _rail(growth, offline):
     """Product Truth at pack time: the live rail unless offline, when the synced copy is
     used and Today counts as not live, so a match ad fails closed."""
@@ -81,6 +97,9 @@ def _run_v2(args, growth):
             return spec.compile(data, _json(args.gates) if args.gates else {})
         if not args.expires_at:
             raise ValueError('propose needs --expires-at, an ISO date and time with its UTC offset')
+        learned = _learning_errors(growth, data)      # what Krish signs relies only on real learnings
+        if learned:
+            raise ValueError('the spec is refused: ' + '; '.join(learned))
         proposal = spec.proposal(data, args.expires_at)
         if args.queue:
             from . import gates

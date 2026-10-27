@@ -69,6 +69,27 @@ class CliV2(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn('spec.mode', err)
 
+    def test_a_spec_relies_only_on_learnings_the_register_holds_and_never_a_refuted_one(self):
+        from engine import learning
+        campaign = json.loads(EXAMPLE.read_text(encoding='utf-8'))
+        campaign['learnings_applied'] = ['learning-001']
+        path = self.write('learned.json', campaign)
+        sign = ('spec', 'propose', path, '--expires-at', '2026-11-02T08:00:00+00:00')
+        code, _, err = self.run_cli(*sign)
+        self.assertEqual(code, 1)
+        self.assertIn('not in the learning register', err)
+        lid = learning.add(self.growth.LOCAL, 'Cold opens on the scoreline travel further', 'shares per post',
+                           'Refuted if the control wins by |z| 2 over two matchweeks', ['take_clip'])
+        self.assertEqual(lid, 'learning-001')
+        code, body, err = self.run_cli(*sign)
+        self.assertEqual((code, body['sent']), (0, False), err)
+        self.assertEqual(self.run_cli('spec', 'check', path)[0], 0)     # structure alone never reads the register
+        learning.observe(self.growth.LOCAL, lid, a=20, b=60, matchweeks=2, preregistered=True,
+                         overlapping=False, planned_matchweeks=2)              # the control won clearly
+        code, _, err = self.run_cli(*sign)
+        self.assertEqual(code, 1)
+        self.assertIn('was refuted', err)
+
     def test_spec_propose_prepares_and_never_sends(self):
         code, _, err = self.run_cli('spec', 'propose', str(EXAMPLE))
         self.assertEqual(code, 1)
