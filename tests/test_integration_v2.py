@@ -172,5 +172,39 @@ class RulingOneInReports(unittest.TestCase):
         self.assertIn('RAIL', [h['reason'] for h in self.report(live)['holds']])   # whole-match still needs 4 of 6
 
 
+class WeeklyLibrary(unittest.TestCase):
+    def setUp(self):
+        self.local = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.local)
+        example = json.loads((Path(__file__).resolve().parent.parent / 'examples' / 'library-listing.example.json')
+                             .read_text(encoding='utf-8'))
+        from engine import library
+        (self.local / 'library').mkdir()
+        self.listing, self.rows = example['listing'], example['index']
+        (self.local / 'library' / 'INDEX.csv').write_text(library.write_index(self.rows), encoding='utf-8')
+
+    def write_listing(self, listing):
+        (self.local / 'library' / 'listing.json').write_text(json.dumps({'listing': listing}), encoding='utf-8')
+
+    def test_a_clean_library_holds_nothing_and_sprawl_leads_the_report(self):
+        self.write_listing(self.listing)
+        line, held = control_center.library_check(self.local)
+        self.assertEqual(held, [])
+        self.assertIn('reconciled clean', line)
+        self.write_listing(self.listing + [{'path': 'Random stuff', 'bytes': None, 'is_folder': True},
+                                           {'path': 'Random stuff/notes.txt', 'bytes': 10, 'is_folder': False}])
+        line, held = control_center.library_check(self.local)
+        self.assertEqual(held[0][0], 'LIBRARY')
+        report = reporting.build('fulltime:2026-11-02:weekly', 'synthetic', '2026-11-02T08:00:00Z',
+                                 {'push': {'open': False, 'why': 'thin'}}, [], {}, [], [line], extra_holds=held)
+        self.assertEqual(report['holds'][0]['reason'], 'LIBRARY')
+
+    def test_without_a_listing_it_says_so_and_holds_nothing(self):
+        (self.local / 'library' / 'INDEX.csv').unlink()
+        line, held = control_center.library_check(self.local)
+        self.assertEqual(held, [])
+        self.assertIn('not reconciled', line)
+
+
 if __name__ == '__main__':
     unittest.main()

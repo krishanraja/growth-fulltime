@@ -26,7 +26,7 @@ ENGINE_ID = 'growth-fulltime'
 PRODUCT_SLUG = 'full-time'
 SLUG = 'fulltime'
 REPO_URL = 'https://github.com/krishanraja/growth-fulltime'
-HOLD_ORDER = ['RAIL', 'RELEASE', 'CHANNEL', 'CONSENT', 'DATA', 'ASSETS', 'APPROVAL',
+HOLD_ORDER = ['LIBRARY', 'RAIL', 'RELEASE', 'CHANNEL', 'CONSENT', 'DATA', 'ASSETS', 'APPROVAL',
               'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7']
 POSTABLE = policy.BRAND_CHANNELS | {'whatsapp'}
 PROTOCOL_VERSION = '1.1.0'
@@ -460,7 +460,7 @@ def one_ask(proposals, waiting=None):
 
 def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list, activity,
           held_items=(), events=(), identity_known=None, kill_list=(), degraded=(), max_actions=3,
-          waiting=None, gate_proposals=()):
+          waiting=None, gate_proposals=(), extra_holds=()):
     """The whole protocol report, sealed. `degraded` names sources that were missing.
     `waiting` is what is already on Krish's list (proposal_id to kind), from the last
     live delivery; unknown is None, and then nothing is taken to be waiting.
@@ -490,6 +490,7 @@ def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list
     proposals, deferred = one_ask(proposals, waiting)
     entries = gate_holds(state, rulings_file, identity_known)
     entries += [('DATA', reason) for reason in degraded]
+    entries += list(extra_holds)       # e.g. the weekly LIBRARY reconcile (engine/library.py)
     hold_list = merge_holds(entries, list(held_items) + [x for x in items if holds(x)])
     status = 'degraded' if degraded else ('held' if hold_list else 'ready')
     source = {'revision': str(state.get('sha') or 'unknown')[:128],

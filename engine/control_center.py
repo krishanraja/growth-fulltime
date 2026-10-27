@@ -449,6 +449,28 @@ def measurement_lines(local, today, rows=None):
                     f'untagged links{best}. Web landings on fulltime.fm, never listeners.']
 
 
+def library_check(local):
+    """The weekly Growth Build reconcile (docs/ENGINE-V2.md, section 2a, rule 7): a
+    listing a Claude session read back from Drive, against INDEX.csv, both under
+    local/library/. Returns (activity line, holds)."""
+    from . import library
+    folder = Path(local) / 'library'
+    listing, index = folder / 'listing.json', folder / 'INDEX.csv'
+    if not (listing.is_file() and index.is_file()):
+        return 'Growth Build library: not reconciled this week (no listing read back from Drive).', []
+    try:
+        found = json.loads(listing.read_text(encoding='utf-8'))
+        found = found.get('listing') if isinstance(found, dict) else found
+        result = library.reconcile(found, library.read_index(index.read_text(encoding='utf-8')))
+    except (ValueError, OSError) as error:
+        return f'Growth Build library: the listing or index was refused ({str(error)[:160]}).', [
+            ('LIBRARY', 'The weekly reconcile could not read its listing or index.')]
+    held = library.hold(result)
+    if held is None:
+        return 'Growth Build library: reconciled clean, nothing outside the tree, misnamed or duplicated.', []
+    return 'Growth Build library: ' + held['detail'], [(held['code'], held['detail'])]
+
+
 def directive_line(directive, dispatched=None):
     body = directive.get('directive') or {}
     action = body.get('next_action') or {}
@@ -502,9 +524,12 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
                     f'{usage["audio_generation_calls"]} audio generation calls.']
         held = reporting.held_creatives(saved['creatives'])
         activity.append(f'{len(held)} creatives are held in private history with their codes.')
+        library_holds = []
         if mode == 'weekly':
             activity.append('Weekly review over the seven complete London days ending yesterday: '
                             + record['native_weekly_review']['findings']['measurement'])
+            line, library_holds = library_check(growth.LOCAL)
+            activity.append(line)
         activity += directive_line(directive)
         activity += measurement_lines(growth.LOCAL, today, saved['observations'])
         degraded = [] if record.get('rail') is not None else ['The live rail was not read; fulltime.fm did not answer.']
@@ -517,7 +542,7 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             identity_known=identity_known,
             kill_list=record['native_weekly_review']['kill_list'] if mode == 'weekly' else (),
             degraded=degraded, max_actions=max_actions(directive), waiting=waiting,
-            gate_proposals=gates.pending(growth.LOCAL))
+            gate_proposals=gates.pending(growth.LOCAL), extra_holds=library_holds)
         return report, {}
     return work
 
