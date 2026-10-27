@@ -232,8 +232,10 @@ INTERNAL = ('other', 'site')
 PUBLIC_LINE = re.compile(r'^\s*(?:on[- ]screen|voiceover|vo|caption|cover|copy|headline|title|hook|cta|'
                          r'end card|line)\s*:', re.I)
 
-# Every link to the product carries tracking built from the creative id.
-OWN_LINK = re.compile(r'https?://(?:www\.)?fulltime\.fm[^\s)>\]"\']*', re.I)
+# Every link to the product carries tracking built from the creative id. A bare
+# fulltime.fm counts: X, Threads and Facebook turn it into a link. krish@fulltime.fm does not.
+OWN_LINK = re.compile(r'(?<![@\w.])(?:https?://)?(?:www\.)?fulltime\.fm(?![\w-])[^\s)>\]"\']*', re.I)
+SCHEME = re.compile(r'https?://', re.I)
 CREATIVE_ID = re.compile(r'^(INV|WA|EM|TT|YT|IG|X|RD|TH|FB|WC|LI|HN|PH|PR|CR|AD|FPL|WEB)_'
                          r'(CLASH|PROOF|TRIBE|BUILD|GAME|HABIT)_'
                          r'(CLIP|SHORT|VIDEO|STORY|POST|THREAD|COMMENT|DM|INVITE|EMAIL|PITCH|LAUNCH|NOTE)_'
@@ -383,7 +385,7 @@ def read_rail():
     return out
 
 
-def push_gate(rail):
+def whole_match_gate(rail):
     if rail is None:
         return {'open': False, 'why': 'the rail was not read, so nothing pushes blind'}
     if not rail:
@@ -396,6 +398,19 @@ def push_gate(rail):
         return {'open': True, 'why': f'the newest match has {top["fill"]} of 6; push the latest full one '
                                      f'({full[0]["home"]} v {full[0]["away"]}, {full[0]["fill"]} of 6) with its drop link'}
     return {'open': False, 'why': f'no match has {RAIL_MIN} of 6 AI Pundits (newest: {top["fill"]} of 6)'}
+
+
+def push_gate(rail, state=None):
+    """'open' is the whole-match gate: four of six. With a state whose ORGANIC is in force,
+    'per_take' says whether a single take may go: true when a rail match has a published show,
+    since the per-take gate (policy.take_gate) asks only for that exact show."""
+    gate = whole_match_gate(rail)
+    if state is not None and policy.organic_in_force(state):
+        gate['per_take'] = any(m.get('pundits') for m in rail or [])
+        if gate['per_take'] and not gate['open']:
+            gate['why'] += ('; only a whole-match push waits for that: under ORGANIC a single take whose exact '
+                            'AI Pundit show is published may go (the per-take gate)')
+    return gate
 
 
 def read_feed():
@@ -501,15 +516,17 @@ def sync(publish=False, quiet=False):
     added = sorted(set(paths) - set(old)) if old else []
     removed = sorted(set(old) - set(paths)) if old else []
     rulings = load_rulings()
+    heads = decisions(texts.get('docs/12-roadmap.md'))
+    ruled = rulings_state(texts.get('docs/12-roadmap.md'), rulings)
     state = {
         'repo': REPO, 'sha': sha, 'synced_at': dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         'previous_sha': prev.get('sha'), 'canon_from_index': found, 'canon': canon, 'rules': prints,
         'rules_ok': rules_ok, 'changed_since_last_sync': changed, 'canon_added': added, 'canon_removed': removed,
-        'commits': commits, 'open_pulls': pulls, 'decisions': decisions(texts.get('docs/12-roadmap.md'))[:6],
-        'rulings': rulings_state(texts.get('docs/12-roadmap.md'), rulings), 'rail': rail, 'push': push_gate(rail),
+        'commits': commits, 'open_pulls': pulls, 'decisions': heads,
+        'rulings': ruled, 'rail': rail, 'push': push_gate(rail, {'rulings': ruled}),
         'feed': feed, 'notes': notes,
     }
-    release = release_evidence(rulings, state['decisions'], sha)
+    release = release_evidence(rulings, heads, sha)   # every heading, so newer decisions never close RELEASE
     if release:
         state['marketing_release'] = release
     d = state_dir(publish)
@@ -553,6 +570,10 @@ def now_md(s):
     push = s['push']
     lines += ['## Push gate: ' + ('OPEN' if push['open'] else 'HOLD'), '',
               f'{push["why"][0].upper() + push["why"][1:]}. A push sends fans to a match only when at least {RAIL_MIN} of the six AI Pundits made a show for it (PLAYBOOK.md, "The rail gate").', '']
+    if 'per_take' in push:
+        lines += ['## Per-take gate (ORGANIC): ' + ('OPEN' if push['per_take'] else 'HOLD'), '',
+                  (f'A single take may go when the exact AI Pundit shows it names are published on this rail, read under 26 hours ago. Whole-match promotion still waits for {RAIL_MIN} of 6.'
+                   if push['per_take'] else 'No match on the rail has a published show, so no take passes the per-take gate.'), '']
     lines += ['## The rail at fulltime.fm', '']
     lines += rail_rows(s['rail']) if s['rail'] else ['The rail was not read.' if s['rail'] is None else 'No match has a published show.']
     if s['changed_since_last_sync'] or s['canon_added'] or s['canon_removed']:
@@ -565,7 +586,7 @@ def now_md(s):
     for rid, r in s['rulings'].items():
         lines.append(f'| {rid}: {titles.get(rid, "")} | {r["status"]} | {"yes" if r["recorded"] else "no"} | {"yes" if r["in_force"] else "no"} |')
     lines += ['', '## Latest decisions (full-time `docs/12-roadmap.md`)', '']
-    lines += [f'- {d}' for d in s['decisions']] or ['- none read']
+    lines += [f'- {d}' for d in s['decisions'][:6]] or ['- none read']
     lines += ['', '## The Reporter feed', '']
     lines += [f'- {i["date"][:16]}: {i["title"]}' for i in (s['feed'] or [])] or ['- not read' if s['feed'] is None else '- empty']
     lines += ['', '## The canon, in order', '']
@@ -600,7 +621,10 @@ def link_problems(url, rail, per_take=()):
     parts = urllib.parse.urlsplit(url)
     if parts.path not in ('', '/'):
         return []
-    q = dict(urllib.parse.parse_qsl(parts.query))
+    pairs = urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
+    if any(sum(1 for k, _ in pairs if k == key) > 1 for key in ('drop', 'pundit')):
+        return [f'the link {url} names drop or pundit more than once (a browser opens the first, so name each once)']
+    q = dict(pairs)
     if rail is None:
         return [f'the link {url} goes to Today, but the rail was not read in the sync (nothing pushes blind)']
     if not rail:
@@ -655,7 +679,7 @@ def problems(item, state=None):
     pending = policy.holds(item)
     # Under ORGANIC a take that passed the per-take gate may link its own published shows.
     per_take = set()
-    if (platform in policy.BRAND_CHANNELS and policy.organic_in_force(state) and item.get('whole_match') is not True
+    if (platform in policy.BRAND_CHANNELS and policy.organic_in_force(state) and item.get('whole_match') is False
             and not policy.take_gate(item, state)):
         per_take = {(item['drop_id'], p) for p in item['pundits']}
     cid = item.get('creative_id')
@@ -726,14 +750,24 @@ def problems(item, state=None):
         out.append(f'it is {len(text)} characters ({LIMITS[platform]} at most on {platform})')
     if len(full) > 8000:
         out.append('it is over 8,000 characters')
-    for url in OWN_LINK.findall(full):
+    for found in OWN_LINK.findall(full):
+        if not SCHEME.match(found) and platform in INTERNAL:
+            continue   # a note for Krish that names the site is not a link anyone clicks
+        url = found if SCHEME.match(found) else 'https://' + found
         q = dict(re.findall(r'[?&](utm_[a-z]+)=([^&#]*)', url))
+        if not SCHEME.match(found):
+            out.append(f'the link {found} has no https:// (paste the exact link python3 growth.py link prints)')
         if not all(k in q for k in ('utm_source', 'utm_medium', 'utm_campaign', 'utm_content')):
-            out.append(f'the link {url} is not tracked (python3 growth.py link <url> <creative_id>)')
+            out.append(f'the link {found} is not tracked (python3 growth.py link <url> <creative_id>)')
         elif not CREATIVE_ID.match(q['utm_content']):
-            out.append(f'the link {url} carries "{q["utm_content"]}", not a creative id')
+            out.append(f'the link {found} carries "{q["utm_content"]}", not a creative id')
         elif cid and q['utm_content'] != cid:
-            out.append(f'the link {url} is tracked as {q["utm_content"]} but the draft is {cid}')
+            out.append(f'the link {found} is tracked as {q["utm_content"]} but the draft is {cid}')
+        elif not cid and platform in PREFIX:
+            code = CREATIVE_ID.match(q['utm_content']).group(1)
+            if code != PREFIX[platform] and not (platform == 'whatsapp' and code == 'INV'):
+                out.append(f'the link {found} is tracked as {q["utm_content"]}, a {code} creative, but the draft is on '
+                           f'{platform} ({PREFIX[platform]})')
         if platform not in INTERNAL:
             parts = urllib.parse.urlsplit(url)
             if parts.path in ('', '/') and not all(dict(urllib.parse.parse_qsl(parts.query)).get(k) for k in ('drop', 'pundit')):
@@ -806,6 +840,9 @@ def freshness(pack, state, head_fn, fetch_fn):
     """Was this pack written against today's full-time? A list of reasons it was not."""
     if not state:
         return ['no sync on this machine: run python3 growth.py sync first']
+    stale = policy.sync_age(state)
+    if stale:
+        return [stale]
     sha = str(pack.get('fulltime_sha') or '')
     if not sha or not state['sha'].startswith(sha):
         return [f'the pack names full-time {sha or "(none)"} but the last sync read {state["sha"][:10]}: sync, re-read, redraft']
@@ -978,7 +1015,8 @@ def self_test():
                             'source_url': 'https://' + {'youtube':'youtube.com','x':'x.com','whatsapp_channel':'whatsapp.com'}.get(p,p+'.com') + '/example-fixture',
                             'verified_at': dt.datetime.now(dt.timezone.utc).isoformat()}
                         for p in policy.BRAND_CHANNELS}
-    st = {'rail': rail, 'rulings': on, 'brand_identities': brand_identities}
+    synced = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    st = {'rail': rail, 'rulings': on, 'brand_identities': brand_identities, 'synced_at': synced}
     cid = 'TT_CLASH_CLIP_C01_H02_V1_20261019'
     link = tracked(f'https://fulltime.fm/?drop={drop_full}&pundit=doomer', cid)
     t('a tracked link is built from the creative id', link ==
@@ -1111,7 +1149,7 @@ def self_test():
              'docs/21-go-to-market-agent.md': 'g', 'docs/07-marketing.md': 'm', 'NOW.md': 'n',
              'docs/product-state.json': '{}', 'docs/01-brand.md': 'b', 'docs/00-product.md': 'p',
              'docs/09-growth.md': 'gr', 'docs/11-legal.md': 'l'}
-    sst = {'sha': 'a' * 40, 'rules_ok': True, 'canon': {p: digest(files.get(p))[:16] for p in paths}}
+    sst = {'sha': 'a' * 40, 'rules_ok': True, 'canon': {p: digest(files.get(p))[:16] for p in paths}, 'synced_at': synced}
     global RULES_BASIS
     saved = RULES_BASIS
     RULES_BASIS = fingerprints(files)
@@ -1124,6 +1162,8 @@ def self_test():
         t('stale when the pack names another sync', any('last sync' in e for e in freshness({'fulltime_sha': 'bbbbbbb'}, sst, lambda: 'a' * 40, lambda p, s: files.get(p))))
         t('stopped when rules changed', any('rules changed' in e for e in freshness({'fulltime_sha': 'aaaaaaa'}, {**sst, 'rules_ok': False}, lambda: 'a' * 40, lambda p, s: files.get(p))))
         t('stopped with no sync', any('no sync' in e for e in freshness({'fulltime_sha': 'aaaaaaa'}, None, lambda: 'a' * 40, lambda p, s: None)))
+        old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=27)).isoformat()
+        t('stale when the sync is over 26 hours old', any('26' in e for e in freshness({'fulltime_sha': 'aaaaaaa'}, {**sst, 'synced_at': old}, lambda: 'a' * 40, lambda p, s: files.get(p))))
     finally:
         RULES_BASIS = saved
     t('RULES_BASIS is filled in', all(v != 'FILL' and len(v) == 16 for v in RULES_BASIS.values()))
@@ -1145,7 +1185,7 @@ def self_test():
       'whatsapp_channel' in policy.BRAND_CHANNELS and 'whatsapp' not in policy.BRAND_CHANNELS)
     t('policy and growth hold the same rail gate', policy.RAIL_MIN == RAIL_MIN)
     take = {'platform': 'tiktok', 'creative_id': cid, 'account_scope': 'brand', 'identity_ref': 'tiktok',
-            'drop_id': drop_thin, 'pundits': ['zen'], 'holds': [],
+            'drop_id': drop_thin, 'pundits': ['zen'], 'whole_match': False, 'holds': [],
             'text': 'The Reporter, an AI Pundit, on Leeds United 1-1 Manchester United: '
                     + tracked(f'https://fulltime.fm/?drop={drop_thin}&pundit=zen', cid)}
     organic = {**st, 'rulings': {**on, 'ORGANIC': {'in_force': True}}}
@@ -1156,6 +1196,8 @@ def self_test():
       any('per-take gate' in e for e in check_pack({**good, 'items': [{**take, 'pundits': ['gaffer']}]}, organic)))
     t('ORGANIC in force: a whole-match post still needs four of six',
       any('whole-match' in e for e in check_pack({**good, 'items': [{**take, 'whole_match': True}]}, organic)))
+    t('ORGANIC in force: a take that does not say whole_match is held, never read as per-take',
+      any('whole_match' in e for e in check_pack({**good, 'items': [{k: v for k, v in take.items() if k != 'whole_match'}]}, organic)))
     changes = Path(HERE, 'CHANGES.md').read_text(encoding='utf-8')
     for rid, r in rulings.items():
         t(f'{rid} is pending, approved or declined', r.get('status') in ('pending', 'approved', 'declined'))
@@ -1236,7 +1278,7 @@ def main():
     if a.cmd == 'rail':
         rail = read_rail()
         print('\n'.join(rail_rows(rail)) if rail else 'No match has a published show.')
-        gate = push_gate(rail)
+        gate = push_gate(rail, load_state() or {})
         print(f'\npush gate: {"OPEN" if gate["open"] else "HOLD"} ({gate["why"]})')
         return
     if a.cmd == 'link':

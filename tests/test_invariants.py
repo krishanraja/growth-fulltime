@@ -3,6 +3,7 @@ the failure history had no test for until now. Synthetic fixtures in temporary f
 only; nothing here writes into the repository or reads the network."""
 import ast
 import contextlib
+import datetime as dt
 import io
 import json
 from pathlib import Path
@@ -16,6 +17,7 @@ from unittest import mock
 
 import growth
 from engine import formats, invariants, measurements
+from engine.clock import LONDON
 from scripts import verify_repository as verify
 
 ROOT = Path(growth.HERE)
@@ -216,17 +218,46 @@ class NowStateTests(unittest.TestCase):
         state.update(change)
         return f'# Now\n\n<!-- north-star-state {json.dumps(state)} -->{visible}\n'
 
-    def errors(self, text):
-        return invariants.now_state_errors(text, self.LADDER)
+    TODAY = dt.date(2026, 10, 27)
+
+    def errors(self, text, today=TODAY):
+        return invariants.now_state_errors(text, self.LADDER, today)
 
     def test_the_real_now_md_passes(self):
+        # Checked against today in London: a line left over from an earlier week fails.
+        self.assertEqual(invariants.now_state_errors(today=dt.datetime.now(LONDON).date()), [])
         self.assertEqual(invariants.now_state_errors(), [])
 
     def test_a_good_line_passes_measured_or_not(self):
         self.assertEqual(self.errors(self.line()), [])
-        self.assertEqual(self.errors(self.line(' U2, measured.', current=7, urgency=2)), [])
-        self.assertEqual(self.errors(self.line(' U3.', week_of='2026-11-02', week_target=16,
-                                               current_as_of='2026-11-08', current=0, urgency=3)), [])
+        # Contract bands: 7 of 5 is on pace (U1); 0 of 16 is under 40% (U4).
+        self.assertEqual(self.errors(self.line(' U1, measured.', current=7, urgency=1)), [])
+        self.assertEqual(self.errors(self.line(' U4.', week_of='2026-11-02', week_target=16,
+                                               current_as_of='2026-11-08', current=0, urgency=4),
+                                     dt.date(2026, 11, 8)), [])
+        for current, urgency in ((5, 1), (4, 2), (2, 3), (1, 4), (5, 5)):
+            with self.subTest(current=current):
+                self.assertEqual(self.errors(self.line(f' U{urgency}.', current=current, urgency=urgency)), [])
+        sunday_night = dt.datetime(2026, 11, 1, 23, 30, tzinfo=dt.timezone.utc)
+        self.assertEqual(self.errors(self.line(), sunday_night), [])
+
+    def test_the_line_must_be_this_weeks_and_banded_by_the_contract(self):
+        cases = [(self.line(' U1', current=0, urgency=1), 'at U4 or higher, not U1'),
+                 (self.line(' U3', current=0, urgency=3), 'at U4 or higher, not U3'),
+                 (self.line(' U2', current=1, urgency=2), 'puts 1 of 5 at U4'),
+                 (self.line(' U1', current=4, urgency=1), 'puts 4 of 5 at U2'),
+                 (self.line(' U3', current=2, urgency=3), 'not this week'),
+                 (self.line(' U3', current=2, urgency=3), 'is 14 days old'),
+                 (self.line(' U3', current=2, urgency=3), 'more than 7 days old is at least U4'),
+                 (self.line(current_as_of='2026-10-28'), 'after today')]
+        days = [self.TODAY] * 4 + [dt.date(2026, 11, 10)] * 3 + [self.TODAY]
+        for (text, words), today in zip(cases, days):
+            with self.subTest(words=words):
+                self.assertTrue(has(self.errors(text, today), words), self.errors(text, today))
+        with self.assertRaisesRegex(ValueError, 'today must be a date'):
+            invariants.now_state_errors(self.line(), self.LADDER, '2026-10-27')
+        with self.assertRaisesRegex(ValueError, 'today must be a date'):
+            invariants.now_state_errors(self.line(), self.LADDER, dt.datetime(2026, 10, 27))
 
     def test_each_break_is_named(self):
         cases = [(self.line(urgency=2, visible=' U2'), 'at least U4'),
@@ -246,6 +277,27 @@ class NowStateTests(unittest.TestCase):
         for text, words in cases:
             with self.subTest(words=words):
                 self.assertTrue(has(self.errors(text), words), self.errors(text))
+        self.test_the_line_must_be_this_weeks_and_banded_by_the_contract()     # DOC17 names this test
+
+
+class R01Tests(unittest.TestCase):
+    """R01 has two halves: a published take goes on a thin rail (the per-take gate), and
+    only a whole-match post needs four of six. Each half fails this test if it regresses."""
+
+    def test_r01_a_published_take_goes_on_a_thin_rail_and_a_whole_match_post_needs_four(self):
+        from engine import policy
+        from tests import test_policy_v2 as organic
+        for platform in ('tiktok',) + organic.NEW:
+            with self.subTest(platform=platform):
+                self.assertEqual(policy.errors(organic.take(platform), organic.state(thin_only=True)), [])
+        self.assertTrue(any('whole-match' in e for e in policy.errors(organic.take(whole_match=True),
+                                                                      organic.state())))
+        for name in ('test_in_force_a_published_take_needs_no_release_or_rail',
+                     'test_a_whole_match_post_still_needs_four_of_six'):
+            with self.subTest(test=name):
+                result = unittest.TestResult()
+                organic.OrganicGateTests(name).run(result)
+                self.assertTrue(result.wasSuccessful(), result.failures + result.errors)
 
 
 def text_io_gaps(path):

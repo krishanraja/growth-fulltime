@@ -104,6 +104,8 @@ class Metrics(unittest.TestCase):
                                    as_of=dt.datetime(2026, 10, 26, 9, 0, tzinfo=UTC)))
         self.assertEqual(result['share_arrived_new_listeners']['availability'], 'measured')
         self.assertEqual(result['share_arrived_new_listeners']['value'], 7)
+        self.assertEqual([r['creative_id'] for r in rows if 'creative_id' in r], ['TT_CLASH_CLIP_C01_H01_V1_20261020'])
+        self.assertEqual(result['brand_post_new_listeners']['value'], 2)     # the total row, never the breakdown
 
 
 class Objectives(unittest.TestCase):
@@ -378,6 +380,241 @@ class ByCreative(unittest.TestCase):
         by_creative(original)
         ga4_observations(original)
         self.assertEqual(original, kept)
+
+
+class GA4NeverEntersHistoryAsListeners(unittest.TestCase):
+    """Review wave 2: a GA4 listener row was accepted at import, then blocked every later reading."""
+
+    def test_the_import_refuses_a_ga4_listener_row(self):
+        for metric in ('share_arrived_new_listeners', 'brand_post_new_listeners', 'untokenised_new_listeners'):
+            forged = row(metric, 58, source='ga4', query_ref='ga4:landings:v1')
+            with self.subTest(metric=metric):
+                with self.assertRaisesRegex(ValueError, 'never listeners'):
+                    measurements.validate(dict(forged))
+                with self.assertRaisesRegex(ValueError, 'never listeners'):
+                    measurements.validate_export({'schema_version': 1, 'product': 'fulltime',
+                                                  'observations': [forged]})
+
+    def test_every_spelling_of_google_analytics_is_refused(self):
+        for source, ref in (('control-center', 'control-center:ga4_landings:v1'),
+                            ('Google Analytics 4 Data API', 'landings-by-creative:v1'),
+                            ('G-W2QL8RKFJ1', 'newUsers:v1'), ('GA-4', 'newUsers:v1'),
+                            ('synthetic-product-export', 'analyticsdata.googleapis.com:landings'),
+                            ('synthetic-product-export', 'runReport:newUsers'),
+                            ('GA landings', 'synthetic:v1'), ('synthetic', 'gtag:page_view:v1')):
+            with self.subTest(source=source, query_ref=ref):
+                with self.assertRaisesRegex(ValueError, 'never listeners'):
+                    objectives([row('share_arrived_new_listeners', 58, source=source, query_ref=ref)],
+                               TODAY, as_of=AS_OF)
+
+    def test_product_sources_and_ga4_landing_rows_still_pass(self):
+        for source, ref in (('full-time-postgres', 'share-token-first-touch-7d:v2'),
+                            ('posthog-product-analytics', 'first-finished-show:v1'),
+                            ('synthetic-product-export', 'synthetic:share-token-first-listen-7d:v0')):
+            with self.subTest(source=source):
+                share = objectives([row('share_arrived_new_listeners', 5, source=source, query_ref=ref)],
+                                   TODAY, as_of=AS_OF)[0]
+                self.assertEqual(share['value'], 5)
+        landing_row = row('ga4_landing_sessions', 76, source='ga4', query_ref='ga4:landings:v1')
+        self.assertEqual(measurements.validate(dict(landing_row)), landing_row)
+
+    def test_an_old_bad_row_never_blocks_a_clean_week(self):
+        """A row imported before the import refused it stays in history; it must not
+        stop every later reading."""
+        old = row('brand_post_new_listeners', 58, source='ga4', query_ref='ga4:landings:v1',
+                  window_start='2026-06-22', window_end='2026-06-28', observed_at='2026-06-29T06:30:00+00:00')
+        late = row('share_arrived_new_listeners', 9, window_start='2026-06-22', window_end='2026-06-28',
+                   observed_at='2026-06-28T10:00:00+00:00')
+        result = by_key(objectives([old, late, row('share_arrived_new_listeners', 7)], TODAY, as_of=AS_OF))
+        self.assertEqual(result['share_arrived_new_listeners']['value'], 7)
+        self.assertTrue(result['brand_post_new_listeners']['reason'].startswith('No product export yet'))
+        card = measurements.scorecard([old, late, row('share_arrived_new_listeners', 7)], START, END, as_of=AS_OF)
+        self.assertEqual(card['share_arrived_new_listeners']['value'], 7)
+
+    def test_a_bad_row_for_this_week_still_refuses_the_reading(self):
+        with self.assertRaisesRegex(ValueError, 'never listeners'):
+            objectives([row('share_arrived_new_listeners', 7),
+                        row('untokenised_new_listeners', 3, source='ga4')], TODAY, as_of=AS_OF)
+
+
+class WholeLondonWeeks(unittest.TestCase):
+    """Review wave 2: a capture taken during the window's last day was accepted as the whole week."""
+
+    def test_a_capture_during_the_last_london_day_is_refused(self):
+        for taken in ('2026-07-05T10:00:00+00:00',      # 11:00 on Sunday 5 July in London
+                      '2026-07-04T23:05:00Z',           # 00:05 on 5 July in London
+                      '2026-07-06T09:30:00+14:00'):     # 20:30 on 5 July in London, dated the 6th locally
+            with self.subTest(observed_at=taken):
+                with self.assertRaisesRegex(ValueError, 'whole London days'):
+                    measurements.validate(row('share_arrived_new_listeners', 3, observed_at=taken))
+                with self.assertRaisesRegex(ValueError, 'whole London days'):
+                    objectives([row('share_arrived_new_listeners', 3, observed_at=taken)], TODAY, as_of=AS_OF)
+
+    def test_a_capture_after_the_last_london_day_passes(self):
+        # 23:30 UTC on 5 July is 00:30 on 6 July in London: the week had ended.
+        share = objectives([row('share_arrived_new_listeners', 3, observed_at='2026-07-05T23:30:00+00:00')],
+                           TODAY, as_of=AS_OF)[0]
+        self.assertEqual((share['value'], share['availability']), (3, 'measured'))
+        # In winter London is on UTC: 00:05 UTC on Monday 12 January is past Sunday.
+        winter = row('share_arrived_new_listeners', 4, window_start='2026-01-05', window_end='2026-01-11',
+                     observed_at='2026-01-12T00:05:00Z')
+        self.assertEqual(measurements.validate(dict(winter)), winter)
+
+
+class StrictDates(unittest.TestCase):
+    """Review wave 2: newer Pythons read more date and time spellings than 3.9 does."""
+
+    def test_only_yyyy_mm_dd_windows(self):
+        for start, end in (('20260629', '20260705'), ('2026-W27-1', '2026-W27-7'), ('2026-06-29', '2026-07-05 '),
+                           (20260629, END)):
+            with self.subTest(start=start, end=end):
+                with self.assertRaisesRegex(ValueError, 'YYYY-MM-DD'):
+                    measurements.validate(row('share_arrived_new_listeners', 3, window_start=start, window_end=end))
+
+    def test_one_week_written_two_ways_cannot_pass_the_duplicate_check(self):
+        with self.assertRaises(ValueError):
+            measurements.validate_export({'schema_version': 1, 'product': 'fulltime', 'observations': [
+                row('share_arrived_new_listeners', 3),
+                row('share_arrived_new_listeners', 4, window_start='20260629', window_end='20260705')]})
+
+    def test_only_rfc_3339_captures(self):
+        for taken in ('2026-07-06 06:00:00+00:00', '2026-07-06T06:00+00:00', '2026-07-06T06:00:00',
+                      '20260706T060000Z', '2026-07-06T06:00:00z'):
+            with self.subTest(observed_at=taken):
+                with self.assertRaisesRegex(ValueError, 'RFC 3339'):
+                    measurements.validate(row('share_arrived_new_listeners', 3, observed_at=taken))
+        self.assertTrue(measurements.validate(row('share_arrived_new_listeners', 3,
+                                                  observed_at='2026-07-06T06:00:00.5Z')))
+
+    def test_source_and_query_ref_are_text(self):
+        for field, bad in (('source', 5), ('query_ref', ['x']), ('source', ' ')):
+            with self.subTest(field=field, value=bad):
+                with self.assertRaisesRegex(ValueError, 'non-empty text'):
+                    measurements.validate(row('shares_created', 3, **{field: bad}))
+
+
+class BreakdownByCreative(unittest.TestCase):
+    """Review wave 2: the briefed per-creative brand-post breakdown could not be exported."""
+
+    def test_a_total_and_one_row_per_creative_are_accepted(self):
+        rows = measurements.validate_export({'schema_version': 1, 'product': 'fulltime', 'observations': [
+            row('brand_post_new_listeners', 5), row('brand_post_new_listeners', 3, creative_id=CREATIVE),
+            row('brand_post_new_listeners', 2, creative_id=OTHER), row('share_arrived_new_listeners', 7)]})
+        self.assertEqual(len(rows), 4)
+        result = by_key(objectives(rows, TODAY, as_of=AS_OF))
+        self.assertEqual(result['brand_post_new_listeners']['value'], 5)
+        self.assertEqual(measurements.scorecard(rows, START, END, as_of=AS_OF)['brand_post_new_listeners']['value'], 5)
+
+    def test_a_breakdown_row_is_never_the_total(self):
+        newer = row('brand_post_new_listeners', 3, creative_id=CREATIVE, observed_at='2026-07-06T07:00:00+00:00')
+        rows = [row('brand_post_new_listeners', 5), newer]
+        self.assertEqual(by_key(objectives(rows, TODAY, as_of=AS_OF))['brand_post_new_listeners']['value'], 5)
+        self.assertEqual(measurements.scorecard(rows, START, END, as_of=AS_OF)['brand_post_new_listeners']['value'], 5)
+        alone = by_key(objectives([newer], TODAY, as_of=AS_OF))['brand_post_new_listeners']
+        self.assertEqual((alone['value'], alone['availability']), (None, 'missing'))
+
+    def test_the_breakdown_is_refused_anywhere_else(self):
+        for bad in (row('share_arrived_new_listeners', 3, creative_id=CREATIVE),
+                    row('ga4_landing_sessions', 3, creative_id=CREATIVE),
+                    row('brand_post_new_listeners', 3, creative_id=CREATIVE + '\n'),
+                    row('brand_post_new_listeners', 3, creative_id='newsletter'),
+                    row('brand_post_new_listeners', 3, creative_id=None)):
+            with self.subTest(row=bad):
+                with self.assertRaisesRegex(ValueError, 'creative_id'):
+                    measurements.validate(bad)
+        with self.assertRaisesRegex(ValueError, 'duplicate'):
+            measurements.validate_export({'schema_version': 1, 'product': 'fulltime', 'observations': [
+                row('brand_post_new_listeners', 3, creative_id=CREATIVE),
+                row('brand_post_new_listeners', 2, creative_id=CREATIVE)]})
+
+
+class UntokenisedSideFigure(unittest.TestCase):
+    """Review wave 2: the untokenised count ignored a newer missing capture and staleness."""
+
+    def test_a_newer_missing_capture_is_reported_as_missing(self):
+        share = objectives([row('share_arrived_new_listeners', 7),
+                            row('untokenised_new_listeners', 40, observed_at='2026-07-06T05:00:00+00:00'),
+                            row('untokenised_new_listeners', None, status='missing',
+                                observed_at='2026-07-06T05:30:00+00:00')], TODAY, as_of=AS_OF)[0]
+        self.assertEqual(share['value'], 7)
+        self.assertNotIn(': 40.', share['reason'])
+        self.assertIn('Untokenised new listeners, reported apart: missing.', share['reason'])
+
+    def test_an_old_untokenised_count_is_reported_as_stale(self):
+        later = dt.datetime(2026, 7, 8, 7, 0, tzinfo=UTC)
+        share = objectives([row('share_arrived_new_listeners', 7, observed_at='2026-07-07T13:30:00+00:00'),
+                            row('untokenised_new_listeners', 40, observed_at='2026-07-06T06:30:00+00:00')],
+                           TODAY, as_of=later)[0]
+        self.assertEqual((share['value'], share['availability']), (7, 'measured'))
+        self.assertNotIn(': 40.', share['reason'])
+        self.assertIn('Untokenised new listeners, reported apart: stale.', share['reason'])
+        marked = objectives([row('share_arrived_new_listeners', 7),
+                             row('untokenised_new_listeners', 40, status='stale')], TODAY, as_of=AS_OF)[0]
+        self.assertIn('reported apart: stale.', marked['reason'])
+
+
+class ExposureScaledZ(unittest.TestCase):
+    """Review wave 2: z assumed equal exposure without recording it."""
+
+    def test_equal_exposure_is_the_plain_test(self):
+        self.assertEqual(z_score(60, 30, 1, 1), z_score(60, 30))
+        self.assertAlmostEqual(z_score(60, 30, 3, 3), 30 / 90 ** 0.5)
+
+    def test_unequal_exposure_scales_arm_b(self):
+        # a: 60 over 3 posts (20 a post), b: 30 over 1 post (30 a post): b leads per post.
+        self.assertAlmostEqual(z_score(60, 30, 3, 1), (60 - 90) / (3 * 90) ** 0.5)
+        self.assertLess(z_score(60, 30, 3, 1), 0)
+        self.assertAlmostEqual(z_score(30, 60, 1, 3), -z_score(60, 30, 3, 1))
+
+    def test_exposure_must_be_above_zero(self):
+        for bad in (0, -1, True, float('nan'), float('inf'), '2', None):
+            with self.subTest(exposure=bad):
+                with self.assertRaisesRegex(ValueError, 'exposure'):
+                    z_score(60, 30, bad, 1)
+                with self.assertRaisesRegex(ValueError, 'exposure'):
+                    z_score(60, 30, 1, bad)
+
+
+class GA4Labels(unittest.TestCase):
+    """Review wave 2: a creative ID with a trailing newline split one creative in two;
+    the documents told exporters to fold Google's (other) row into (not set)."""
+
+    def test_utm_content_must_match_a_creative_id_in_full(self):
+        with self.assertRaisesRegex(ValueError, 'creative ID'):
+            ga4_rows(export([landing(), landing(CREATIVE + '\n', new_users=1, sessions=1, engaged=0)]))
+        with self.assertRaises(ValueError):
+            by_creative(export([landing(CREATIVE + '\n')]))
+
+    def test_google_other_row_and_limitation_flags_are_refused(self):
+        with self.assertRaisesRegex(ValueError, 'not sent at all'):
+            ga4_rows(export([landing('(other)')]))
+        for flag in ('limited', 'thresholded', 'other_row'):
+            with self.subTest(flag=flag):
+                with self.assertRaisesRegex(ValueError, f'unknown: {flag}'):
+                    ga4_rows(export(**{flag: True}))
+
+    def test_the_contract_no_longer_folds_other_into_not_set(self):
+        text = (ROOT / 'MEASUREMENT.md').read_text(encoding='utf-8')
+        self.assertIn("but never Google's `(other)` row", text)
+        self.assertIn('is not sent at all', text)
+        self.assertNotIn('must fold other labels into `(not set)` first.', text)
+
+
+class OneNorthStarDefinition(unittest.TestCase):
+    """Review wave 2: MEASUREMENT.md and the product brief defined share-arrived differently."""
+
+    RULE = ('A new listener counts as share-arrived when their first touch, stored once on their first visit and '
+            'never overwritten, carried a valid share token `s` and their first finished show came within 7 days '
+            'of it; they count in the London week of that first finished show.')
+
+    def test_the_contract_and_the_brief_state_the_same_rule(self):
+        contract = (ROOT / 'MEASUREMENT.md').read_text(encoding='utf-8')
+        brief = (ROOT / 'briefs' / '2026-10-27-share-attribution.md').read_text(encoding='utf-8')
+        for text in (contract, brief):
+            self.assertIn(self.RULE, text)
+            self.assertIn('two days later', text)     # the case the two used to answer differently
+            self.assertNotIn('\u2014', text)
+        self.assertNotIn('the earliest in the window gets the credit', contract)
 
 
 if __name__ == '__main__':

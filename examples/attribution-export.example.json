@@ -45,6 +45,18 @@
       "observed_at": "2026-10-26T07:30:00+00:00",
       "status": "measured",
       "note": "Synthetic example of the export shape; not a measurement."
+    },
+    {
+      "metric": "brand_post_new_listeners",
+      "value": 1,
+      "source": "synthetic-example",
+      "query_ref": "synthetic-example:brand-post-utm-content-first-listen:v0",
+      "window_start": "2026-10-19",
+      "window_end": "2026-10-25",
+      "observed_at": "2026-10-26T07:30:00+00:00",
+      "status": "measured",
+      "creative_id": "TT_CLASH_CLIP_C01_H01_V1_20261020",
+      "note": "Synthetic example of one per-creative breakdown row; not a measurement."
     }
   ]
 }

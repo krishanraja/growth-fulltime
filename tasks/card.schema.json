@@ -2,13 +2,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/krishanraja/growth-fulltime/blob/main/tasks/card.schema.json",
   "title": "Full Time task card",
-  "description": "One build or production job for Codex or a fresh Claude session (docs/ENGINE-V2.md, section 6). Saved as tasks/<card_id>.json, at most 6 KB as canonical JSON. This file describes the shape for people and tooling; engine/dispatch.py validate_card() is the enforcement and also refuses what JSON Schema cannot say well: a worktree that is not ../growth-fulltime-wt/<card_id>, a write_allow glob that would match anything under .git, duplicate paths, and a card over 6 KB. guard() then refuses a Codex card when the allowance reading is unknown, more than one hour old, in the future or above 80%, unless Krish's spend decision names the card.",
+  "description": "One build or production job for Codex or a fresh Claude session (docs/ENGINE-V2.md, section 6). Saved as tasks/<card_id>.json, at most 6 KB as canonical JSON. This file describes the shape for people and tooling; engine/dispatch.py validate_card() is the enforcement and also refuses what JSON Schema cannot say well: a worktree that is not ../growth-fulltime-wt/<card_id>, a write_allow glob that would match anything under .git (in any letter case, as NTFS reads it), duplicate paths, and a card over 6 KB. guard() then refuses a Codex card when the allowance reading is unknown, more than one hour old, in the future or above 80%, unless Krish approved the spend proposal fulltime-codex-<card_id> (dispatch.spend_proposal) on this exact card and amount.",
   "type": "object",
   "additionalProperties": false,
   "required": ["card_id", "kind", "executor", "model", "effort", "max_minutes", "max_calls", "write_allow",
                "read_files", "never", "interface", "acceptance", "return_shape"],
   "properties": {
-    "card_id": {"type": "string", "pattern": "^[a-z0-9-]+$",
+    "card_id": {"type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 105,
                 "description": "Also the file name: tasks/<card_id>.json, with its prompt in tasks/<card_id>.md."},
     "kind": {"enum": ["build", "production"],
              "description": "build runs in its own worktree; production runs in the main checkout with --require-existing-history."},
@@ -24,15 +24,16 @@
     "write_allow": {
       "type": "array", "minItems": 1, "uniqueItems": true,
       "items": {"type": "string", "minLength": 1, "not": {"anyOf": [
-        {"pattern": "^(/|~|[A-Za-z]:)"}, {"pattern": "\\.\\."}, {"pattern": "\\\\"}, {"pattern": "(^|/)\\.git(/|$)"}]}},
+        {"pattern": "^(/|~|[A-Za-z]:)"}, {"pattern": "\\.\\."}, {"pattern": "\\\\"}, {"pattern": "^[*?\\[]"},
+        {"pattern": "(^|/)(\\.[Gg][Ii][Tt]|[Gg][Ii][Tt]~[0-9]+)[. ]*(/|$)"}]}},
       "not": {"const": ["**"]},
-      "description": "Repo-relative fnmatch globs the card may write. Never absolute, never .., never .git, never the single pattern **."
+      "description": "Repo-relative fnmatch globs the card may write. Never absolute, never .., never .git in any case, never starting with a wildcard (fnmatch * crosses /, so it can reach .git), never the single pattern **."
     },
     "read_files": {
       "type": "array", "maxItems": 5, "uniqueItems": true,
       "items": {"type": "string", "minLength": 1, "not": {"anyOf": [
         {"pattern": "^(/|~|[A-Za-z]:)"}, {"pattern": "\\.\\."}, {"pattern": "\\\\"}, {"pattern": "[*?\\[]"},
-        {"pattern": "(^|/)\\.git(/|$)"}]}},
+        {"pattern": "(^|/)(\\.[Gg][Ii][Tt]|[Gg][Ii][Tt]~[0-9]+)[. ]*(/|$)"}]}},
       "description": "At most five repo-relative files the card reads, named one by one."
     },
     "never": {
@@ -50,7 +51,8 @@
   },
   "allOf": [
     {"if": {"properties": {"kind": {"const": "build"}}}, "then": {"required": ["worktree"]}},
-    {"if": {"properties": {"kind": {"const": "production"}}}, "then": {"not": {"required": ["worktree"]}}},
+    {"if": {"properties": {"kind": {"const": "production"}}},
+     "then": {"not": {"required": ["worktree"]}, "properties": {"max_minutes": {"maximum": 30}}}},
     {"if": {"properties": {"executor": {"const": "codex"}}}, "then": {"properties": {"model": {"const": "gpt-6.1-sol"}}}}
   ]
 }

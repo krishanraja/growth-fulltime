@@ -7,9 +7,9 @@ callables in this repository, and its card (3 KB at most) and lens (1 KB at most
 under crew/<id>/. errors() proves every path imports and is callable and every card
 and lens exists within its budget; load_crew() refuses a registry that fails it.
 
-Three checks had no code before this registry, so they live here: the Match Clock's
-fixtures_fresh() and publish_to_pack_minutes(), and the Card Maker's glyph_readback()
-(R19). Nothing here posts, sends, schedules, spends or reads the network.
+Four checks had no code before this registry, so they live here: the Match Clock's
+fixtures_fresh() and publish_to_pack_minutes(), and the Card Maker's card_lint() and
+glyph_readback() (R19). Nothing here posts, sends, schedules, spends or reads the network.
 """
 import copy
 import datetime as dt
@@ -45,7 +45,7 @@ CREW = [
             'engine.creative_system.System.artifact_gate'),
     _member('motion_maker', 'Motion Maker', 'Codex offline; Claude calls Higgsfield and Runway',
             'engine.assets.checked_segments', 'engine.assets.probe'),
-    _member('card_maker', 'Card Maker', 'Claude, through the Canva connector', 'engine.formats.recipe',
+    _member('card_maker', 'Card Maker', 'Claude, through the Canva connector', 'engine.crew.card_lint',
             'engine.crew.glyph_readback'),
     _member('channel_steward', 'Channel & Pack Steward', 'Codex builds; Claude reads Buffer', 'engine.pack.check',
             'engine.buffer_read.receipts'),
@@ -210,8 +210,44 @@ def publish_to_pack_minutes(published_at, pack_ready_at):
 
 
 # ---------------------------------------------------------------------------
-# The Card Maker: glyph readback (R19).
+# The Card Maker: the lint before making a card, and glyph readback (R19).
 # ---------------------------------------------------------------------------
+CARD_FIELDS = ('template_id', 'text', 'channel', 'width', 'height')
+
+
+def card_lint(card, recipe, pinned_templates):
+    """The Card Maker's lint before acting: [] when the card is made from a pinned Full
+    Time template, shows "AI Pundit", carries no league or broadcaster mark and has its
+    channel's cut size in the recipe (engine.formats.recipe); else the reasons.
+
+    card is {template_id, text, channel, width, height}; pinned_templates the template IDs
+    pinned in the brand-kit receipt."""
+    import growth
+    from .audience import LEAGUE
+    if not isinstance(card, dict) or set(card) != set(CARD_FIELDS):
+        raise ValueError('card must carry exactly ' + ', '.join(CARD_FIELDS))
+    if not isinstance(recipe, dict) or not isinstance(recipe.get('cuts'), dict):
+        raise ValueError('recipe must be a format recipe with its cuts, from engine.formats.recipe')
+    if isinstance(pinned_templates, (str, bytes)) or not hasattr(pinned_templates, '__iter__'):
+        raise ValueError('pinned_templates must list the template IDs pinned in the brand-kit receipt')
+    text = card['text'] if isinstance(card['text'], str) else ''
+    out = []
+    if card['template_id'] not in set(pinned_templates):
+        out.append('the card is not made from a pinned Full Time template: use one pinned in the brand-kit receipt')
+    if 'AI Pundit' not in text:
+        out.append('the card must show "AI Pundit", exactly')
+    found = growth.BROADCASTERS.search(text) or LEAGUE.search(text)
+    if found:
+        out.append(f'the card shows a league or broadcaster mark: "{found.group(0)}"')
+    cut = recipe['cuts'].get(card['channel'])
+    if not isinstance(cut, dict):
+        out.append(f'the {recipe.get("format_id", "format")} recipe has no cut for this channel')
+    elif (card['width'], card['height']) != (cut.get('width'), cut.get('height')):
+        out.append(f'the card is {card["width"]}x{card["height"]}, but the cut for this channel is '
+                   f'{cut.get("width")}x{cut.get("height")}')
+    return out
+
+
 def _plain(text):
     return ' '.join(unicodedata.normalize('NFC', text).split())
 

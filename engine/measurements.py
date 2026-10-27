@@ -1,6 +1,10 @@
 """Validate aggregate observations. Never ingest people or sum unique counts."""
 import datetime as dt
 import math
+import re
+
+from .clock import LONDON
+from .records import instant as rfc3339
 
 METRICS = {'unique_visitors', 'unique_players', 'unique_completers', 'reachable_completers',
            'mature_completers', 'returners_7d', 'returners_playing_second_pundit',
@@ -17,18 +21,35 @@ RATIOS = {'play_rate': ('unique_players', 'unique_visitors'),
           'second_pundit_rate': ('returners_playing_second_pundit', 'returners_7d'),
           'very_disappointed_rate': ('very_disappointed', 'survey_respondents')}
 FIELDS = {'metric', 'value', 'source', 'query_ref', 'window_start', 'window_end',
-          'observed_at', 'status', 'note', 'cohort_start', 'cohort_end', 'follow_up_through'}
+          'observed_at', 'status', 'note', 'cohort_start', 'cohort_end', 'follow_up_through', 'creative_id'}
+# The one metric the product may break down by creative ID, beside its total row.
+BY_CREATIVE = 'brand_post_new_listeners'
+DATE = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}')
+# Google Analytics in any spelling, compared after lower-casing and removing all
+# but letters and digits; GA and gtag as whole words. The last mark is Full Time's
+# measurement ID, G-W2QL8RKFJ1.
+GA4_MARKS = ('ga4', 'googleanalytics', 'universalanalytics', 'firebaseanalytics', 'analyticsdata', 'runreport',
+             'gw2ql8rkfj1')
+GA4_WORDS = {'ga', 'gtag'}
 
 
 def date(value):
+    """A calendar date written YYYY-MM-DD, read the same way on every Python."""
+    if not isinstance(value, str) or not DATE.fullmatch(value):
+        raise ValueError(f'{value!r} is not a date written YYYY-MM-DD')
     return dt.date.fromisoformat(value)
 
 
 def instant(value):
-    result = dt.datetime.fromisoformat(value.replace('Z', '+00:00'))
-    if result.tzinfo is None:
-        raise ValueError('observation timestamp must include a timezone')
-    return result
+    """An RFC 3339 moment with its offset (records.instant)."""
+    return rfc3339(value)
+
+
+def from_ga4(observation):
+    """True when the row's source or query_ref names Google Analytics, however spelt."""
+    text = f'{observation.get("source", "")} {observation.get("query_ref", "")}'.lower()
+    return (any(mark in re.sub(r'[^a-z0-9]', '', text) for mark in GA4_MARKS)
+            or bool(GA4_WORDS & set(re.split(r'[^a-z0-9]+', text))))
 
 
 def validate(observation):
@@ -37,12 +58,22 @@ def validate(observation):
     required = {'metric', 'value', 'source', 'query_ref', 'window_start', 'window_end', 'observed_at', 'status'}
     if not required <= set(observation) or observation['metric'] not in METRICS:
         raise ValueError('observation is missing provenance or has an unknown metric')
-    if not observation['source'] or not observation['query_ref']:
-        raise ValueError('source and query_ref must be non-empty')
+    if any(not isinstance(observation[k], str) or not observation[k].strip() for k in ('source', 'query_ref')):
+        raise ValueError('source and query_ref must be non-empty text')
+    if observation['metric'].endswith('_listeners') and from_ga4(observation):
+        raise ValueError('GA4 landings are web sessions, never listeners; a listener count must come '
+                         'from the product export')
+    if 'creative_id' in observation:
+        import growth
+        if observation['metric'] != BY_CREATIVE or not isinstance(observation['creative_id'], str) \
+                or not growth.CREATIVE_ID.fullmatch(observation['creative_id']):
+            raise ValueError(f'creative_id is only for a {BY_CREATIVE} breakdown row, and must be a creative ID')
     start, end = date(observation['window_start']), date(observation['window_end'])
     captured = instant(observation['observed_at'])
-    if start > end or captured.date() < end or captured > dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=5):
-        raise ValueError('invalid source window or capture time')
+    if start > end or captured.astimezone(LONDON).date() <= end \
+            or captured > dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=5):
+        raise ValueError('invalid source window or capture time: a window is whole London days, read after '
+                         'its last day ended in London and not in the future')
     status, value = observation['status'], observation['value']
     if status not in ('measured', 'missing', 'stale'):
         raise ValueError('status must be measured, missing or stale')
@@ -72,7 +103,7 @@ def validate_export(export):
     rows = [validate(x) for x in export['observations']]
     seen = set()
     for row in rows:
-        key = (row['metric'], row['window_start'], row['window_end'])
+        key = (row['metric'], row['window_start'], row['window_end'], row.get('creative_id'))
         if key in seen:
             raise ValueError('duplicate metric/window; reconcile upstream instead of adding unique counts')
         seen.add(key)
@@ -83,9 +114,11 @@ def scorecard(rows, window_start, window_end, as_of=None):
     as_of = as_of or dt.datetime.now(dt.timezone.utc)
     values = {}
     for row in rows:
-        validate(row)
-        if (row['window_start'], row['window_end']) != (window_start, window_end):
+        # Only this window's totals are read, so only they are checked: a row for
+        # another window, or a per-creative breakdown row, never enters a value.
+        if (row.get('window_start'), row.get('window_end')) != (window_start, window_end) or 'creative_id' in row:
             continue
+        validate(row)
         old = values.get(row['metric'])
         if old is None or instant(row['observed_at']) > instant(old['observed_at']):
             values[row['metric']] = row

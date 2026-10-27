@@ -29,7 +29,8 @@ class Budgets(unittest.TestCase):
         self.assertEqual(set(kinds), set(session.KINDS))
         self.assertEqual((kinds['scheduled']['max_tokens'], kinds['scheduled']['max_engine_minutes']), (0, 2))
         self.assertEqual((kinds['orchestrator']['max_tokens'], kinds['orchestrator']['max_engine_minutes']), (150000, 20))
-        self.assertEqual((kinds['production']['max_tokens'], kinds['production']['max_engine_minutes']), (0, 30))
+        # Was (0, 30): production uses Claude for connector calls, so 0 flagged every matchday.
+        self.assertEqual((kinds['production']['max_tokens'], kinds['production']['max_engine_minutes']), (60000, 30))
         self.assertEqual((kinds['review']['max_tokens'], kinds['review']['max_engine_minutes']), (60000, 10))
         self.assertEqual((kinds['build']['max_tokens'], kinds['build']['max_engine_minutes']), (None, None))
         self.assertEqual(budgets['krish_minutes_per_day'], 20)
@@ -119,14 +120,86 @@ class Pack(unittest.TestCase):
         self.assertEqual(order, sorted(order))
         self.assertLessEqual(len(text.encode('utf-8')), session.PACK_LIMIT)
 
-    def test_a_review_pack_carries_lenses_only(self):
-        text = session.pack('review', self.crew, ['librarian'])
+    def test_a_review_pack_carries_lenses_the_rubric_and_the_contact_sheet(self):
+        text = session.pack('review', self.crew, ['librarian'], contact_sheet='Drive 03_Runs/2026-W44/sheet.png')
         self.assertIn('LENS-librarian', text)
         self.assertNotIn('CARD-', text)
-        self.assertIn('No signed spec', text)
-        self.assertIn('None open.', text)
-        self.assertIn('No gate status recorded.', text)
-        self.assertIn('No report yet.', text)
+        self.assertIn('No spec for this session.', text)
+        self.assertIn('## COPY.md: Rubric for packs', text)
+        self.assertIn('38 and above', text)
+        self.assertIn('## Contact sheet\n\nDrive 03_Runs/2026-W44/sheet.png', text)
+        self.assertNotIn('## Test record', text, 'only the rubric section of COPY.md')
+        self.assertIn('Not supplied to this pack', session.pack('review', self.crew, ['librarian']))
+
+    def test_what_the_caller_did_not_supply_is_unknown_never_none(self):
+        # Before the fix the defaults printed 'None open.', 'No gate status recorded.' and 'No report yet.'.
+        text = session.pack('orchestrator', self.crew, ['librarian'])
+        for head, pointer in (('## Open findings', 'docs/FAILURE-REGISTER.md'), ('## Gate status', 'Control Center'),
+                              ('## Last report summary', 'local/control-center/last.json')):
+            body = text[text.index(head):].split('\n\n')[1]
+            self.assertIn('Not supplied to this pack, so unknown here, not none', body)
+            self.assertIn(pointer, body)
+        for words in ('None open.', 'No gate status recorded.', 'No report yet.'):
+            self.assertNotIn(words, text)
+        told = session.pack('orchestrator', self.crew, ['librarian'], findings=[], gates={}, last_report='')
+        for words in ('None open.', 'No gate status recorded.', 'No report yet.'):
+            self.assertIn(words, told)
+        self.assertNotIn('Not supplied', told)
+
+    def test_a_spec_is_called_signed_only_on_the_digest_krish_cleared(self):
+        draft = {'mode': 'live', 'status': 'draft'}
+        digest = session.reporting.canonical_sha256(draft)
+        text = session.pack('orchestrator', self.crew, [], spec=draft)
+        self.assertNotIn('Signed spec', text)
+        self.assertIn('## Spec (not signed)\n\nsha256 ' + digest, text)
+        signed = session.pack('orchestrator', self.crew, [], spec=draft, signed_sha256=digest)
+        self.assertIn('## Signed spec\n\nsha256 ' + digest, signed)
+        for call, words in ((lambda: session.pack('orchestrator', self.crew, [], spec=draft, signed_sha256='0' * 64),
+                             'not the ' + '0' * 64),
+                            (lambda: session.pack('orchestrator', self.crew, [], signed_sha256=digest), 'without the spec')):
+            with self.assertRaises(ValueError) as caught:
+                call()
+            self.assertIn(words, str(caught.exception))
+
+    def test_a_build_pack_carries_its_task_card_and_read_files(self):
+        from tests.test_dispatch import card
+        task = card(read_files=['docs/ENGINE.md', 'engine/assets.py'])
+        text = session.pack('build', self.crew, [], card=task)
+        self.assertIn('## Task card synthetic-build', text)
+        self.assertIn(session.reporting.canonical(task), text)
+        self.assertIn('### Read these files, and only these\n\n- docs/ENGINE.md\n- engine/assets.py', text)
+        self.assertIn('## Task card\n\nNot supplied', session.pack('build', self.crew, []))
+        with self.assertRaises(ValueError) as caught:
+            session.pack('build', self.crew, [], card=card(model='gpt-6-astra'))
+        self.assertIn('the task card is refused', str(caught.exception))
+
+    def test_a_production_pack_carries_its_instance_and_locks(self):
+        text = session.pack('production', self.crew, ['librarian'], instance={'creative_id': 'tc-synthetic-1'},
+                            locks={'take_clip': 'a' * 64})
+        self.assertIn('## Instance\n\n{"creative_id":"tc-synthetic-1"}', text)
+        self.assertIn('## Locks\n\n{"take_clip":"' + 'a' * 64 + '"}', text)
+        self.assertIn('## Locks\n\nNot supplied', session.pack('production', self.crew, ['librarian']))
+
+    def test_each_part_belongs_to_its_own_kind(self):
+        from tests.test_dispatch import card
+        cases = [
+            (lambda: session.pack('review', self.crew, ['librarian'], card=card()), 'does not carry card'),
+            (lambda: session.pack('orchestrator', self.crew, [], contact_sheet='x.png'), 'does not carry contact_sheet'),
+            (lambda: session.pack('build', self.crew, [], locks={}), 'does not carry locks'),
+            (lambda: session.pack('production', self.crew, [], instance=['x']), 'instance must be an object'),
+            (lambda: session.pack('review', self.crew, ['librarian'], contact_sheet=' '), 'contact_sheet'),
+            (lambda: session.pack('review', self.crew, ['librarian'], copy=Path(self.folder.name) / 'none.md'),
+             'is missing'),
+        ]
+        for call, words in cases:
+            with self.assertRaises(ValueError) as caught:
+                call()
+            self.assertIn(words, str(caught.exception))
+        plain = Path(self.folder.name) / 'COPY.md'
+        plain.write_text('# Copy\n\n## Something else\n', encoding='utf-8')
+        with self.assertRaises(ValueError) as caught:
+            session.pack('review', self.crew, ['librarian'], copy=plain)
+        self.assertIn('Rubric for packs', str(caught.exception))
 
     def test_production_and_build_packs_carry_cards(self):
         for kind in ('production', 'build'):
@@ -173,10 +246,11 @@ class Pack(unittest.TestCase):
             (lambda: session.pack('review', self.crew, ['measurement-analyst']), 'at most 1024 bytes'),
             (lambda: session.pack('build', self.crew, ['nobody']), 'is missing'),
             (lambda: session.pack('build', self.crew, ['../crew']), 'not a crew folder name'),
+            (lambda: session.pack('build', self.crew, ['librarian\n']), 'not a crew folder name'),
             (lambda: session.pack('build', self.crew, 'librarian'), 'must be a list'),
             (lambda: session.pack('build', self.crew, ['nobody', 'nobody']), 'twice'),
             (lambda: session.pack('review', self.crew, []), 'at least one crew member'),
-            (lambda: session.pack('build', self.crew, [], spec=['not', 'a', 'spec']), 'signed spec object'),
+            (lambda: session.pack('build', self.crew, [], spec=['not', 'a', 'spec']), 'spec object'),
             (lambda: session.pack('build', self.crew, [], findings='one finding'), 'list of open findings'),
             (lambda: session.pack('build', self.crew, [], findings=['']), 'non-empty text'),
             (lambda: session.pack('build', self.crew, [], gates=['G1']), 'gates must be an object'),
@@ -232,6 +306,27 @@ class Ledger(unittest.TestCase):
                 session.ledger_append(self.local, bad)
             self.assertIn(words, str(caught.exception))
         self.assertFalse(self.path.exists())
+
+    def test_line_separators_inside_a_record_never_split_it(self):
+        # Before the fix one outcome holding U+2028 made every later read of the ledger fail.
+        outcome = 'rendered\u2028then\u2029held\x85again é'
+        session.ledger_append(self.local, record(outcome=outcome))
+        session.ledger_append(self.local, record(krish_minutes=3))
+        raw = self.path.read_bytes()
+        self.assertEqual(raw.count(b'\n'), 2)
+        self.assertTrue(raw.isascii(), 'written with ASCII escapes')
+        records = session.read_ledger(self.path)
+        self.assertEqual([r['outcome'] for r in records], [outcome, 'ended at G2'])
+        self.assertEqual(session.krish_minutes_on(self.path, '2026-10-27'), 7)
+        self.assertEqual(session.budget_errors(self.path, '2026-10-28'), [])
+        with open(self.path, 'a', encoding='utf-8', newline='\r\n') as handle:     # an older line, written raw
+            handle.write(json.dumps(record(outcome='old\u2028line'), ensure_ascii=False) + '\n')
+        self.assertEqual(session.read_ledger(self.path)[-1]['outcome'], 'old\u2028line')
+
+    def test_a_production_session_may_use_claude_for_connector_calls(self):
+        session.ledger_append(self.local, record(kind='production', tokens_in=3000, tokens_out=400, engine_minutes=25,
+                                                 krish_minutes=None, outcome='pack ready; Canva exports by Claude'))
+        self.assertEqual(session.budget_errors(self.path, '2026-10-27'), [])
 
     def test_a_bad_ledger_line_is_named(self):
         session.ledger_append(self.local, record())

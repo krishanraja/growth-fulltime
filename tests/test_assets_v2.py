@@ -56,7 +56,7 @@ class Base(unittest.TestCase):
         cls.root = Path(cls.temporary.name)
         cls.state = {'sha': 'a' * 40, 'rail': [{'drop': 'drop1', 'pundits': ['zen', 'gaffer'], 'fill': 2,
                                                 'home': 'Fixture Home', 'away': 'Fixture Away', 'score': [1, 0]}],
-                     'rulings': {}}
+                     'rulings': {}, 'synced_at': dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()}
         cls.api = types.SimpleNamespace(LOCAL=str(cls.root), SITE=growth.SITE, PUNDITS=growth.PUNDITS,
                                         RAIL_MIN=4, CREATIVE_ID=growth.CREATIVE_ID,
                                         tracked=growth.tracked, problems=growth.problems,
@@ -189,6 +189,15 @@ class HoldTests(Base):
         no_consent = {**state, 'rulings': {**state['rulings'], 'D7': {'in_force': False}}}
         self.assertIn('CONSENT', self.holds('TT_CLASH_CLIP_C98_H01_V1_20261027', no_consent))
 
+    def test_under_organic_a_render_from_an_old_sync_is_held_for_rail(self):
+        state = {**copy.deepcopy(self.state), 'rulings': {'ORGANIC': {'in_force': True}, 'D1': {'in_force': True},
+                                                          'D7': {'in_force': True}}}
+        old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=27)).isoformat()
+        for synced in (old, None, 'yesterday'):
+            with self.subTest(synced=synced):
+                self.assertEqual(self.holds('TT_CLASH_CLIP_C98_H01_V1_20261027', {**state, 'synced_at': synced}, verified=True),
+                                 ['APPROVAL', 'CHANNEL', 'RAIL'])
+
 
 @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'FFmpeg and FFprobe required')
 class RenderTests(Base):
@@ -237,6 +246,23 @@ class RenderTests(Base):
         self.assertEqual(saved['master_id'], 'M_20261027_FIXTURE_TWO_MINDS')
         with patch.dict(os.environ, NO_FONT_ENV, clear=True):
             self.assertTrue(render(self.api, self.root / (manifest['creative_id'] + '.json'))['reused'])
+
+    def test_a_cached_render_carries_todays_holds(self):
+        cid = 'TT_CLASH_CLIP_C96_H01_V1_20261027'
+        open_state = {**copy.deepcopy(self.state), 'sha': 'b' * 40,
+                      'rulings': {'ORGANIC': {'in_force': True}, 'D1': {'in_force': True}, 'D7': {'in_force': True}},
+                      'brand_identities': {'fixture-tiktok': identity('tiktok', 'tiktok.com')}}
+        manifest = {**self.manifest(cid), 'identity_ref': 'fixture-tiktok', 'caption_alignment_verified': True}
+        with patch.object(self.api, 'load_state', lambda: copy.deepcopy(open_state)):
+            first, _ = self.run_capturing(manifest, NO_FONT_ENV)
+        self.assertEqual((first['holds'], first['source_sha'], first['reused']), (['APPROVAL'], 'b' * 40, False))
+        closed = {**copy.deepcopy(self.state), 'sha': 'c' * 40, 'rulings': {'ORGANIC': {'in_force': True},
+                                                                         'D1': {'in_force': True}}}
+        with patch.object(self.api, 'load_state', lambda: copy.deepcopy(closed)):
+            again, commands = self.run_capturing(manifest, NO_FONT_ENV)
+        self.assertEqual(commands, [])
+        self.assertEqual((again['reused'], again['video_sha256'], again['source_sha']), (True, first['video_sha256'], 'c' * 40))
+        self.assertEqual(again['holds'], ['APPROVAL', 'CHANNEL', 'CONSENT'])
 
     def test_default_render_on_a_new_channel_keeps_720x1280_and_no_font(self):
         manifest = self.manifest('WC_CLASH_CLIP_C97_H01_V1_20261027')

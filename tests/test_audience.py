@@ -206,9 +206,67 @@ class GateTests(unittest.TestCase):
                      allowlist=allowlist(), review_ref='r', words='approved without a ruling')
 
     def test_a_stale_rule_check_is_refused(self):
+        # An explicit registry is now checked against today, as load_actions() checks the file.
         data = approve(registry(), 'reply_to_comments_on_own_posts', checked='2026-07-01')
         self.refused('reply_to_comments_on_own_posts', 'youtube', 'fulltime-yt-shorts', NOW, 0, actions=data,
-                     allowlist=allowlist(), review_ref='r', words='rule check of 2026-07-01 is stale')
+                     allowlist=allowlist(), review_ref='r', words='rule check of 2026-07-01 is not within the last 90')
+
+    def test_a_future_ruling_is_refused_with_an_explicit_registry(self):
+        data = registry()
+        data['actions']['add_post_to_playlist_or_highlight'].update(
+            status='approved', rule_checked_on='2026-10-20', ruling={'date': '2027-06-01', 'words': 'yes'})
+        self.refused('add_post_to_playlist_or_highlight', 'youtube', 'fulltime-yt-shorts', NOW, 0, actions=data,
+                     allowlist=allowlist(), words='dated in the future')
+        self.assertTrue(audience.refusals('add_post_to_playlist_or_highlight', 'youtube', 'fulltime-yt-shorts',
+                                          NOW, 0, data, allowlist()))
+
+    def renamed(self, aid, title, platforms, api):
+        data = registry()
+        data['actions'][aid] = {'title': title, 'platforms': platforms, 'official_api': api,
+                                'rule_source': 'https://help.x.com/en/rules-and-policies/x-automation',
+                                'rule_checked_on': '2026-10-20', 'status': 'approved',
+                                'ruling': {'date': '2026-10-27', 'words': 'yes'}, 'daily_cap': 400,
+                                'needs_review_each_time': False}
+        self.assertEqual(audience.actions_errors(data, NOW.date()), [])
+        return data
+
+    def test_a_renamed_banned_tactic_is_refused(self):
+        self.renamed_tactics_are_refused()
+
+    def renamed_tactics_are_refused(self):
+        cases = [('follow_back_engaged_fans', 'Follow back every account that engages with Full Time', 'x',
+                  'X API v2 POST /2/users/{id}/following', 'fulltime-x', 'follows or unfollows'),
+                 ('grow_reach', 'Grow reach on X', 'x', 'X API v2 POST /2/users/{id}/following', 'fulltime-x',
+                  'follows or unfollows'),
+                 ('like_fan_replies', 'Like every fan reply that mentions Full Time', 'x',
+                  'X API v2 POST /2/users/{id}/likes', 'fulltime-x', 'likes posts'),
+                 ('dm_new_followers', 'Send a welcome DM to every new follower', 'x',
+                  'X API v2 POST /2/dm_conversations/with/{participant_id}/messages', 'fulltime-x', 'sends messages'),
+                 ('welcome_fans', 'Welcome new fans', 'x', 'X API v2 dm_conversations', 'fulltime-x',
+                  'sends messages'),
+                 ('publish_daily_reel', "Publish the day's reel", 'instagram',
+                  'Instagram Graph API POST /{ig-user-id}/media_publish', 'fulltime-ig-reels', 'publishes'),
+                 ('daily_take', 'Post the daily take', 'x', 'X API v2 POST /2/tweets', 'fulltime-x', 'publishes'),
+                 ('upload_short', 'Upload the short', 'youtube', 'YouTube Data API v3 videos.insert',
+                  'fulltime-yt-shorts', 'publishes'),
+                 ('instagram_story', 'Share a story', 'instagram', 'Instagram Graph API media STORIES',
+                  'fulltime-ig-reels', 'publishes'),
+                 ('boost_best_post', 'Boost the best post', 'facebook', 'Facebook Marketing API ads',
+                  'fulltime-facebook', 'buys or boosts'),
+                 ('reply_to_trending_posts', 'Reply to trending posts by other clubs', 'youtube',
+                  'YouTube Data API v3 comments.insert', 'fulltime-yt-shorts', 'comments beyond')]
+        for aid, title, platform, api, account, words in cases:
+            with self.subTest(action=aid):
+                self.refused(aid, platform, account, NOW, 0, actions=self.renamed(aid, title, [platform], api),
+                             allowlist=allowlist(), words=words)
+
+    def test_the_seeded_actions_are_not_read_as_banned_kinds(self):
+        for aid, entry in registry()['actions'].items():
+            with self.subTest(action=aid):
+                found = audience._kind_refusals(aid, entry)
+                self.assertEqual(found, [] if aid not in audience.HANDCRAFTED else found)
+                if aid in audience.HANDCRAFTED:
+                    self.assertTrue(found)
 
     def test_an_action_without_an_official_api_is_refused(self):
         message = self.refused('pin_best_comment_on_own_post', 'youtube', 'fulltime-yt-shorts', NOW, 0,
@@ -228,6 +286,7 @@ class GateTests(unittest.TestCase):
         data['actions']['mass_liking'] = copy.deepcopy(data['actions']['reply_to_comments_on_own_posts'])
         self.refused('mass_liking', 'youtube', 'fulltime-yt-shorts', NOW, 0, actions=data, allowlist=allowlist(),
                      review_ref='r', words='mass_liking is banned')
+        self.renamed_tactics_are_refused()     # INV-AUDIENCE-BANS names this test: it covers new ids too
 
     def test_a_personal_account_is_always_refused(self):
         for scope in ('personal', None, 'other_product'):
@@ -464,6 +523,25 @@ class PlanTests(unittest.TestCase):
         self.assertTrue(all(i['who'] == 'krish' for i in capped if i['action_id'] == 'reply_to_comments_on_own_posts'))
         unlisted = daily_plan(profiles, performance, trends, 500, actions=data, now=NOW)
         self.assertTrue(all(i['who'] == 'krish' for i in unlisted))
+
+    def test_cross_promotion_goes_through_the_next_pack_never_buffer_alone(self):
+        profiles = {p: profile('tiktok', cross_links=[]) for p in audience.PLATFORMS}
+        performance = [post('tiktok', 't1', 48, follows=30, shares=12, views=4000)]
+        plan = daily_plan(profiles, performance, [], 500, actions=registry(), now=NOW)
+        cross = [i for i in plan if i['tactic'] == 'cross_promotion']
+        self.assertEqual(len(cross), 1)
+        what = cross[0]['what']
+        for words in ('next G2 matchday pack', 'by hand, the WhatsApp Channel', 'only as a pack item that clears G2'):
+            self.assertIn(words, what)
+        self.assertNotIn('story', what)
+        for item in plan:
+            with self.subTest(tactic=item['tactic']):
+                self.assertFalse(item['what'].startswith('In Buffer'))
+                self.assertNotRegex(item['what'], r'Buffer[^.:]*WhatsApp Channel')
+        two = daily_plan({'tiktok': profiles['tiktok'], 'whatsapp_channel': profiles['whatsapp_channel']},
+                         performance, [], 500, actions=registry(), now=NOW)
+        what = next(i for i in two if i['tactic'] == 'cross_promotion')['what']
+        self.assertIn('next G2 matchday pack for, by hand, the WhatsApp Channel', what)
 
     def test_the_product_brief_drops_once_sent(self):
         profiles, performance, trends = self.busy()

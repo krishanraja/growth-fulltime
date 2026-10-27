@@ -101,7 +101,8 @@ class Store(unittest.TestCase):
         identifier = new(self.local)
         for args in ((-1, 2, 2, True, False, 2), (1.5, 2, 2, True, False, 2), (True, 2, 2, True, False, 2),
                      (2, 2, -1, True, False, 2), (2, 2, 2, 'yes', False, 2), (2, 2, 2, True, 0, 2),
-                     (2, 2, 2, True, False, 1)):
+                     (2, 2, 2, True, False, 1), (2, 2, 2, True, False, 2, 0, 1), (2, 2, 2, True, False, 2, 1, 1.5),
+                     (2, 2, 2, True, False, 2, True, 1)):
             with self.subTest(args=args):
                 with self.assertRaises(ValueError):
                     observe(self.local, identifier, *args)
@@ -285,6 +286,224 @@ class Verdicts(unittest.TestCase):
     def test_the_example_verdicts_use_real_creative_ids(self):
         for verdict in self.verdicts():
             self.assertTrue(growth.CREATIVE_ID.match(verdict['creative_id']))
+
+
+class Hand(unittest.TestCase):
+    """A store in a temporary directory, and a way to hand-edit it."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.local = Path(self.tmp.name)
+        self.path = self.local / 'engine' / 'learning.json'
+        self.id = new(self.local)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def edit(self, change):
+        stored = json.loads(self.path.read_text(encoding='utf-8'))
+        change(stored['learnings'][self.id])
+        self.path.write_text(json.dumps(stored), encoding='utf-8')
+
+    def refused(self):
+        with self.assertRaisesRegex(ValueError, 'unreadable'):
+            read(self.local)
+
+
+def recompute(revision):
+    """Bring a hand-edited revision's computed fields into line with its evidence, so
+    only the rule under test can catch the edit."""
+    revision.update(learning._derived({k: revision[k] for k in learning.EVIDENCE}))
+
+
+class NoDifferenceNeedsTheCleanBar(Hand):
+    """Review wave 2: no_difference was called from overlapping, unregistered or one-matchweek evidence."""
+
+    def test_judge(self):
+        self.assertEqual(judge(30, 25, 4, True, True, 4)[0], 'directional')
+        self.assertEqual(judge(30, 25, 4, False, False, 4)[0], 'directional')
+        self.assertEqual(judge(30, 25, 4, False, True, 4)[0], 'directional')
+        self.assertEqual(judge(30, 25, 1, True, False, 1)[0], 'directional')
+        self.assertEqual(judge(30, 25, 0, True, False, 0)[0], 'directional')
+        self.assertEqual(judge(30, 25, 4, True, False, 4)[0], 'no_difference')
+
+    def test_observe(self):
+        revision = observe(self.local, self.id, 30, 25, 4, False, True, 4)
+        self.assertEqual(revision['status'], 'directional')
+        self.assertIn('not pre-registered', revision['why'])
+
+    def test_read_refuses_a_plan_under_two_matchweeks(self):
+        observe(self.local, self.id, 30, 25, 4, True, False, 4)
+
+        def shorten(entry):
+            entry['revisions'][0].update(matchweeks=1, planned_matchweeks=1)
+            recompute(entry['revisions'][0])
+        self.edit(shorten)
+        self.refused()
+
+
+class FrozenAtTheFirstObservation(Hand):
+    """Review wave 2: pre-registration and the planned duration could change after the data was seen."""
+
+    def test_preregistration_cannot_be_added_later(self):
+        observe(self.local, self.id, 60, 30, 3, False, False, 6)
+        with self.assertRaisesRegex(ValueError, 'preregistered.*new ID'):
+            observe(self.local, self.id, 60, 30, 3, True, False, 6)
+        self.assertEqual(kill_double_down(read(self.local))['double_down'], [])
+
+    def test_the_plan_cannot_be_cut_short(self):
+        observe(self.local, self.id, 30, 25, 2, True, False, 6)
+        with self.assertRaisesRegex(ValueError, 'planned_matchweeks.*new ID'):
+            observe(self.local, self.id, 30, 25, 2, True, False, 2)
+        self.assertEqual(learning.status(read(self.local)['learnings'][self.id]), 'directional')
+
+    def test_an_overlap_cannot_be_cleared(self):
+        observe(self.local, self.id, 60, 30, 3, True, True, 3)
+        with self.assertRaisesRegex(ValueError, 'overlapping.*new ID'):
+            observe(self.local, self.id, 60, 30, 3, True, False, 3)
+        observe(self.local, self.id, 70, 30, 4, True, True, 3)     # more evidence, same experiment
+        self.assertEqual(len(read(self.local)['learnings'][self.id]['revisions']), 2)
+
+    def test_read_refuses_revisions_that_disagree(self):
+        observe(self.local, self.id, 60, 30, 2, False, False, 2)
+        observe(self.local, self.id, 70, 30, 3, False, False, 2)
+
+        def register_late(entry):
+            entry['revisions'][1]['preregistered'] = True
+            recompute(entry['revisions'][1])
+        self.edit(register_late)
+        self.refused()
+
+    def test_read_refuses_a_definition_changed_after_the_data(self):
+        observe(self.local, self.id, 60, 30, 2, True, False, 2)
+        self.edit(lambda entry: entry.update(claim='Clips without the score beat clips with it'))
+        self.refused()
+
+
+class UnequalExposure(Hand):
+    """Review wave 2: z assumed equal exposure; it is now recorded per arm and scaled for."""
+
+    def test_unequal_exposure_is_not_confirmed_on_raw_counts(self):
+        status, why = judge(60, 30, 3, True, False, 3, 3, 1)
+        self.assertNotEqual(status, 'confirmed')
+        self.assertIn('|z| 1.82', why)
+        self.assertEqual(judge(60, 30, 3, True, False, 3, 1, 1)[0], 'confirmed')
+        self.assertEqual(judge(60, 30, 3, True, False, 3, 2, 2)[0], 'confirmed')
+        self.assertEqual(judge(60, 20, 3, True, False, 3, 1, 3)[0], 'confirmed')     # 60 a post against 6.7
+        lid = observe(self.local, self.id, 60, 20, 3, True, False, 3, exposure_a=1, exposure_b=3)
+        line = kill_double_down(read(self.local))['double_down'][0]['line']
+        self.assertIn('60 against 20 on exposures 1 and 3 over 3 matchweeks', line)
+        self.assertEqual(lid['status'], 'confirmed')
+
+    def test_observe_records_and_uses_exposure(self):
+        revision = observe(self.local, self.id, 60, 30, 3, True, False, 3, exposure_a=3, exposure_b=1)
+        self.assertEqual((revision['exposure_a'], revision['exposure_b'], revision['z']), (3, 1, -1.82))
+        self.assertEqual(revision['status'], 'no_difference')       # the plan ran, clean, |z| under 2
+        self.assertIn('over exposures 3 and 1', revision['why'])
+        equal = observe(self.local, self.id, 60, 30, 3, True, False, 3)
+        self.assertEqual((equal['exposure_a'], equal['exposure_b'], equal['z'], equal['status']),
+                         (1, 1, 3.16, 'confirmed'))
+        row = list(csv.DictReader(io.StringIO(export_csv(read(self.local)))))[0]
+        self.assertEqual((row['exposure_a'], row['exposure_b']), ('1', '1'))
+
+
+class ReadRecomputes(Hand):
+    """Review wave 2: read() checked only the status, not types, derived fields or CSV-bound text."""
+
+    def setUp(self):
+        super().setUp()
+        observe(self.local, self.id, 60, 30, 3, False, False, 3)
+
+    def test_a_flag_written_as_text_is_refused(self):
+        def forge(entry):
+            entry['revisions'][0]['preregistered'] = 'false'
+            entry['revisions'][0]['status'] = 'confirmed'
+        self.edit(forge)
+        self.refused()
+
+    def test_forged_counts_and_z_are_refused(self):
+        for field, value in (('z', 9.99), ('n', 5000), ('interval_a', [0.0, 1.0]), ('why', 'trust me'),
+                             ('a', 60.0), ('matchweeks', True)):
+            with self.subTest(field=field):
+                self.edit(lambda entry: entry['revisions'][0].update({field: value}))
+                self.refused()
+                self.edit(lambda entry: entry['revisions'][0].update(
+                    {field: learning._derived({k: entry['revisions'][0][k] for k in learning.EVIDENCE}).get(
+                        field, {'a': 60, 'matchweeks': 3}.get(field))}))
+                self.assertTrue(read(self.local))
+
+    def test_text_fields_and_times_are_checked(self):
+        for field, value in (('created_at', '=HYPERLINK("https://example.invalid","open")'),
+                             ('created_at', '2026-10-27'), ('applied_to', [3]), ('applied_to', ['a', 'a']),
+                             ('claim', ''), ('flip_rule', 7)):
+            with self.subTest(field=field, value=value):
+                original = read(self.local)['learnings'][self.id][field]
+                self.edit(lambda entry: entry.update({field: value}))
+                self.refused()
+                self.edit(lambda entry: entry.update({field: original}))
+        self.edit(lambda entry: entry['revisions'][0].update(observed_at='yesterday'))
+        self.refused()
+
+    def test_an_identifier_must_match_in_full(self):
+        stored = json.loads(self.path.read_text(encoding='utf-8'))
+        entry = stored['learnings'].pop(self.id)
+        entry['id'] = self.id + '\n'
+        stored['learnings'][entry['id']] = entry
+        self.path.write_text(json.dumps(stored), encoding='utf-8')
+        self.refused()
+
+    def test_csv_times_are_kept_as_text(self):
+        register = read(self.local)
+        register['learnings'][self.id]['created_at'] = '=HYPERLINK("https://example.invalid")'
+        row = list(csv.DictReader(io.StringIO(export_csv(register))))[0]
+        self.assertTrue(row['created_at'].startswith("'="))
+
+
+class ShownZ(Hand):
+    """Review wave 2: a stored z rounded to 2.0 beside a status that said |z| was under 2."""
+
+    def test_z_is_cut_toward_zero(self):
+        revision = observe(self.local, self.id, 91, 66, 2, True, False, 2)
+        self.assertEqual((revision['z'], revision['status']), (1.99, 'no_difference'))
+        self.assertTrue(revision['why'].startswith('|z| 1.99 under 2'))
+        self.assertEqual(judge(66, 91, 2, True, False, 2), ('no_difference', revision['why']))
+        self.assertEqual(learning._shown(-1.9952), -1.99)
+        self.assertEqual(learning._shown(2.0), 2.0)
+        self.assertIn('z 3.16 for a', judge(60, 30, 2, True, False, 2)[1])
+
+    def test_no_shown_z_crosses_the_bar(self):
+        for a in range(20, 400, 3):
+            for b in range(20, 400, 7):
+                z = learning.z_score(a, b)
+                self.assertEqual(abs(learning._shown(z)) >= 2, abs(z) >= 2, (a, b))
+
+
+class WeeklyProposals(Hand):
+    """Review wave 2: a double-down line through kill_proposal was titled as a stop; long
+    claims cut off the flip rule."""
+
+    def test_double_down_is_titled_as_doing_more(self):
+        observe(self.local, self.id, 60, 30, 3, True, False, 3)
+        other = new(self.local, 'Morning cards before 9 beat cards after 11')
+        observe(self.local, other, 30, 60, 3, True, False, 3)
+        result = kill_double_down(read(self.local))
+        more, stop = learning.proposal(result['double_down'][0]), learning.proposal(result['kill'][0])
+        self.assertNotIn('stop', more['title'].lower())
+        self.assertEqual(more['title'], 'Weekly review: do more of this')
+        self.assertIn(':double-down:', more['proposal_id'])
+        self.assertEqual(stop, reporting.kill_proposal(result['kill'][0]['line']))
+        schema = reporting.load_schema()['properties']['proposals']
+        self.assertEqual(reporting.schema_errors([more, stop], schema, 'proposals'), [])
+        with self.assertRaises(ValueError):
+            learning.proposal({'status': 'directional', 'line': 'x'})
+
+    def test_a_long_claim_never_cuts_off_what_flips_it(self):
+        long_id = add(self.local, 'c' * 990, 'sends per asset', 'FLIPRULE when the control leads', ['take_clip'])
+        observe(self.local, long_id, 60, 30, 3, True, False, 3)
+        item = [x for x in kill_double_down(read(self.local))['double_down'] if x['id'] == long_id][0]
+        self.assertLessEqual(len(item['line']), 1000)
+        self.assertIn('What flips it: FLIPRULE when the control leads', item['line'])
+        self.assertEqual(item['claim'], 'c' * 990)
 
 
 if __name__ == '__main__':

@@ -26,6 +26,7 @@ from pathlib import Path
 import re
 import unittest
 
+from .clock import LONDON
 from .crew import resolve
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -210,6 +211,30 @@ STATE_FIELDS = ('week_of', 'week_target', 'current', 'current_as_of', 'current_s
                 'urgency_reason')
 LADDER = re.compile(r'^\s*-\s*\[([0-9]{4}-[0-9]{2}-[0-9]{2}),\s*([0-9]+)\]\s*$', re.M)
 UNMEASURED_URGENCY = 4          # CLAUDE.md: "a number nobody measures is U4"
+# The harness contract (ai-harness contract/north-star-metric.md): U1 at or above this
+# week's target, U2 at 75% or more, U3 at 40% to 75%, U4 under 40%, unmeasured, or a
+# reading more than 7 days old. U5 needs history this line does not carry.
+BANDS = ((1.0, 1), (0.75, 2), (0.4, 3))
+STALE_READING_DAYS = 7
+MAX_READING_DAYS = 8
+
+
+def _band(current, target):
+    """The least urgency the contract allows for current against this week's target."""
+    share = current / target
+    return next((level for floor, level in BANDS if share >= floor), 4)
+
+
+def _today(today):
+    if today is None:
+        return dt.datetime.now(LONDON).date()
+    if isinstance(today, dt.datetime):
+        if today.tzinfo is None:
+            raise ValueError('today must be a date, or a date and time with its offset')
+        return today.astimezone(LONDON).date()
+    if isinstance(today, dt.date):
+        return today
+    raise ValueError('today must be a date, or a date and time with its offset')
 
 
 def _day(value):
@@ -218,10 +243,13 @@ def _day(value):
     return dt.date.fromisoformat(value)
 
 
-def now_state_errors(now_text=None, north_star_text=None):
+def now_state_errors(now_text=None, north_star_text=None, today=None):
     """Every reason the north-star-state line in NOW.md is wrong, in plain words: its
-    shape, this week's target against the ladder in docs/NORTH_STAR.md, the urgency (U1
-    to U5, and at least U4 while the number is unmeasured) and the visible line."""
+    shape, that it is for this London week (today, London, by default) with a reading at
+    most 8 days old, this week's target against the ladder in docs/NORTH_STAR.md, and the
+    urgency (U1 to U5, never below the contract's band for current against the target,
+    and at least U4 while unmeasured or read more than 7 days ago) and the visible line."""
+    today = _today(today)
     now_text = (ROOT / 'NOW.md').read_text(encoding='utf-8') if now_text is None else now_text
     if north_star_text is None:
         north_star_text = (ROOT / 'docs' / 'NORTH_STAR.md').read_text(encoding='utf-8')
@@ -243,6 +271,10 @@ def now_state_errors(now_text=None, north_star_text=None):
         return ['week_of must be a date, YYYY-MM-DD']
     if week.weekday() != 0:
         out.append(f'week_of {week.isoformat()} is not a Monday')
+    monday = today - dt.timedelta(days=today.weekday())
+    if week != monday:
+        out.append(f'the state line is for the week of {week.isoformat()}, not this week (the week of '
+                   f'{monday.isoformat()}, London): update NOW.md')
     if week.isoformat() not in ladder:
         out.append(f'week_of {week.isoformat()} is not a week on the ladder in docs/NORTH_STAR.md')
     elif state['week_target'] != ladder[week.isoformat()]:
@@ -251,10 +283,17 @@ def now_state_errors(now_text=None, north_star_text=None):
     current = state['current']
     if current is not None and (type(current) is not int or current < 0):
         out.append('current must be a whole number of 0 or more, or null when unmeasured')
+    age = None
     try:
         as_of = _day(state['current_as_of'])
         if not week <= as_of < week + dt.timedelta(days=7):
             out.append(f'current_as_of {as_of.isoformat()} is outside the week of {week.isoformat()}')
+        age = (today - as_of).days
+        if age < 0:
+            out.append(f'current_as_of {as_of.isoformat()} is after today ({today.isoformat()}, London)')
+        elif age > MAX_READING_DAYS:
+            out.append(f'current_as_of {as_of.isoformat()} is {age} days old: the line must be read within '
+                       f'{MAX_READING_DAYS} days')
     except ValueError:
         out.append('current_as_of must be a date, YYYY-MM-DD')
     for key in ('current_source', 'urgency_reason'):
@@ -266,6 +305,14 @@ def now_state_errors(now_text=None, north_star_text=None):
     else:
         if current is None and urgency < UNMEASURED_URGENCY:
             out.append(f'an unmeasured number is at least U{UNMEASURED_URGENCY}, not U{urgency}')
+        if age is not None and age > STALE_READING_DAYS and urgency < UNMEASURED_URGENCY:
+            out.append(f'a reading more than {STALE_READING_DAYS} days old is at least U{UNMEASURED_URGENCY}, '
+                       f'not U{urgency}')
+        target = state['week_target']
+        if type(current) is int and current >= 0 and type(target) is int and target > 0:
+            band = _band(current, target)
+            if urgency < band:
+                out.append(f'the contract puts {current} of {target} at U{band} or higher, not U{urgency}')
         if f'U{urgency}' not in visible:
             out.append(f'the visible North Star line does not say U{urgency}')
     return out

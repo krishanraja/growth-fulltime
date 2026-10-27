@@ -48,7 +48,7 @@ Each has `crew/<name>/card.md` (3 KB at most) and a reviewer's `lens.md` (1 KB).
 
 ## Sessions
 
-Kinds: scheduled (the CLI, no model), orchestrator, production (Codex, main checkout), review (lenses only) and build (a task card). Budgets: `engine/config/budgets.json`; Krish's minutes stay at 20 a day or fewer. `engine/session.py` builds the pack (36 KB at most) and logs each session to `local/engine/sessions.jsonl`. `engine/dispatch.py` checks task cards (`tasks/card.schema.json`) and guards the shared Codex allowance: refused above 80% or on an unknown or stale reading, unless Krish's spend decision names the card. Codex runs on `gpt-6.1-sol`.
+Kinds: scheduled (the CLI, no model), orchestrator, production (Codex, main checkout), review (lenses and rubric) and build (a task card). Budgets: `engine/config/budgets.json`; Krish's minutes stay at 20 a day or fewer. `engine/session.py` builds the pack (36 KB at most) and logs each session to `local/engine/sessions.jsonl`. `engine/dispatch.py` checks task cards (`tasks/card.schema.json`) and guards the shared Codex allowance: refused above 80% or on an unknown or stale reading, unless Krish approved its spend ask (`fulltime-codex-<card_id>`) on that exact card. Codex runs on `gpt-6.1-sol`.
 
 ## Commands
 
@@ -58,7 +58,7 @@ python3 growth.py run morning|weekly [--offline] [--require-existing-history]
 python3 growth.py cc morning|weekly|dispatch
 python3 -m unittest discover -s tests -v
 python3 scripts/verify_repository.py
-python3 scripts/baseline.py [--actions-json FILE] [--sessions-dir DIR] [--out FILE]
+python3 scripts/baseline.py [--actions-json FILE] [--run-sessions-dir DIR] [--build-sessions-dir DIR]
 ```
 
 The v2 verbs are wired as each phase lands; [ENGINE-V2.md](ENGINE-V2.md) section 2 lists them.

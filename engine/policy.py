@@ -3,14 +3,17 @@
 Since 27 October 2026 (Krish's ruling 1, ORGANIC in rulings.json): once ORGANIC is
 in force, an organic brand post needs no RELEASE hold, and RAIL becomes the
 per-take gate: the exact AI Pundit shows it promotes are published on the synced
-rail. A whole-match post still needs four of the six. CHANNEL and CONSENT apply
-either way, and the listener-shared 'whatsapp' platform stays apart from the
-brand 'whatsapp_channel'."""
+rail, from a sync under 26 hours old. A whole-match post still needs four of the
+six; whole_match must be stated, and a missing flag never counts as a per-take post.
+CHANNEL and CONSENT apply either way, and the listener-shared 'whatsapp' platform
+stays apart from the brand 'whatsapp_channel'."""
 import re
 import datetime as dt
 import json
 from pathlib import Path
 from urllib.parse import urlsplit
+
+from .records import instant
 
 VERSION = 'fulltime-brand-zero-cash-v1'
 EXCLUDED = {'invite', 'linkedin', 'hn', 'producthunt', 'press', 'creator', 'ads', 'fpl'}
@@ -21,6 +24,14 @@ IDENTITY_HOSTS = {'youtube': ('youtube.com', 'youtu.be'), 'tiktok': ('tiktok.com
                   'facebook': ('facebook.com',), 'whatsapp_channel': ('whatsapp.com',)}
 # The rail gate for a whole match: four of the six AI Pundits (growth.RAIL_MIN).
 RAIL_MIN = 4
+# A sync over 26 hours old is stale (AGENTS.md; engine/runner.py, growth.py doctor, control_center).
+SYNC_MAX_AGE = dt.timedelta(hours=26)
+# Words that claim the whole match. One copy for growth.py and this gate; engine/pack.py keeps the same pattern.
+WHOLE_MATCH_WORDS = re.compile(r'\b(?:all|every|each)\s+(?:of\s+)?(?:the\s+)?(?:six\s+|6\s+)?AI\s+Pundits?\b'
+                               # "six AI Pundits" on a match claims them all; "one of six AI Pundits" is the roster
+                               r'|(?<!of )(?<!of the )(?<!among )(?<!among the )\b(?:six|6)\s+AI\s+Pundits\b'
+                               r'|\bwhole[\s-]match\b'
+                               r'|\b(?:six|6)\s+(?:of|out\s+of)\s+(?:six|6)\b|\b6/6\b|\bfull\s+panel\b', re.I)
 INTERNAL = {'site', 'other'}
 HOLDS = {'RAIL', 'RELEASE', 'CHANNEL', 'CONSENT', 'DATA', 'ASSETS', 'APPROVAL',
          'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'}
@@ -81,25 +92,56 @@ def release_needed(state):
     return not organic_in_force(state) and not release_open(state)
 
 
+def sync_age(state, at=None):
+    """Why the synced rail is too old, future-dated or undated to trust, or '' when it is fresh."""
+    try:
+        synced = instant((state or {}).get('synced_at'))
+    except ValueError:
+        return 'the last sync has no RFC 3339 synced_at time, so its rail is not trusted: run python3 growth.py sync'
+    age = (at or dt.datetime.now(dt.timezone.utc)) - synced
+    if age < -dt.timedelta(minutes=5):
+        return 'the last sync is dated in the future, so its rail is not trusted: run python3 growth.py sync'
+    if age > SYNC_MAX_AGE:
+        return (f'the last sync is {int(age.total_seconds() // 3600)} hours old (over 26), so its rail is not '
+                'trusted: run python3 growth.py sync, re-read, redraft')
+    return ''
+
+
+def claims_whole_match(item):
+    """The words in the item's text that claim the whole match, or ''."""
+    text = item.get('text')
+    found = WHOLE_MATCH_WORDS.search(text) if isinstance(text, str) else None
+    return found.group(0) if found else ''
+
+
 def take_gate(item, state):
-    """Why an item fails the per-take gate, or '' when it passes. Its drop_id must be a
-    match on the synced rail and every AI Pundit in its pundits must have a published
-    show there. A whole-match post (whole_match true) still needs four of the six."""
-    rail = (state or {}).get('rail')
+    """Why an item fails the per-take gate, or '' when it passes. The sync must be under 26
+    hours old. whole_match must say true or false: a missing flag is never read as a per-take
+    post, and words that claim the whole match need it true. Its drop_id must be a match on the
+    synced rail, and pundits (a non-empty list, whole match or not) must name AI Pundits with a
+    published show there. A whole-match post still needs four of the six."""
+    state = state or {}
+    rail = state.get('rail')
     if not isinstance(rail, list):
         return 'the rail was not read, so nothing is promoted blind'
+    stale = sync_age(state)
+    if stale:
+        return stale
+    whole = item.get('whole_match')
+    if type(whole) is not bool:
+        return 'it must say, in whole_match, true or false, whether it claims the whole match'
+    worded = claims_whole_match(item)
+    if worded and not whole:
+        return f'the words claim the whole match ("{worded}"), so whole_match must be true'
     drop = item.get('drop_id')
     match = next((m for m in rail if isinstance(m, dict) and drop and m.get('drop') == drop), None)
     if match is None:
         return 'its drop_id is not a match on the synced rail'
+    if whole and match.get('fill', 0) < RAIL_MIN:
+        return (f'a whole-match post needs {RAIL_MIN} of 6 AI Pundits, and this match has '
+                f'{match.get("fill", 0)}')
     published = match.get('pundits') or []
     pundits = item.get('pundits')
-    if item.get('whole_match') is True:
-        if match.get('fill', 0) < RAIL_MIN:
-            return (f'a whole-match post needs {RAIL_MIN} of 6 AI Pundits, and this match has '
-                    f'{match.get("fill", 0)}')
-        if pundits is None:
-            return ''
     if not isinstance(pundits, list) or not pundits or any(not isinstance(p, str) for p in pundits):
         return 'it must name, in pundits, the AI Pundits whose published shows it promotes'
     missing = [p for p in pundits if p not in published]

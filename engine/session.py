@@ -2,9 +2,13 @@
 (docs/ENGINE-V2.md, section 5).
 
 A session starts from a pack, never from the long documents. pack() puts
-docs/ENGINE.md first, then the signed spec as canonical JSON, then the crew cards
-in play (for an independent review, their lenses only), the open findings, the
-gate status and the last report summary, and refuses anything over 36 KB.
+docs/ENGINE.md first, then the spec as canonical JSON (called signed only when its
+digest is the one Krish cleared), then the crew cards in play (for an independent
+review, their lenses only), what this kind of session works from (a review: the
+COPY.md rubric and the contact sheet; a build: its task card and read files; a
+production run: its instance and locks), the open findings, the gate status and the
+last report summary, and refuses anything over 36 KB. A part the caller did not
+supply is printed as not supplied, never as none.
 
 Every session leaves one line in local/engine/sessions.jsonl: its kind, when it
 started and ended, Claude tokens in and out, calls, engine minutes, minutes spent
@@ -32,8 +36,10 @@ BUDGET_TOP = ('_about', 'schema_version', 'kinds', 'krish_minutes_per_day')
 MAX_OUTCOME = 200
 ROOT = Path(__file__).resolve().parent.parent
 INDEX = ROOT / 'docs' / 'ENGINE.md'
+COPY = ROOT / 'COPY.md'
+RUBRIC = '## Rubric for packs'
 BUDGETS = Path(__file__).resolve().parent / 'config' / 'budgets.json'
-CREW_NAME = re.compile(r'^[a-z0-9][a-z0-9_-]{0,63}$')
+CREW_NAME = re.compile(r'[a-z0-9][a-z0-9_-]{0,63}')     # always fullmatch: '$' alone lets 'x\n' through
 
 
 def _number(value):
@@ -83,7 +89,7 @@ def _crew_names(kind, crew):
         raise ValueError('crew must be a list of crew member names, such as ["librarian"]')
     names = list(crew)
     for name in names:
-        if not isinstance(name, str) or not CREW_NAME.match(name):
+        if not isinstance(name, str) or not CREW_NAME.fullmatch(name):
             raise ValueError(f'crew member {name!r} is not a crew folder name (lowercase letters, digits, - and _)')
     if len(set(names)) != len(names):
         raise ValueError('crew names one member twice')
@@ -110,8 +116,14 @@ def _crew_section(kind, crew_dir, names):
     return '\n\n'.join(parts)
 
 
+def _not_supplied(where):
+    return f'Not supplied to this pack, so unknown here, not none: {where}.'
+
+
 def _findings_section(findings):
-    if isinstance(findings, (str, bytes, dict)) or findings is None:
+    if findings is None:
+        return '## Open findings\n\n' + _not_supplied('read docs/FAILURE-REGISTER.md')
+    if isinstance(findings, (str, bytes, dict)):
         raise ValueError('findings must be a list of open findings (text or objects)')
     lines = []
     for item in findings:
@@ -126,7 +138,7 @@ def _findings_section(findings):
 
 def _gates_section(gates):
     if gates is None:
-        return '## Gate status\n\nNo gate status recorded.'
+        return '## Gate status\n\n' + _not_supplied("read Krish's list in Control Center and local/engine/gates/")
     if not isinstance(gates, dict):
         raise ValueError('gates must be an object, such as {"G1": "waiting on Krish"}')
     lines = [f'- {key}: {value if isinstance(value, str) else reporting.canonical(value)}'
@@ -136,7 +148,7 @@ def _gates_section(gates):
 
 def _report_section(last_report):
     if last_report is None:
-        body = 'No report yet.'
+        body = _not_supplied('read local/control-center/last.json')
     elif isinstance(last_report, str):
         body = last_report.strip() or 'No report yet.'
     else:
@@ -144,9 +156,74 @@ def _report_section(last_report):
     return '## Last report summary\n\n' + body
 
 
-def pack(kind, crew_dir, crew, spec=None, findings=(), gates=None, last_report=None, index=None):
-    """The text a fresh session starts from. docs/ENGINE.md comes first (index= swaps in
-    another file, for tests). ValueError names the size when it is over PACK_LIMIT bytes."""
+def _spec_section(spec, signed_sha256):
+    if spec is None:
+        if signed_sha256 is not None:
+            raise ValueError('signed_sha256 was given without the spec it signs')
+        return '## Spec\n\nNo spec for this session.'
+    if not isinstance(spec, dict):
+        raise ValueError('spec must be the spec object')
+    digest = reporting.canonical_sha256(spec)
+    if signed_sha256 is None:
+        return f'## Spec (not signed)\n\nsha256 {digest}\n\n' + reporting.canonical(spec)
+    if signed_sha256 != digest:
+        raise ValueError(f'the spec is sha256 {digest}, not the {signed_sha256} Krish signed; '
+                         'a changed spec needs his Clear again')
+    return f'## Signed spec\n\nsha256 {digest}\n\n' + reporting.canonical(spec)
+
+
+def _rubric(copy_path):
+    try:
+        text = Path(copy_path).read_text(encoding='utf-8')
+    except OSError:
+        raise ValueError(f'{copy_path}: is missing; a review pack carries its rubric')
+    start = text.find('\n' + RUBRIC)
+    if start < 0:
+        raise ValueError(f'{copy_path}: has no "{RUBRIC[3:]}" section')
+    end = text.find('\n## ', start + 1)
+    return text[start + 1:end if end >= 0 else len(text)].strip().replace(RUBRIC, '## COPY.md: ' + RUBRIC[3:], 1)
+
+
+def _work_section(kind, card, contact_sheet, instance, locks, copy_path):
+    """What this kind of session works from (docs/ENGINE-V2.md, section 5)."""
+    given = {'card': card, 'contact_sheet': contact_sheet, 'instance': instance, 'locks': locks}
+    allowed = {'review': ('contact_sheet',), 'build': ('card',), 'production': ('instance', 'locks')}.get(kind, ())
+    stray = [key for key, value in given.items() if value is not None and key not in allowed]
+    if stray:
+        raise ValueError(f'a {kind} pack does not carry {", ".join(stray)}')
+    if kind == 'review':
+        if contact_sheet is not None and not (isinstance(contact_sheet, str) and contact_sheet.strip()):
+            raise ValueError('contact_sheet must be the contact sheet\'s path or link')
+        sheet = contact_sheet.strip() if contact_sheet else _not_supplied('ask for the contact sheet')
+        return _rubric(copy_path) + '\n\n## Contact sheet\n\n' + sheet
+    if kind == 'build':
+        if card is None:
+            return '## Task card\n\n' + _not_supplied('the card names what this build reads and writes')
+        from . import dispatch
+        errors = dispatch.validate_card(card)
+        if errors:
+            raise ValueError('the task card is refused: ' + '; '.join(errors))
+        reads = '\n'.join('- ' + path for path in card['read_files']) or 'None: the card reads nothing.'
+        return (f'## Task card {card["card_id"]}\n\n' + reporting.canonical(card)
+                + '\n\n### Read these files, and only these\n\n' + reads)
+    if kind == 'production':
+        parts = []
+        for title, value in (('Instance', instance), ('Locks', locks)):
+            if value is not None and not isinstance(value, dict):
+                raise ValueError(f'{title.lower()} must be an object')
+            parts.append(f'## {title}\n\n' + (reporting.canonical(value) if value is not None
+                                                 else _not_supplied('read the run folder in Growth Build')))
+        return '\n\n'.join(parts)
+    return None
+
+
+def pack(kind, crew_dir, crew, spec=None, findings=None, gates=None, last_report=None, index=None,
+         signed_sha256=None, card=None, contact_sheet=None, instance=None, locks=None, copy=None):
+    """The text a fresh session starts from. docs/ENGINE.md comes first (index= and copy=
+    swap in other files, for tests). None means not supplied, printed as unknown, never
+    as none: findings=[] is what says none are open. The spec is labelled signed only
+    when signed_sha256 (the digest of the spec Krish cleared) equals its digest; a
+    mismatch is refused. ValueError names the size when it is over PACK_LIMIT bytes."""
     if kind not in KINDS:
         raise ValueError(f'session kind {kind!r} is not one of {", ".join(KINDS)}')
     if kind == 'scheduled':
@@ -157,15 +234,11 @@ def pack(kind, crew_dir, crew, spec=None, findings=(), gates=None, last_report=N
         head = index_path.read_text(encoding='utf-8').strip()
     except OSError:
         raise ValueError(f'{index_path}: is missing; a pack starts from docs/ENGINE.md')
-    if spec is None:
-        spec_part = '## Signed spec\n\nNo signed spec for this session.'
-    elif not isinstance(spec, dict):
-        raise ValueError('spec must be the signed spec object')
-    else:
-        spec_part = f'## Signed spec\n\nsha256 {reporting.canonical_sha256(spec)}\n\n' + reporting.canonical(spec)
-    sections = [head, f'# Session pack: {kind}', spec_part, _crew_section(kind, crew_dir, names),
-                _findings_section(findings), _gates_section(gates), _report_section(last_report)]
-    text = '\n\n'.join(sections) + '\n'
+    work = _work_section(kind, card, contact_sheet, instance, locks, copy or COPY)
+    sections = [head, f'# Session pack: {kind}', _spec_section(spec, signed_sha256),
+                _crew_section(kind, crew_dir, names), work, _findings_section(findings), _gates_section(gates),
+                _report_section(last_report)]
+    text = '\n\n'.join(part for part in sections if part is not None) + '\n'
     size = len(text.encode('utf-8'))
     if size > PACK_LIMIT:
         raise ValueError(f'the {kind} pack is {size} bytes, over the {PACK_LIMIT}-byte limit (36 KB); '
@@ -218,7 +291,8 @@ def ledger_append(local_dir, record):
         raise ValueError('the session record is refused: ' + '; '.join(errors))
     path = Path(local_dir) / 'engine' / 'sessions.jsonl'
     path.parent.mkdir(parents=True, exist_ok=True)
-    line = json.dumps({key: record[key] for key in LEDGER_FIELDS}, ensure_ascii=False, allow_nan=False,
+    # ASCII escapes, so a U+2028 or U+0085 in an outcome never splits the line for any reader.
+    line = json.dumps({key: record[key] for key in LEDGER_FIELDS}, ensure_ascii=True, allow_nan=False,
                       separators=(',', ':'))
     with open(path, 'a', encoding='utf-8', newline='\n') as handle:
         handle.write(line + '\n')
@@ -229,7 +303,8 @@ def read_ledger(ledger_path):
     """Every record in the ledger, each checked again; ValueError names a bad line."""
     path = Path(ledger_path)
     records = []
-    for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+    # One record per '\n', never splitlines(): it also breaks at U+2028, U+2029 and U+0085.
+    for number, line in enumerate(path.read_text(encoding='utf-8').split('\n'), 1):
         if not line.strip():
             continue
         try:

@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from engine import control_center, formats, ga4, gates, pack, reporting
 from tests.test_pack import allowlist, media, take
@@ -213,6 +214,78 @@ class GateLoop(unittest.TestCase):
         self.assertEqual(spec.digest(signed['spec']), spec.digest(example))
 
 
+class G2Closes(unittest.TestCase):
+    """An approved G2 matchday ask closes with a creative_published event naming the G2
+    proposal, once every item Krish kept carries his permalink read back from Buffer."""
+
+    def setUp(self):
+        self.local = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.local)
+        _, self.proposal = queued_pack(self.local, '2026-11-01', take_on('drop-a', 1), take_on('drop-b', 2),
+                                       drops=('drop-a', 'drop-b'))
+        self.report = report_with_gates(self.local)
+        self.sent = next(p for p in self.report['proposals'] if p['proposal_id'] == self.proposal['proposal_id'])
+        self.items = json.loads(self.sent['exact_payload'])['items']
+
+    def receipt(self, n, at):
+        item = self.items[n]
+        return {'creative_id': item['creative_id'], 'channel': item['channel'],
+                'permalink': f'https://www.tiktok.com/@fulltime/video/{n + 1}', 'published_at': at}
+
+    def answer(self, decision):
+        gates.settle(self.local, control_center.classify([decision], self.report['proposals']))
+
+    def test_it_closes_once_every_item_is_posted_and_never_before(self):
+        pid = self.proposal['proposal_id']
+        first, second = self.receipt(0, '2026-11-01T19:00:00Z'), self.receipt(1, '2026-11-01T20:30:00+00:00')
+        self.assertEqual(gates.record_receipts(self.local, [first]), {'recorded': 1, 'gates': [pid]})
+        self.assertEqual(gates.events(self.local, '2026-10-26'), [])           # still waiting on Krish
+        self.answer({'proposal_id': pid, 'decision': 'approved', 'payload_sha256': self.sent['payload_sha256']})
+        self.assertEqual(gates.events(self.local, '2026-10-26'), [])           # one item of two posted
+        self.assertEqual(gates.record_receipts(self.local, [first, second])['recorded'], 1)
+        self.assertEqual(gates.record_receipts(self.local, [first, second])['recorded'], 0)
+        events = gates.events(self.local, '2026-10-26')
+        self.assertEqual(events, [{'event': 'creative_published', 'proposal_id': pid,
+                                   'at': '2026-11-01T20:30:00Z', 'evidence_url': first['permalink']}])
+        self.assertEqual(gates.events(self.local, '2026-11-02'), [])           # before this week's window
+        built = reporting.build('fulltime:2026-11-02:daily', 'live', '2026-11-02T06:00:00Z', rail('drop-a'), [],
+                                {}, [], ['test'], events=events)
+        self.assertEqual(reporting.schema_errors(built), [])
+        self.assertEqual([e['proposal_id'] for e in built['events']], [pid])
+        rows = (self.local / 'engine' / 'receipts.jsonl').read_text(encoding='utf-8').splitlines()
+        self.assertEqual(len(rows), 2)
+
+    def test_a_rejected_item_needs_no_post_and_a_declined_pack_never_closes(self):
+        mine = json.loads(self.sent['exact_payload'])
+        del mine['items'][1]
+        self.answer(amended(self.sent, mine))
+        gates.record_receipts(self.local, [self.receipt(0, None)])
+        events = gates.events(self.local, '2026-10-26')
+        self.assertEqual([(e['proposal_id'], e['evidence_url']) for e in events],
+                         [(self.proposal['proposal_id'], 'https://www.tiktok.com/@fulltime/video/1')])
+        other = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, other)
+        _, declined = queued_pack(other, '2026-11-01', take_on('drop-a', 1), drops=('drop-a',))
+        report = report_with_gates(other)
+        sent = next(p for p in report['proposals'] if p['proposal_id'] == declined['proposal_id'])
+        gates.settle(other, control_center.classify([{'proposal_id': sent['proposal_id'], 'decision': 'declined',
+                                                      'payload_sha256': sent['payload_sha256']}], report['proposals']))
+        item = json.loads(sent['exact_payload'])['items'][0]
+        gates.record_receipts(other, [{'creative_id': item['creative_id'], 'channel': item['channel'],
+                                       'permalink': 'https://www.tiktok.com/@fulltime/video/9',
+                                       'published_at': '2026-11-01T19:00:00Z'}])
+        self.assertEqual(gates.events(other, '2026-10-26'), [])
+
+    def test_a_receipt_that_is_not_buffers_shape_is_refused(self):
+        good = self.receipt(0, '2026-11-01T19:00:00Z')
+        for bad in ({**good, 'permalink': 'http://www.tiktok.com/@fulltime/video/1'}, {**good, 'extra': 1},
+                    {**good, 'published_at': '2026-11-01'}, {**good, 'creative_id': ''},
+                    {k: v for k, v in good.items() if k != 'channel'}):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                gates.record_receipts(self.local, [bad])
+        self.assertFalse((self.local / 'engine' / 'receipts.jsonl').exists())
+
+
 class RulingOneInReports(unittest.TestCase):
     def rulings(self, organic='approved'):
         return {'D2': {'status': 'pending', 'unlocks': ['tiktok'], 'title': 'D2', 'recommendation': 'r'},
@@ -250,27 +323,81 @@ class WeeklyLibrary(unittest.TestCase):
         self.listing, self.rows = example['listing'], example['index']
         (self.local / 'library' / 'INDEX.csv').write_text(library.write_index(self.rows), encoding='utf-8')
 
-    def write_listing(self, listing):
-        (self.local / 'library' / 'listing.json').write_text(json.dumps({'listing': listing}), encoding='utf-8')
+    NOW = dt.datetime(2026, 11, 2, 8, 0, tzinfo=dt.timezone.utc)
+
+    def write_listing(self, listing, read_at='2026-11-01T21:00:00Z'):
+        document = {'listing': listing} if read_at is None else {'read_at': read_at, 'listing': listing}
+        (self.local / 'library' / 'listing.json').write_text(json.dumps(document), encoding='utf-8')
+
+    def check(self):
+        return control_center.library_check(self.local, self.NOW)
 
     def test_a_clean_library_holds_nothing_and_sprawl_leads_the_report(self):
         self.write_listing(self.listing)
-        line, held = control_center.library_check(self.local)
+        line, held = self.check()
         self.assertEqual(held, [])
         self.assertIn('reconciled clean', line)
         self.write_listing(self.listing + [{'path': 'Random stuff', 'bytes': None, 'is_folder': True},
                                            {'path': 'Random stuff/notes.txt', 'bytes': 10, 'is_folder': False}])
-        line, held = control_center.library_check(self.local)
+        line, held = self.check()
         self.assertEqual(held[0][0], 'LIBRARY')
         report = reporting.build('fulltime:2026-11-02:weekly', 'synthetic', '2026-11-02T08:00:00Z',
                                  {'push': {'open': False, 'why': 'thin'}}, [], {}, [], [line], extra_holds=held)
         self.assertEqual(report['holds'][0]['reason'], 'LIBRARY')
 
-    def test_without_a_listing_it_says_so_and_holds_nothing(self):
-        (self.local / 'library' / 'INDEX.csv').unlink()
-        line, held = control_center.library_check(self.local)
-        self.assertEqual(held, [])
+    def test_without_a_listing_it_says_so_and_holds(self):
+        # Was test_without_a_listing_it_says_so_and_holds_nothing: unknown is never clean
+        # (ENGINE-V2.md 2a rule 7), so a missing listing or index is now a LIBRARY hold.
+        line, held = self.check()
         self.assertIn('not reconciled', line)
+        self.assertEqual([code for code, _ in held], ['LIBRARY'])
+        self.write_listing(self.listing)
+        (self.local / 'library' / 'INDEX.csv').unlink()
+        line, held = self.check()
+        self.assertIn('not reconciled', line)
+        self.assertEqual([code for code, _ in held], ['LIBRARY'])
+
+    def test_a_stale_or_undated_listing_is_never_this_weeks_clean_reconcile(self):
+        for read_at in ('2026-09-03T09:00:00Z', None, '2026-11-01', 'yesterday', '2026-11-09T09:00:00Z'):
+            with self.subTest(read_at=read_at):
+                self.write_listing(self.listing, read_at=read_at)
+                line, held = self.check()
+                self.assertNotIn('reconciled clean', line)
+                self.assertIn('not reconciled', line)
+                self.assertEqual([code for code, _ in held], ['LIBRARY'])
+        self.write_listing(self.listing, read_at='2026-10-26T08:00:00+00:00')   # exactly 7 days back
+        self.assertEqual(self.check()[1], [])
+        self.write_listing(self.listing, read_at='2026-10-26T07:59:59+00:00')
+        self.assertEqual(self.check()[1][0][0], 'LIBRARY')
+
+
+class CompleterObjective(unittest.TestCase):
+    def row(self, source, query_ref, value=37):
+        start, end = reporting.week_window(TODAY)[:2]
+        return {'metric': 'attributed_new_completers', 'value': value, 'source': source, 'query_ref': query_ref,
+                'window_start': start.isoformat(), 'window_end': end.isoformat(),
+                'observed_at': '2026-10-27T06:00:00Z', 'status': 'measured'}
+
+    def setUp(self):
+        moment = dt.datetime(2026, 10, 27, 7, tzinfo=dt.timezone.utc)
+        clock = patch.object(reporting, 'utc_now', lambda: moment)
+        clock.start()
+        self.addCleanup(clock.stop)
+
+    def test_a_google_analytics_row_is_never_reported_as_completers(self):
+        for source, ref in (('ga4', 'runReport synthetic'), ('Google Analytics', 'landings'),
+                            ('product', 'ga4:synthetic-landings')):
+            with self.subTest(source=source):
+                first = reporting.objectives(TODAY, [self.row(source, ref)], {})[0]
+                self.assertEqual((first['key'], first['value'], first['availability']),
+                                 ('attributed_new_completers', None, 'missing'))
+                self.assertIn('web landings', first['reason'])
+
+    def test_the_products_own_row_still_counts(self):
+        first = reporting.objectives(TODAY, [self.row('full-time product', 'completers-weekly synthetic', 4)], {})[0]
+        self.assertEqual((first['value'], first['availability']), (4, 'measured'))
+        both = [self.row('ga4', 'runReport synthetic'), self.row('full-time product', 'completers-weekly synthetic', 4)]
+        self.assertEqual(reporting.objectives(TODAY, both, {})[0]['value'], 4)
 
 
 class Capabilities(unittest.TestCase):

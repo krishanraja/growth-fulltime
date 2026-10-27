@@ -11,7 +11,8 @@
   "write_allow": [
     "engine/formats/match_ad/tv_mix.py",
     "tests/test_match_ad_tv_mix.py",
-    "local/reference/v8.mix.json"
+    "local/reference/v8.mix.json",
+    "local/reference/v8-port.mp3"
   ],
   "read_files": [
     "docs/ENGINE.md",

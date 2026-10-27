@@ -260,8 +260,10 @@ class MeasurementTests(unittest.TestCase):
         self.assertIsNone(self.score(rows)['return_rate_7d']['value'])
 
     def test_stale_counts_do_not_make_current_rates(self):
+        # Captured four days ago, after its one-day window (five days ago) had ended in London.
         old = dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=4)
-        row = observation(observed_at=old.isoformat(),window_start=str(old.date()),window_end=str(old.date()))
+        day = str((old-dt.timedelta(days=1)).date())
+        row = observation(observed_at=old.isoformat(),window_start=day,window_end=day)
         result = scorecard([row],row['window_start'],row['window_end'])
         self.assertEqual(result['unique_completers']['status'],'stale')
 

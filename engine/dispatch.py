@@ -7,18 +7,21 @@ commands and the shape of its answer. validate_card() is the enforcement and
 tasks/card.schema.json describes the same shape for people and tooling.
 
 guard() is the allowance guard. The Codex allowance is shared by every venture, so
-a Codex card is refused when the reading is unknown, stale or above 80%, unless a
-spend decision from Krish names that exact card. command() only builds the argv for
-codex-companion; this module never starts a process. After a run, Claude reruns the
+a Codex card is refused when the reading is unknown, stale or above 80%, unless Krish
+approved spend_proposal() for that exact card: his approval binds the card's
+canonical JSON and the amount, so a changed card needs a new approval. command()
+only builds the argv for codex-companion; this module never starts a process. After a run, Claude reruns the
 acceptance commands outside the sandbox and outside_write_allow() checks the diff:
 Codex's own report is never evidence."""
 import datetime as dt
 from fnmatch import fnmatchcase
+import json
 import math
 import os
+from pathlib import Path
 import re
 
-from . import reporting
+from . import records, reporting
 
 PINNED_CODEX_MODEL = 'gpt-6.1-sol'
 REFUSED_MODELS = ('gpt-6-astra',)
@@ -31,13 +34,18 @@ REQUIRED = ('card_id', 'kind', 'executor', 'model', 'effort', 'max_minutes', 'ma
             'read_files', 'never', 'interface', 'acceptance', 'return_shape')
 OPTIONAL = ('worktree', 'goal')
 MAX_MINUTES, MAX_CALLS, MAX_READ_FILES = 120, 400, 5
+PRODUCTION_MAX_MINUTES = 30        # engine/config/budgets.json kinds.production.max_engine_minutes
 ALLOWANCE_CEILING = 80
 READING_MAX_AGE = dt.timedelta(hours=1)
 WORKTREE_ROOT = '../growth-fulltime-wt/'
-CARD_ID = re.compile(r'^[a-z0-9-]+$')
+CARD_ID = re.compile(r'[a-z0-9-]+')            # always fullmatch: '$' alone lets 'abc\n' through
 DRIVE = re.compile(r'^[A-Za-z]:')
 GLOB = re.compile(r'[*?\[]')
-GIT_PROBES = ('.git/config', '.git/HEAD', '.git/hooks/pre-commit')
+GIT_PROBES = ('.git/config', '.git/head', '.git/hooks/pre-commit')
+GIT_SHORT = re.compile(r'git~\d+')               # the 8.3 name Windows may give .git
+SPEND_PREFIX = reporting.SLUG + '-codex-'
+CARD_ID_MAX = 120 - len(SPEND_PREFIX)           # so fulltime-codex-<card_id> fits a proposal id
+SHA256 = re.compile(r'[0-9a-f]{64}')
 
 
 def _text(value):
@@ -57,10 +65,15 @@ def _path_errors(value, path, globs):
         out.append(f'{path}: {value!r} contains ..; a card never reaches outside the repository')
     if not globs and GLOB.search(value):
         out.append(f'{path}: {value!r} is a glob; name each file to read')
-    segments = value.split('/')
-    if ('.git' in segments or fnmatchcase('.git', segments[0])
-            or any(fnmatchcase(probe, value) for probe in GIT_PROBES)):
+    # NTFS is case-insensitive and drops trailing dots and spaces, so .GIT and '.git.' are .git there.
+    lowered = value.lower()
+    segments = [segment.rstrip('. ') for segment in lowered.split('/')]
+    if ('.git' in segments or any(GIT_SHORT.fullmatch(segment) for segment in segments)
+            or fnmatchcase('.git', segments[0]) or any(fnmatchcase(probe, lowered) for probe in GIT_PROBES)):
         out.append(f'{path}: {value!r} touches .git')
+    elif globs and GLOB.match(value):
+        out.append(f'{path}: {value!r} touches .git: a glob that starts with a wildcard can reach .git; '
+                   'start it with a folder or file name')
     return out
 
 
@@ -99,8 +112,10 @@ def validate_card(card):
     out = [f'card.{key}: is required' for key in REQUIRED if key not in card]
     out += [f'card.{key}: unknown field' for key in card if key not in REQUIRED + OPTIONAL]
     card_id, kind = card.get('card_id'), card.get('kind')
-    if not isinstance(card_id, str) or not CARD_ID.match(card_id):
+    if not isinstance(card_id, str) or not CARD_ID.fullmatch(card_id):
         out.append('card.card_id: must be lowercase letters, digits and hyphens only')
+    elif len(card_id) > CARD_ID_MAX:
+        out.append(f'card.card_id: is {len(card_id)} characters; at most {CARD_ID_MAX}, so its spend proposal id fits')
     if kind not in KINDS:
         out.append('card.kind: must be build or production')
     if card.get('executor') not in EXECUTORS:
@@ -112,6 +127,10 @@ def validate_card(card):
         value = card.get(key)
         if type(value) is not int or not 1 <= value <= most:
             out.append(f'card.{key}: must be a whole number from 1 to {most}')
+    minutes = card.get('max_minutes')
+    if kind == 'production' and type(minutes) is int and minutes > PRODUCTION_MAX_MINUTES:
+        out.append(f'card.max_minutes: a production card runs for at most {PRODUCTION_MAX_MINUTES} Codex minutes '
+                   '(engine/config/budgets.json), not ' + str(minutes))
     if kind == 'build':
         expected = WORKTREE_ROOT + (card_id if isinstance(card_id, str) else '<card_id>')
         if card.get('worktree') != expected:
@@ -183,22 +202,98 @@ def _reading_problem(reading, now):
     return None
 
 
-def _decision_problem(card, decision):
-    if decision is None:
+def _amount(value):
+    return type(value) in (int, float) and math.isfinite(value) and value >= 0
+
+
+def spend_digest(card, amount_usd):
+    """What Krish's yes binds: the canonical JSON of exactly {amount_usd, exact_payload},
+    the card's canonical JSON as exact_payload. It is the shape Control Center hashes for
+    amended_sha256, so his plain yes and his amended yes are checked the same way."""
+    return reporting.canonical_sha256({'amount_usd': amount_usd, 'exact_payload': reporting.canonical(card)})
+
+
+def spend_proposal(card, amount_usd, expires_at):
+    """The Control Center 'spend' ask that lets one Codex card use the shared allowance
+    above 80%: prepared, behind the spend wall, with the card's canonical JSON as
+    exact_payload so Krish sees and can amend exactly what runs. The proposal_id is
+    stable (fulltime-codex-<card_id>), so a changed card comes back to him."""
+    errors = validate_card(card)
+    if errors:
+        raise ValueError('the card is refused: ' + '; '.join(errors))
+    if card['executor'] != 'codex':
+        raise ValueError(f'card {card["card_id"]}: only a Codex card spends the Codex allowance')
+    if not _amount(amount_usd):
+        raise ValueError('amount_usd must be a number of 0 or more: a spend always names its amount')
+    try:
+        records.instant(expires_at)
+    except ValueError as error:
+        raise ValueError(f'expires_at: {error}')
+    pid = SPEND_PREFIX + card['card_id']
+    exact = reporting.canonical(card)
+    why = (f'The shared Codex allowance is unknown, stale or above {ALLOWANCE_CEILING}%. Approving lets exactly '
+           f'this {card["kind"]} card ({card["max_minutes"]} minutes, {card["max_calls"]} calls, {card["model"]}, '
+           f'effort {card["effort"]}) use it once Claude dispatches it. Any change to the card needs a new approval.')
+    return reporting._proposal(
+        pid, f'Codex allowance for card {card["card_id"]}', why, 'prepared', 'spend',
+        {'amount_usd': amount_usd, 'exact_payload': exact}, 'codex_card_dispatched', card['card_id'],
+        exact_payload=exact, expires_at=expires_at, amount_usd=amount_usd,
+        evidence=[{'label': 'Allowance guard, docs/ENGINE-V2.md section 6',
+                   'url': reporting.REPO_URL + '/blob/main/docs/ENGINE-V2.md'}])
+
+
+def _decision_problem(card, approval):
+    """None when approval is Krish's approved spend for exactly this card: the entry
+    engine/control_center.classify makes under 'approved' (amended, stage, exact_payload,
+    amount_usd, sha256), or the line record_instructions keeps of it in
+    local/control-center/instructions.jsonl (the same, without exact_payload)."""
+    if approval is None:
         return 'no spend decision names this card'
-    if not isinstance(decision, dict) or not _text(decision.get('decision_id')):
-        return 'the spend decision has no decision_id'
-    if decision.get('approved') is not True:
-        return f'spend decision {decision["decision_id"]} is not an approval'
-    if decision.get('card_id') != card.get('card_id'):
-        return f'spend decision {decision["decision_id"]} names {decision.get("card_id")!r}, not this card'
+    if validate_card(card):
+        return 'the card is not valid, so no spend decision can name it'
+    pid = SPEND_PREFIX + card['card_id']
+    if (not isinstance(approval, dict) or type(approval.get('amended')) is not bool or 'stage' not in approval
+            or not isinstance(approval.get('sha256'), str) or not SHA256.fullmatch(approval['sha256'])):
+        return ('the spend decision is not an approval Control Center classified '
+                '(it needs amended, stage, amount_usd and sha256)')
+    if approval.get('proposal_id', pid) != pid:
+        return f'the spend decision answers {approval.get("proposal_id")!r}, not {pid}'
+    if approval.get('wall', 'spend') != 'spend' or approval['stage'] not in (None, 'go_live'):
+        return f'the decision on {pid} is not a spend approval'
+    amount = approval.get('amount_usd')
+    if not _amount(amount):
+        return f'the spend approval of {pid} has no amount_usd'
+    if 'exact_payload' in approval and approval['exact_payload'] != reporting.canonical(card):
+        return f'the spend approval of {pid} was given on a different card: its exact_payload is not this card'
+    if approval['sha256'] != spend_digest(card, amount):
+        return (f'the spend approval of {pid} was given on a different payload: its sha256 is not this card '
+                f'at {amount:g} USD, so a changed card needs a new approval')
     return None
+
+
+def recorded_approval(local, card):
+    """The latest approval of spend_proposal(card) the loop recorded, once per approved
+    spend, in <local>/control-center/instructions.jsonl (control_center.record_instructions),
+    or None. It is only read here: guard() still checks it against the card."""
+    path = Path(local) / 'control-center' / 'instructions.jsonl'
+    pid, found = SPEND_PREFIX + str(card.get('card_id') if isinstance(card, dict) else None), None
+    if not path.is_file():
+        return None
+    for line in path.read_text(encoding='utf-8').split('\n'):
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(row, dict) and row.get('proposal_id') == pid:
+            found = row
+    return found
 
 
 def guard(card, reading, now, spend_decision=None):
     """None when the card may use the Codex allowance, else ValueError saying why.
-    reading = {'pct': number, 'read_at': ISO time}; spend_decision = {'decision_id',
-    'approved': True, 'card_id'} from Krish's spend decision in Control Center."""
+    reading = {'pct': number, 'read_at': ISO time}; spend_decision is Krish's approval
+    of spend_proposal(card, ...) as Control Center classified it (see _decision_problem).
+    A hand-written {'approved': True} or an approval of an earlier version of the card is refused."""
     if not isinstance(card, dict) or card.get('executor') not in EXECUTORS:
         raise ValueError('card.executor must be codex or claude before the guard can read it')
     if card['executor'] != 'codex':
@@ -212,8 +307,10 @@ def guard(card, reading, now, spend_decision=None):
     refusal = _decision_problem(card, spend_decision)
     if refusal is None:
         return None
-    raise ValueError(f'card {card.get("card_id")}: {problem}, and {refusal}. Codex work needs a spend '
-                     'decision from Krish in Control Center that names this card.')
+    card_id = card.get('card_id')
+    pid = SPEND_PREFIX + card_id if isinstance(card_id, str) and CARD_ID.fullmatch(card_id) else 'for it'
+    raise ValueError(f'card {card_id}: {problem}, and {refusal}. Codex work needs Krish to approve '
+                     f'the spend proposal {pid} on this exact card in Control Center.')
 
 
 def command(card, plugin_root, prompt_file):

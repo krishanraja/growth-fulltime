@@ -211,8 +211,18 @@ class DigestAndReportTests(unittest.TestCase):
         self.assertIn('YT_PROOF_SHORT_C01_H01_V1_20261017', next(h for h in report['holds'] if h['reason'] == 'D1')['detail'])
         walls = {p['proposal_id']: p['wall'] for p in report['proposals']}
         self.assertEqual(walls['fulltime:action:rail'], 'none')
-        for rid in ('release', 'D1', 'D2', 'D3', 'D7'):
-            self.assertEqual(walls[f'fulltime:ruling:{rid}'], 'strategy')
+        # One ask at a time holds for the standing rulings too: one new strategy ask per
+        # report, D7 (the consent item) first, and the rest named as waiting their turn.
+        self.assertEqual([pid for pid, wall in walls.items() if wall == 'strategy'], ['fulltime:ruling:D7'])
+        line = report['activity'][-1]['line']
+        self.assertTrue(line.startswith('One ask at a time'), line)
+        for rid in ('release', 'D1', 'D2', 'D3'):
+            self.assertIn(f'fulltime:ruling:{rid}', line)
+            self.assertNotIn(f'fulltime:ruling:{rid}', walls)
+        rulings = rulings_on_19_october()
+        for rid in ('D1', 'D2', 'D3', 'D7'):
+            self.assertEqual(reporting.ruling_proposal(rid, rulings[rid])['wall'], 'strategy')
+        self.assertEqual(reporting.release_proposal()['wall'], 'strategy')
         for rid in ('D4', 'D5', 'D6'):
             self.assertNotIn(f'fulltime:ruling:{rid}', walls)
             self.assertIn(rid, reasons)
@@ -369,7 +379,12 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(self.server.reports, {})
 
     def test_decisions_count_only_on_the_same_payload(self):
-        report = sample_report()
+        # D1, D2 and D3 wait their turn behind D7 in a fresh report, so they are put on
+        # it here: an answer counts only for an ask in the report.
+        rulings = rulings_on_19_october()
+        base = sample_report()
+        report = reporting.seal({**base, 'proposals': base['proposals'] + [
+            reporting.ruling_proposal(rid, rulings[rid]) for rid in ('D1', 'D2', 'D3')]})
         d1 = next(p for p in report['proposals'] if p['proposal_id'] == 'fulltime:ruling:D1')
         self.server.decisions = [
             {'proposal_id': d1['proposal_id'], 'decision': 'approved', 'decided_at': '2026-10-18T20:00:00Z',
@@ -441,8 +456,11 @@ class EntryPointTests(unittest.TestCase):
         self.assertIn(cash['availability'], ('measured', 'missing'))
 
     def test_weekly_review_maps_its_kill_list_to_strategy(self):
+        # Every standing ruling answered, so the kill is the one strategy ask this report.
+        answered = {rid: {**r, 'status': 'approved'} for rid, r in growth.load_rulings().items()}
         with tempfile.TemporaryDirectory() as root, patch.object(growth, 'LOCAL', root), \
-                patch.object(growth, 'load_state', return_value=sample_state()):
+                patch.object(growth, 'load_state', return_value=sample_state()), \
+                patch.object(growth, 'load_rulings', return_value=answered):
             code, text = self.run_cli(['cc', 'weekly', '--offline', '--synthetic'], {cc.TOKEN_ENV: TOKEN})
         self.assertEqual(code, 0, text)
         report = next(iter(self.server.reports.values()))

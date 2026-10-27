@@ -1,12 +1,16 @@
 """The Measurement Analyst (docs/ENGINE-V2.md, crew row 8; MEASUREMENT.md, "Share
 attribution and Google Analytics").
 
-The North Star is share_arrived_new_listeners: new listeners whose first finished
-listen came within seven days of a Full Time share token, counted inside the product
-and exported as a weekly aggregate once the product builds the join.
-brand_post_new_listeners counts first finished listens from a brand post's link,
-read from the creative ID in utm_content, from the same export. Both reach Control
-Center as objectives with a rough Poisson interval, or as null with the reason.
+The North Star is share_arrived_new_listeners: new listeners a week who arrived
+through a fan's shared link (docs/NORTH_STAR.md). The product stores a new
+identity's first touch once, on its first visit, and counts it as share-arrived
+only when that first touch carried a valid share token and the first finished show
+came within seven days of it; the join runs inside the product and leaves it as a
+weekly aggregate (briefs/2026-10-27-share-attribution.md). brand_post_new_listeners
+is the same join for a first touch with a brand post's creative ID in utm_content
+and no token, from the same export, with an optional per-creative breakdown. Both
+reach Control Center as objectives with a rough Poisson interval, or as null with
+the reason.
 
 Google Analytics 4 runs on fulltime.fm (property G-W2QL8RKFJ1, page views only;
 consent item D7 is still open). Its landings by creative ID are a leading web
@@ -28,6 +32,7 @@ GA4_COUNTS = ('new_users', 'sessions', 'engaged_sessions')
 GA4_METRICS = ('ga4_landing_new_users', 'ga4_landing_sessions')
 UNTAGGED = '(not set)'
 LISTENER_OBJECTIVES = ('share_arrived_new_listeners', 'brand_post_new_listeners')
+UNTOKENISED = 'untokenised_new_listeners'
 STALE_AFTER = dt.timedelta(hours=48)
 DATE = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
 # Field names that identify a person, a browser or a device. Compared after
@@ -40,8 +45,8 @@ PERSON_PART = re.compile(r'email|phone|mobile|cookie|fingerprint|useragent|'
                          r'session|advertising|pseudo|install|instance|contact)(id|identifier|key|hash)')
 NO_EXPORT = {
     'share_arrived_new_listeners':
-        'No product export yet: the share token and its join to the first finished listen within 7 days '
-        'are not built in the product (MEASUREMENT.md, share attribution).',
+        'No product export yet: the share token, the first touch and its join to a first finished show '
+        'within 7 days are not built in the product (MEASUREMENT.md, share attribution).',
     'brand_post_new_listeners':
         'No product export yet: first finished listens by brand-post creative ID (utm_content) are not '
         'exported by the product yet (MEASUREMENT.md, share attribution).'}
@@ -71,19 +76,23 @@ def poisson_interval(count):
     return round(max(0.0, count - spread), 1), round(count + spread, 1)
 
 
-def z_score(a, b):
-    """(a - b) / sqrt(a + b) for two arms with equal exposure; 0.0 when both are zero."""
+def z_score(a, b, exposure_a=1, exposure_b=1):
+    """How many standard errors arm a's count sits above what equal rates would give:
+    (a - r * b) / sqrt(r * (a + b)) with r = exposure_a / exposure_b, the conditional
+    test for two Poisson counts. With equal exposure it is (a - b) / sqrt(a + b).
+    Exposure is what each arm had to earn its count, such as the number of posts.
+    0.0 when both arms are zero."""
     a, b = _count(a, 'arm a'), _count(b, 'arm b')
-    return 0.0 if a + b == 0 else (a - b) / math.sqrt(a + b)
+    for value, what in ((exposure_a, 'exposure a'), (exposure_b, 'exposure b')):
+        if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
+            raise ValueError(f'{what} must be a finite amount above zero')
+    ratio = exposure_a / exposure_b
+    return 0.0 if a + b == 0 else (a - ratio * b) / math.sqrt(ratio * (a + b))
 
 
 # ---------------------------------------------------------------------------
 # The listener objectives, from the product export only.
 # ---------------------------------------------------------------------------
-def _from_ga4(row):
-    return 'ga4' in str(row.get('source', '')).lower() or str(row.get('query_ref', '')).lower().startswith('ga4')
-
-
 def _interval_reason(row, extra=''):
     low, high = poisson_interval(row['value'])
     text = (f'Rough 95% interval {low} to {high}: the count plus or minus twice its square root. '
@@ -91,40 +100,62 @@ def _interval_reason(row, extra=''):
     return text[:500]
 
 
+def _newest(found):
+    return max(found, key=lambda r: (instant(r['observed_at']), r['window_end'], r['window_start']))
+
+
+def _untokenised(found, as_of):
+    """The side figure beside the North Star: the week's newest untokenised count,
+    quoted only when it is measured and no more than 48 hours old."""
+    if not found:
+        return ''
+    row = _newest(found)
+    if row['status'] == 'measured' and as_of - instant(row['observed_at']) <= STALE_AFTER:
+        return f' Untokenised new listeners, reported apart and never counted here: {row["value"]}.'
+    return f' Untokenised new listeners, reported apart: {"missing" if row["status"] == "missing" else "stale"}.'
+
+
 def objectives(rows, today, as_of=None):
     """Control Center objectives for share_arrived_new_listeners (the North Star) and
     brand_post_new_listeners, over the seven complete London days ending yesterday, in
-    reporting.objectives' shape. A value only from a measured product row for exactly
-    that week, with its interval in the reason; otherwise null with the reason: no
-    product export yet, stale, or window mismatch. A GA4 row is never a listener count."""
+    reporting.objectives' shape. A value only from a measured product total row for
+    exactly that week, with its interval in the reason; otherwise null with the
+    reason: no product export yet, stale, or window mismatch. A GA4 row is never a
+    listener count. Only the listener rows are read: one for exactly this week is
+    checked strictly and an invalid one refuses the reading; one for another window
+    only names the newest export, and is left out when it fails the checks, so an old
+    row never blocks a clean week. A per-creative breakdown row is never the total."""
     window = reporting.week_window(today)
     start, end = window[0].isoformat(), window[1].isoformat()
     as_of = as_of or reporting.utc_now()
-    rows = [validate(dict(row)) for row in rows or []]
-    for row in rows:
-        if row['metric'].endswith('_listeners') and _from_ga4(row):
-            raise ValueError('GA4 landings are web sessions, never listeners; a listener count must come '
-                             'from the product export')
-    newest = lambda found: max(found, key=lambda r: (instant(r['observed_at']), r['window_end'], r['window_start']))
-    exact = {}
-    for row in rows:
-        if (row['window_start'], row['window_end']) == (start, end):
-            exact.setdefault(row['metric'], []).append(row)
+    exact, other = {}, {}
+    for row in rows or []:
+        if not isinstance(row, dict):
+            raise ValueError('every observation must be an object')
+        if row.get('metric') not in LISTENER_OBJECTIVES + (UNTOKENISED,) or 'creative_id' in row:
+            continue
+        if (row.get('window_start'), row.get('window_end')) == (start, end):
+            exact.setdefault(row['metric'], []).append(validate(dict(row)))
+            continue
+        try:
+            checked = validate(dict(row))
+        except ValueError:
+            continue
+        other.setdefault(row['metric'], []).append(checked)
     out = []
     for key in LISTENER_OBJECTIVES:
-        mine = [r for r in rows if r['metric'] == key]
-        if not mine:
+        if key not in exact and key not in other:
             out.append(reporting._objective(key, 'people', None, 'missing', NO_EXPORT[key], window))
             continue
         if key not in exact:
-            other = newest(mine)
+            seen = _newest(other[key])
             out.append(reporting._objective(
                 key, 'people', None, 'missing',
-                f'Window mismatch: the newest product export covers {other["window_start"]} to '
-                f'{other["window_end"]}, not the seven complete London days {start} to {end}. Other windows '
+                f'Window mismatch: the newest product export covers {seen["window_start"]} to '
+                f'{seen["window_end"]}, not the seven complete London days {start} to {end}. Other windows '
                 'are never added into a week.', window))
             continue
-        row = newest(exact[key])
+        row = _newest(exact[key])
         if row['status'] == 'missing':
             out.append(reporting._objective(
                 key, 'people', None, 'missing',
@@ -135,11 +166,7 @@ def objectives(rows, today, as_of=None):
                 f'Stale: the newest product export for this week was taken at {row["observed_at"]}, more than '
                 '48 hours ago or marked stale. Refresh it before counting.', window))
         else:
-            extra = ''
-            dark = [r for r in exact.get('untokenised_new_listeners', []) if r['status'] == 'measured']
-            if key == 'share_arrived_new_listeners' and dark:
-                extra = (f' Untokenised new listeners, reported apart and never counted here: '
-                         f'{newest(dark)["value"]}.')
+            extra = _untokenised(exact.get(UNTOKENISED), as_of) if key == LISTENER_OBJECTIVES[0] else ''
             out.append(reporting._objective(key, 'people', row['value'], 'measured',
                                             _interval_reason(row, extra), window))
     return out
@@ -213,9 +240,10 @@ def ga4_rows(export):
         for key in GA4_LABELS:
             if not isinstance(row[key], str) or not row[key].strip() or len(row[key]) > 500:
                 raise ValueError(f'GA4 row {number}: {key} must be non-empty text')
-        if row['utm_content'] != UNTAGGED and not creative.match(row['utm_content']):
-            raise ValueError(f'GA4 row {number}: utm_content must be a creative ID or {UNTAGGED}; '
-                             'fold other labels into (not set) before export')
+        if row['utm_content'] != UNTAGGED and not creative.fullmatch(row['utm_content']):
+            raise ValueError(f'GA4 row {number}: utm_content must be a creative ID or {UNTAGGED}; fold other '
+                             "campaign labels into (not set) before export, but never Google's (other) row: a "
+                             'read Google thresholded or folded into (other) is not sent at all')
         for key in GA4_COUNTS:
             if type(row[key]) is not int or row[key] < 0:
                 raise ValueError(f'GA4 row {number}: {key} must be a whole, non-negative count')

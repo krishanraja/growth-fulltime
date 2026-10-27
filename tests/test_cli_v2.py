@@ -234,20 +234,97 @@ class CliV2(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn('no pack', err)
 
-    def test_dispatch_needs_a_reading_or_a_spend_decision_and_never_runs(self):
+    def test_session_pack_calls_a_spec_signed_only_from_the_g1_record(self):
+        campaign = json.loads(EXAMPLE.read_text(encoding='utf-8'))
+        code, text, err = self.run_cli('session', 'pack', '--kind', 'orchestrator', '--spec', str(EXAMPLE))
+        self.assertEqual(code, 0, err)
+        self.assertIn('## Spec (not signed)', text)
+        self.assertNotIn('Signed spec', text)
+        self.assertIn('Not supplied to this pack', text)
+        record = self.write('local/specs/2026-W44.signed.json', {'spec': campaign, 'proposal_id': 'fulltime-spec-2026-W44',
+                                                                  'amended': False, 'signed_at': '2026-10-27T09:00:00Z'})
+        code, text, err = self.run_cli('session', 'pack', '--kind', 'orchestrator', '--spec', record)
+        self.assertEqual(code, 0, err)
+        self.assertIn('## Signed spec', text)
+
+    def test_session_pack_carries_the_build_card_and_the_review_contact_sheet(self):
+        code, text, err = self.run_cli('session', 'pack', '--kind', 'build', '--card', str(CARD))
+        self.assertEqual(code, 0, err)
+        card = json.loads(CARD.read_text(encoding='utf-8'))
+        self.assertIn('## Task card ' + card['card_id'], text)
+        for path in card['read_files']:
+            self.assertIn('- ' + path, text)
+        code, text, err = self.run_cli('session', 'pack', '--kind', 'review', '--crew', 'librarian',
+                                       '--contact-sheet', 'Drive 03_Runs/2026-W44/sheet.png')
+        self.assertEqual(code, 0, err)
+        self.assertIn('Rubric for packs', text)
+        self.assertIn('Drive 03_Runs/2026-W44/sheet.png', text)
+
+    def approve_spend(self, card, amount=0):
+        """Krish's yes to the card's spend ask, classified and recorded by the engine's own loop."""
+        from engine import control_center
+        proposal = dispatch.spend_proposal(card, amount, '2026-10-28T12:00:00Z')
+        decided = control_center.classify([{'proposal_id': proposal['proposal_id'], 'decision': 'approved',
+                                            'decided_at': '2026-10-27T11:00:00Z', 'stage': None, 'amended': False,
+                                            'payload_sha256': proposal['payload_sha256']}], [proposal])
+        control_center.record_instructions(self.growth.LOCAL, decided['instructions'], '2026-10-27T11:05:00Z')
+        return proposal
+
+    def test_dispatch_needs_a_reading_or_krish_approval_of_this_exact_card_and_never_runs(self):
         code, _, err = self.run_cli('dispatch', str(CARD), '--plugin-root', '/plugins/codex')
         self.assertEqual(code, 1)
         self.assertIn('spend decision', err)
+        self.assertIn('fulltime-codex-match-ad-v8-mix-port', err)
         card = json.loads(CARD.read_text(encoding='utf-8'))
+        # Was --spend-decision FILE, which took any hand-written {'approved': true, 'card_id': ...}.
         decision = self.write('decision.json', {'decision_id': 'dec-1', 'approved': True, 'card_id': card['card_id']})
-        code, body, err = self.run_cli('dispatch', str(CARD), '--plugin-root', '/plugins/codex',
-                                       '--spend-decision', decision)
+        code, _, err = self.run_cli('dispatch', str(CARD), '--plugin-root', '/plugins/codex', '--spend-decision', decision)
+        self.assertEqual(code, 2)
+        instructions = Path(self.growth.LOCAL) / 'control-center' / 'instructions.jsonl'
+        instructions.parent.mkdir(parents=True)
+        instructions.write_text(json.dumps({'proposal_id': 'fulltime-codex-' + card['card_id'], 'wall': 'spend',
+                                            'amended': False, 'stage': None, 'amount_usd': 0,
+                                            'sha256': 'f' * 64}) + '\n', encoding='utf-8')
+        code, _, err = self.run_cli('dispatch', str(CARD), '--plugin-root', '/plugins/codex')
+        self.assertEqual(code, 1)
+        self.assertIn('was given on a different payload', err)
+        older = dict(card, max_minutes=90)
+        self.approve_spend(older)
+        code, _, err = self.run_cli('dispatch', str(CARD), '--plugin-root', '/plugins/codex')
+        self.assertEqual(code, 1, 'his yes to another version of the card does not carry over')
+        proposal = self.approve_spend(card)
+        code, body, err = self.run_cli('dispatch', str(CARD), '--plugin-root', '/plugins/codex')
         self.assertEqual(code, 0, err)
+        self.assertEqual(body['spend_approval'], {'proposal_id': proposal['proposal_id'], 'amount_usd': 0,
+                                                  'sha256': proposal['payload_sha256']})
         argv = body['run_this']
         self.assertEqual(argv[argv.index('--model') + 1], dispatch.PINNED_CODEX_MODEL)
         prompt = Path(body['prompt_file'])
         self.assertTrue(prompt.is_file())
         self.assertIn(Path(self.growth.LOCAL).resolve(), prompt.resolve().parents)
+
+    def test_dispatch_with_a_fresh_low_reading_needs_no_approval(self):
+        import datetime as dt
+        moment = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
+        reading = self.write('reading.json', {'pct': 40, 'read_at': moment})
+        code, body, err = self.run_cli('dispatch', str(CARD), '--plugin-root', '/plugins/codex', '--reading', reading)
+        self.assertEqual(code, 0, err)
+        self.assertIsNone(body['spend_approval'])
+        code, _, err = self.run_cli('dispatch', str(CARD), '--reading', reading)
+        self.assertEqual(code, 1)
+        self.assertIn('--plugin-root', err)
+
+    def test_dispatch_prepares_the_spend_ask_and_never_sends_it(self):
+        code, body, err = self.run_cli('dispatch', str(CARD), '--propose-spend', '0', '--expires-at',
+                                       '2026-10-28T12:00:00Z')
+        self.assertEqual(code, 0, err)
+        self.assertEqual((body['prepared'], body['sent']), (True, False))
+        card = json.loads(CARD.read_text(encoding='utf-8'))
+        self.assertEqual(body['proposal']['exact_payload'], dispatch.reporting.canonical(card))
+        self.assertEqual(body['proposal']['wall'], 'spend')
+        code, _, err = self.run_cli('dispatch', str(CARD), '--propose-spend', '0')
+        self.assertEqual(code, 1)
+        self.assertIn('--expires-at', err)
 
     def test_audience_plan_leaves_every_unruled_action_to_krish(self):
         code, body, _ = self.run_cli('audience', 'actions')

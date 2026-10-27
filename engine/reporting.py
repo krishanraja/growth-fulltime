@@ -6,7 +6,8 @@ engine/control_center.py.
 Reports go as protocol 1.1.0, which adds a proposal's stage (plan, go_live,
 check_in) and parent_proposal_id; 1.2.0 only when a proposal names a subject.
 Krish sees one ask per engine at a time: an answered ruling is never asked
-again, and no second walled ask of a kind already waiting is added."""
+again, no second walled ask of a kind already waiting is added, and an ask he has
+already answered on its digest takes no ask's place."""
 import copy
 import datetime as dt
 import hashlib
@@ -36,6 +37,10 @@ ASK_KINDS = STAGES + GO_LIVE_WALLS + ('strategy',)
 NEWER_FIELDS = {'stage': (1, 1), 'parent_proposal_id': (1, 1), 'subject_ref': (1, 2)}
 PROPOSAL_ID = r'[A-Za-z0-9][A-Za-z0-9:._-]{0,119}'
 RULING_PREFIX = SLUG + ':ruling:'
+# The order the standing ruling asks reach Krish, one at a time: D7, the consent item,
+# must close first (ruling 1 of 27 October), then D2 and D3, then the rest as built.
+RULING_FIRST = ('D7', 'D2', 'D3')
+GA4_COMPLETERS = 'A Google Analytics row is web landings, never people who finished a show; it is not counted.'
 
 
 def envelope(pack, receipt):
@@ -257,6 +262,15 @@ def _objective(key, unit, value, availability, reason, window):
             'timezone': 'Europe/London', 'availability': availability, 'reason': reason}
 
 
+def _from_ga4(row):
+    """True when a row's source or query reference names Google Analytics: measurements'
+    own test where it has one, and GA4 or Google Analytics in any case always."""
+    from . import measurements
+    text = re.sub(r'[^a-z0-9]', '', f'{row.get("source", "")} {row.get("query_ref", "")}'.lower())
+    check = getattr(measurements, 'from_ga4', None)
+    return 'ga4' in text or 'googleanalytics' in text or bool(check and check(row))
+
+
 def objectives(today, rows=None, runs=None, workspace=True):
     """The two registered objectives. Unknown is null with a reason, never zero."""
     window = week_window(today)
@@ -267,9 +281,18 @@ def objectives(today, rows=None, runs=None, workspace=True):
         return [_objective('attributed_new_completers', 'people', None, 'missing', why, window),
                 _objective('marketing_cash_gbp', 'GBP', None, 'missing', why, window)]
     from .measurements import scorecard
-    card = scorecard(rows or [], start, end)
+    rows = list(rows or [])
+    # A Google Analytics row is landings on fulltime.fm, never completers (ruling 8), so it
+    # never enters this count, whatever its label; the product's own row still counts.
+    landings = [r for r in rows if isinstance(r, dict) and r.get('metric') == 'attributed_new_completers'
+                and _from_ga4(r)]
+    card = scorecard([r for r in rows if not any(r is x for x in landings)], start, end)
     completers = card['attributed_new_completers']
-    if completers['status'] == 'measured':
+    in_window = any((r.get('window_start'), r.get('window_end')) == (start, end) and 'creative_id' not in r
+                    for r in landings)
+    if completers['status'] == 'missing' and in_window:
+        first = _objective('attributed_new_completers', 'people', None, 'missing', GA4_COMPLETERS, window)
+    elif completers['status'] == 'measured':
         first = _objective('attributed_new_completers', 'people', completers['value'], 'measured', None, window)
     elif completers['status'] == 'stale':
         first = _objective('attributed_new_completers', 'people', completers['value'], 'stale',
@@ -434,36 +457,55 @@ def ask_kind(proposal):
     return proposal.get('stage') or proposal.get('wall')
 
 
-def one_ask(proposals, waiting=None):
+def answered_pairs(value):
+    """(proposal_id, payload_sha256) pairs Krish has answered, from any iterable of pairs."""
+    return {(pid, sha) for pid, sha in (value or ()) if isinstance(pid, str) and isinstance(sha, str)}
+
+
+def one_ask(proposals, waiting=None, answered=()):
     """One ask at a time (ENGINE-PROTOCOL.md). `waiting` maps each proposal_id already on
-    Krish's list and unanswered to its kind. An ask that waits is kept, and so kept
-    current. No ask is added beside another of its kind that waits, and only one new ask
-    of each kind is added per report. The standing ruling asks are each their own
-    question, so they are not capped against each other, but they too wait behind an
-    ask of their kind already on his list. Returns (kept, deferred)."""
-    waiting = waiting or {}
+    Krish's list and unanswered to its kind. `answered` holds (proposal_id, payload_sha256)
+    for each ask he has already answered on that digest: Control Center keeps it off his
+    list, so it is kept as it is, waits for nothing and holds no place. An ask that waits
+    is kept, and so kept current. No ask is added beside another of its kind that waits,
+    and only one new ask of each kind is added per report, the standing ruling asks
+    included (build orders them D7, D2, D3, then the rest). Returns (kept, deferred)."""
+    answered = answered_pairs(answered)
+    digest = {p['proposal_id']: p.get('payload_sha256') for p in proposals}
+    waiting = {pid: kind for pid, kind in (waiting or {}).items() if (pid, digest.get(pid)) not in answered}
     kinds_waiting = set(waiting.values())
     kept, deferred, added = [], [], set()
     for p in proposals:
         pid, kind = p['proposal_id'], ask_kind(p)
-        standing = pid.startswith(RULING_PREFIX)
-        if p.get('wall') == 'none' or pid in waiting:
+        if p.get('wall') == 'none' or pid in waiting or (pid, p.get('payload_sha256')) in answered:
             kept.append(p)
-        elif kind in kinds_waiting or (kind in added and not standing):
+        elif kind in kinds_waiting or kind in added:
             deferred.append(p)
         else:
             kept.append(p)
-            if not standing:
-                added.add(kind)
+            added.add(kind)
     return kept, deferred
+
+
+def standing_order(proposals):
+    """The standing ruling asks put in the order they reach Krish, D7, D2, D3, then the
+    rest as built, each into a place one of them held; every other proposal stays put."""
+    places = [i for i, p in enumerate(proposals) if p['proposal_id'].startswith(RULING_PREFIX)]
+    rank = lambda p: (RULING_FIRST.index(p['proposal_id'][len(RULING_PREFIX):])
+                      if p['proposal_id'][len(RULING_PREFIX):] in RULING_FIRST else len(RULING_FIRST))
+    out = list(proposals)
+    for i, p in zip(places, sorted((proposals[i] for i in places), key=rank)):
+        out[i] = p
+    return out
 
 
 def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list, activity,
           held_items=(), events=(), identity_known=None, kill_list=(), degraded=(), max_actions=3,
-          waiting=None, gate_proposals=(), extra_holds=()):
+          waiting=None, gate_proposals=(), extra_holds=(), answered=()):
     """The whole protocol report, sealed. `degraded` names sources that were missing.
     `waiting` is what is already on Krish's list (proposal_id to kind), from the last
     live delivery; unknown is None, and then nothing is taken to be waiting.
+    `answered` holds the (proposal_id, payload_sha256) pairs he has already answered.
     `gate_proposals` are the queued G1 and G2 asks (engine/gates.py); they lead, so
     one ask at a time keeps them ahead of others of their kind."""
     state = state or {}
@@ -487,7 +529,7 @@ def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list
         if ruling.get('status') == 'pending' and not (unlocks and unlocks <= policy.EXCLUDED):
             proposals.append(ruling_proposal(rid, ruling))
     proposals += [kill_proposal(line) for line in kill_list]
-    proposals, deferred = one_ask(proposals, waiting)
+    proposals, deferred = one_ask(standing_order(proposals), waiting, answered)
     entries = gate_holds(state, rulings_file, identity_known)
     entries += [('DATA', reason) for reason in degraded]
     entries += list(extra_holds)       # e.g. the weekly LIBRARY reconcile (engine/library.py)

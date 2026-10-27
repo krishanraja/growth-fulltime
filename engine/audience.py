@@ -25,7 +25,7 @@ import json
 from pathlib import Path
 import re
 
-from . import buffer_read, policy, spec
+from . import buffer_read, pack, policy, spec
 
 ROOT = Path(__file__).resolve().parent.parent
 ACTIONS_FILE = ROOT / 'engagement-actions.json'
@@ -60,6 +60,26 @@ BANNED = {
 }
 # Publishing stays with Krish in Buffer, whatever a ruling on the action says.
 HANDCRAFTED = {'schedule_story_or_community_post': 'publishing stays with Krish in Buffer (ruling 3)'}
+# What an action does, read from its id, title and official API with punctuation as
+# spaces, so a banned tactic under a new id is still refused. A false match only
+# leaves the task with Krish, by hand.
+KINDS = (
+    ('follows or unfollows accounts', 'automated_follow_or_unfollow',
+     re.compile(r'\b(?:un)?follow(?:s|ed|ing)?\b', re.I)),
+    ('likes posts or replies', 'mass_liking', re.compile(r'\b(?:un)?lik(?:e|es|ed|ing)\b|\bfavou?rit', re.I)),
+    ('sends messages', 'unsolicited_dms', re.compile(r'\bdms?\b|\bmessag|\binbox', re.I)),
+    ('publishes, posts or schedules', None,
+     re.compile(r'\bpublish|\bschedul|\bupload|\brepost|\bretweet|\bstor(?:y|ies)\b(?! highlight)|'
+                r'\bcontent posting\b|\bvideos insert\b|\bpost 2 tweets\b(?! id)|\bfeed\b|'
+                r'\bpost(?:ing|ed)? (?:a|an|the|new|daily|every|it|them)\b', re.I)),
+    ('buys or boosts reach', 'buying_followers_or_engagement',
+     re.compile(r'\bbuy|\bpurchas|\bboost|\bpaid\b|\bads?\b|\bsponsor', re.I)),
+    ('baits engagement', 'engagement_bait', re.compile(r'\bgiveaway|\bcontest|\btag a friend|\bto win\b', re.I)),
+    ('acts on a personal account', 'any_personal_account_action', re.compile(r'\bpersonal\b', re.I)),
+)
+COMMENTS = re.compile(r'\bcomment|\brepl(?:y|ies|ied|ying)\b', re.I)
+OWN = re.compile(r"\bown\b|\bfull time\b", re.I)
+OTHERS = re.compile(r'\bother (?:accounts|creators|clubs|pages|profiles|people)\b|\bothers\b', re.I)
 
 PROFILE_FIELDS = {'account_scope', 'name', 'handle', 'bio', 'link', 'pinned_post', 'avatar_sha256',
                   'cross_links', 'ai_disclosure', 'image_marks'}
@@ -302,6 +322,23 @@ def _account_refusals(platform, account, allowlist):
     return []
 
 
+def _kind_refusals(action_id, entry):
+    """Every banned kind of action this one does, whatever its id: read from the id, the
+    title and the official API (ruling 9: these tactics stay banned in code)."""
+    title = re.sub(r'[^A-Za-z0-9]+', ' ', str(entry.get('title') or ''))
+    words = ' '.join((re.sub(r'[^A-Za-z0-9]+', ' ', str(action_id)), title,
+                      re.sub(r'[^A-Za-z0-9]+', ' ', str(entry.get('official_api') or ''))))
+    out = []
+    for kind, ban, pattern in KINDS:
+        if pattern.search(words):
+            why = BANNED[ban] if ban else HANDCRAFTED['schedule_story_or_community_post']
+            out.append(f'{_name(action_id)} {kind}, a banned kind of action whatever its id: {why}')
+    if COMMENTS.search(title) and (not OWN.search(title) or OTHERS.search(title)):
+        out.append(f'{_name(action_id)} comments beyond Full Time\'s own posts, a banned kind of action whatever its '
+                   f'id: {BANNED["comments_on_other_accounts_at_scale"]}')
+    return out
+
+
 def refusals(action_id, platform, account, now, today_count, actions=None, allowlist=None):
     """Every reason this automated action may not go ahead, leaving out the per-action
     review that gate() also needs. An empty list means only that review remains."""
@@ -320,13 +357,13 @@ def refusals(action_id, platform, account, now, today_count, actions=None, allow
             actions = load_actions(ACTIONS_FILE, day)
         except ValueError as error:
             return [str(error)]
-    errors = actions_errors(actions)
+    errors = actions_errors(actions, day)
     if errors:
         return ['the action registry was refused: ' + '; '.join(errors)]
     entry = actions['actions'].get(name)
     if entry is None:
         return [f'{name} is not in engagement-actions.json']
-    out = []
+    out = _kind_refusals(name, entry)
     if name in HANDCRAFTED:
         out.append(f'{name} is never automated: {HANDCRAFTED[name]}')
     if entry['status'] != 'approved':
@@ -606,6 +643,19 @@ def _automated(item, actions, allowlist, counts, now):
     return item
 
 
+def _cross_promotion(best, created):
+    """A derived card for the next G2 matchday pack, never a post of its own (ruling 3):
+    Krish publishes pack items only once G2 clears them, and the WhatsApp Channel by hand."""
+    names = [LABEL[p] for p in PLATFORMS if p in created and p != best['channel'] and p not in pack.BY_HAND]
+    hand = [LABEL[p] for p in PLATFORMS if p in created and p != best['channel'] and p in pack.BY_HAND]
+    targets = ', '.join(names[:-1]) + ' and ' + names[-1] if len(names) > 1 else ''.join(names)
+    where = (f'for {targets}' if names else '') + (' and, by hand, ' if names and hand else 'for, by hand, ' if hand
+                                                   else '') + ' and '.join(f'the {h}' for h in hand)
+    return (f'Add a derived card pointing at {best["post_ref"]}, the best {LABEL[best["channel"]]} post of the last '
+            f'{BEST_DAYS} days, to the next G2 matchday pack {where}: it goes out only as a pack item that clears '
+            'G2, never as a post of its own')
+
+
 def _candidates(created, performance, trends, product_brief_sent, now):
     out = [_item('create_profile', p, f'Create the Full Time {LABEL[p]} handle (ruling 2: every handle is reserved)',
                  5, GAIN['create_profile' if p in PUSH else 'create_derived_profile'])
@@ -639,11 +689,8 @@ def _candidates(created, performance, trends, product_brief_sent, now):
     bests = [b for b in (_best_post(p, performance, now) for p in created) if b]
     if len(created) > 1 and bests:
         best = max(bests, key=lambda r: (tuple(-1 if r.get(k) is None else r[k] for k in RANK_KEYS), r['post_ref']))
-        names = [LABEL[p] for p in PLATFORMS if p in created and p != best['channel']]
-        targets = ', '.join(names[:-1]) + ' and ' + names[-1] if len(names) > 1 else names[0]
-        out.append(_item('cross_promotion', best['channel'], f'In Buffer, point {targets} at {best["post_ref"]}, the '
-                         f'best {LABEL[best["channel"]]} post of the last {BEST_DAYS} days, with a derived card or '
-                         'story', 3, GAIN['cross_promotion']))
+        out.append(_item('cross_promotion', best['channel'], _cross_promotion(best, created), 3,
+                         GAIN['cross_promotion']))
     for platform in SOUND:
         sounds = [t for t in trends if t['platform'] == platform and t['kind'] == 'sound' and t['commercial_ok']]
         if platform in created and sounds:

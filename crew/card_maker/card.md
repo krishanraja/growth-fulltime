@@ -10,7 +10,7 @@ Crew card (docs/ENGINE-V2.md, section 3), loaded for `morning_card` and for ever
 - The six Full Time templates in Canva `Growth/Templates`, pinned by ID from the brand-kit receipt.
 - The exported file per channel, with its SHA-256 and dimensions.
 
-**Lint before acting: `engine.formats.recipe()`.** The `morning_card` recipe pins the cut sizes per channel and the pre-live checks `brand_template_pinned`, `no_league_marks` and `glyph_readback`. "AI Pundit" is visible on the card. No league or broadcaster marks, club crests or player images.
+**Lint before acting: `engine.crew.card_lint()`.** Given the card, its recipe (`engine.formats.recipe()`) and the pinned template IDs, it refuses an unpinned template, a card without "AI Pundit", a league or broadcaster mark in the text, and a size that is not the channel's cut. Club crests and player images are checked by eye.
 
 **Measured check after acting: `engine.crew.glyph_readback()`.** The text read back with `read-design` equals the slot text after line wrapping, and every character has a glyph in the font (R19: a share image once shipped with missing glyphs). The export's hash and dimensions match its channel's cut. No CLI step runs the readback yet, so the session runs it on every export.
 

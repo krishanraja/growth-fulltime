@@ -171,7 +171,8 @@ def render_holds(growth, state, manifest, match, pundits):
         holds.append('D1')
     if not rulings.get('D7', {}).get('in_force'):
         holds.append('CONSENT')
-    take = {'platform': platform, 'drop_id': manifest['drop_id'], 'pundits': list(pundits)}
+    # A render clips one or two exact editions: a take, never a whole-match post.
+    take = {'platform': platform, 'drop_id': manifest['drop_id'], 'pundits': list(pundits), 'whole_match': False}
     if (policy.take_gate(take, state) if policy.organic_in_force(state) else match['fill'] < growth.RAIL_MIN):
         holds.append('RAIL')
     if not manifest['caption_alignment_verified']:
@@ -267,7 +268,10 @@ def render(growth, manifest_path):
         if (output.exists() and sha(output) == cached['video_sha256']
                 and all(Path(cached[k]).exists() and sha(cached[k]) == cached.get(k + '_sha256')
                         for k in ('captions', 'thumbnail'))):
-            return {**cached, 'reused': True}
+            # The file is the same; the gates are today's, never the ones it was first made under.
+            state = growth.load_state() or {}
+            return {**cached, 'holds': render_holds(growth, state, manifest, match, [s['pundit'] for _, s in segments]),
+                    'source_sha': state.get('sha'), 'reused': True}
     captions, offset = [], 0.0
     with tempfile.TemporaryDirectory(prefix='fulltime-render-') as temporary:
         work = Path(temporary)

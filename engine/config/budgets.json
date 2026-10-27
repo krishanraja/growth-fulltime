@@ -6,10 +6,10 @@
                   "note": "The CLI at 06:15, Monday 08:00 and the 05:10 UTC dispatch. No pack, no model."},
     "orchestrator": {"max_tokens": 150000, "max_engine_minutes": 20,
                      "note": "A fresh Claude session from a pack of 36 KB or less. Ends at a gate."},
-    "production": {"max_tokens": 0, "max_engine_minutes": 30,
-                   "note": "Codex in the main checkout with --require-existing-history: 30 Codex minutes, no Claude tokens. Ends when the pack is ready."},
+    "production": {"max_tokens": 60000, "max_engine_minutes": 30,
+                   "note": "Codex in the main checkout with --require-existing-history: 30 Codex minutes. Claude makes the connector calls (Canva, Higgsfield, product fetches), so it has a Claude-token budget: 60000 is provisional until Phase 0 measures it. Ends when the pack is ready."},
     "review": {"max_tokens": 60000, "max_engine_minutes": 10,
-               "note": "A fresh Claude session that made nothing, reading lenses only. Ends at 38 of 48 or more, Ethics and Action both at 4, two alternatives."},
+               "note": "A fresh Claude session that made nothing, reading lenses, the COPY.md rubric and a contact sheet. Ends at 38 of 48 or more, Ethics and Action both at 4, two alternatives."},
     "build": {"max_tokens": null, "max_engine_minutes": null,
               "note": "Per card: the task card's max_minutes and max_calls. Ends when acceptance exits 0."}
   },

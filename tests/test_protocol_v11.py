@@ -10,12 +10,15 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import types
 import unittest
+from urllib.parse import parse_qs
 from unittest.mock import patch
 
 import growth
 from engine import control_center as cc
-from engine import reporting
+from engine import gates, reporting
+from engine.records import instant
 from tests.test_control_center import TOKEN, StandIn, sample_state
 
 TODAY = dt.date(2026, 10, 27)
@@ -90,6 +93,12 @@ def report(items=(), rulings_file=None, extra=(), waiting=None, kill_list=(), mo
 
 def ids(value):
     return [p['proposal_id'] for p in value['proposals']]
+
+
+def deferred(value):
+    """The ids the 'One ask at a time' activity line names as waiting their turn."""
+    line = next((a['line'] for a in value['activity'] if a['line'].startswith('One ask at a time')), '')
+    return [pid.strip() for pid in line.split(': ', 2)[-1].rstrip('.').split(',')] if line else []
 
 
 class StandIn11(StandIn):
@@ -263,14 +272,17 @@ class AmendmentTests(ServedTests):
 
 class OneAskTests(ServedTests):
     def test_an_approved_ruling_is_never_asked_again(self):
-        asked = ids(report())
-        for pid in ('fulltime:ruling:release', 'fulltime:ruling:D1', 'fulltime:ruling:D2'):
-            self.assertIn(pid, asked)
+        # One new strategy ask per report (the standing rulings included): D2 is asked and
+        # release and D1 wait their turn, named in the One ask at a time line.
+        first = report()
+        self.assertEqual([p for p in ids(first) if p.startswith('fulltime:ruling:')], ['fulltime:ruling:D2'])
+        self.assertEqual(deferred(first), ['fulltime:ruling:release', 'fulltime:ruling:D1'])
         ruled = report(rulings_file=rulings(D1='approved'))
-        self.assertNotIn('fulltime:ruling:D1', ids(ruled))
-        self.assertNotIn('fulltime:ruling:release', ids(ruled))
+        self.assertNotIn('fulltime:ruling:D1', ids(ruled) + deferred(ruled))
+        self.assertNotIn('fulltime:ruling:release', ids(ruled) + deferred(ruled))
         self.assertIn('fulltime:ruling:D2', ids(ruled))
-        self.assertNotIn('fulltime:ruling:release', ids(report(rulings_file=rulings(ORGANIC='approved'))))
+        organic = report(rulings_file=rulings(ORGANIC='approved'))
+        self.assertNotIn('fulltime:ruling:release', ids(organic) + deferred(organic))
         for value in (report(), ruled):
             self.assertNotIn('fulltime:ruling:D4', ids(value))
             self.assertIn('D4', [h['reason'] for h in value['holds']])
@@ -278,8 +290,10 @@ class OneAskTests(ServedTests):
 
     def test_a_retired_release_item_is_not_turned_into_an_action(self):
         items = [{'item_id': 'fulltime-release', 'platform': 'other', 'why': 'release', 'text': 'Release decision.'}]
-        self.assertIn('fulltime:ruling:release', ids(report(items=items)))
-        retired = ids(report(items=items, rulings_file=rulings(D1='approved')))
+        asked = report(items=items)
+        self.assertIn('fulltime:ruling:release', ids(asked) + deferred(asked))
+        later = report(items=items, rulings_file=rulings(D1='approved'))
+        retired = ids(later) + deferred(later)
         self.assertFalse([pid for pid in retired if 'release' in pid])
 
     def test_a_waiting_ask_is_kept_current_and_no_second_of_its_kind_is_added(self):
@@ -300,8 +314,14 @@ class OneAskTests(ServedTests):
         self.assertIn('fulltime:action:rail', ids(unwalled))
 
     def test_a_new_strategy_ask_waits_behind_one_already_on_his_list(self):
-        alone = report(kill_list=['Stop the synthetic thing.'])
+        # With no standing ruling to ask, the kill is the one strategy ask; with D2 pending,
+        # the kill waits behind it like any other strategy ask.
+        alone = report(kill_list=['Stop the synthetic thing.'], rulings_file=rulings(D1='approved', D2='approved'))
         self.assertEqual(len([p for p in ids(alone) if p.startswith('fulltime:kill:')]), 1)
+        first = report(kill_list=['Stop the synthetic thing.'])
+        self.assertIn('fulltime:ruling:D2', ids(first))
+        self.assertFalse([p for p in ids(first) if p.startswith('fulltime:kill:')])
+        self.assertTrue([p for p in deferred(first) if p.startswith('fulltime:kill:')])
         waiting = {'fulltime:ruling:D2': 'strategy'}
         behind = report(kill_list=['Stop the synthetic thing.'], waiting=waiting)
         self.assertIn('fulltime:ruling:D2', ids(behind))
@@ -322,9 +342,11 @@ class OneAskTests(ServedTests):
         self.server.decisions = [{'proposal_id': d2['proposal_id'], 'decision': 'declined',
                                   'decided_at': '2026-10-27T08:00:00Z', 'payload_sha256': d2['payload_sha256'],
                                   'stage': None, 'amended': False}]
+        self.assertEqual(deferred(value), ['fulltime:ruling:release', 'fulltime:ruling:D1'])
         summary = self.loop(value)
-        self.assertEqual(summary['waiting'], {'fulltime:post:YT_SYNTH_A': 'post', 'fulltime:ruling:release': 'strategy',
-                                              'fulltime:ruling:D1': 'strategy'})
+        # D2 was the one strategy ask and he declined it, so only the post waits; release
+        # and D1 were never on his list, so they wait for nothing yet.
+        self.assertEqual(summary['waiting'], {'fulltime:post:YT_SYNTH_A': 'post'})
         self.assertIsNone(self.loop(report(run_id='fulltime:2026-10-27:other'))['waiting'])
 
     def test_the_ledger_carries_what_waits_into_the_next_run(self):
@@ -354,6 +376,188 @@ class OneAskTests(ServedTests):
         self.assertEqual(saved['waiting'], {'fulltime:kill:synthetic': 'strategy'})
 
 
+class SinceStandIn(StandIn11):
+    """The stand-in answering the decisions route as Control Center does: only decisions
+    made after `since`, by its own clock, which may run `behind` the engine's."""
+
+    def __init__(self):
+        super().__init__()
+        self.asked = []
+
+    def get_decisions(self, h, route, query, body):
+        since = (parse_qs(query).get('since') or [None])[0]
+        self.asked.append(since)
+        return h._send(200, {'ok': True, 'decisions': [
+            d for d in self.decisions if since is None or instant(d['decided_at']) > instant(since)]})
+
+    def decide(self, run_id, pid, verdict, at):
+        proposal = next(p for p in self.reports[run_id]['proposals'] if p['proposal_id'] == pid)
+        self.decisions.append({'proposal_id': pid, 'decision': verdict, 'decided_at': at, 'stage': proposal.get('stage'),
+                               'payload_sha256': proposal['payload_sha256'], 'amended': False})
+
+
+class LoopTests(unittest.TestCase):
+    """The real cc.main, run after run, against a stand-in that honours since. The work it
+    calls builds the report as workspace_work does, with what main hands it."""
+
+    def setUp(self):
+        self.server = SinceStandIn()
+        self.addCleanup(self.server.close)
+        self.local = tempfile.mkdtemp()
+        self.addCleanup(__import__('shutil').rmtree, self.local)
+        self.items, self.rulings, self.kills = [], rulings(D1='approved', D2='approved'), ()
+
+    def work(self, report_mode, kind, waiting, answered):
+        def run(directive):
+            today = reporting.london_today()
+            return reporting.build(
+                reporting.run_id_for(today, kind), report_mode, reporting.iso(reporting.utc_now()), sample_state(),
+                list(self.items), self.rulings, reporting.objectives(today, [], {}), ['A synthetic line.'],
+                identity_known=False, waiting=waiting, kill_list=self.kills if kind == 'report' else (),
+                gate_proposals=gates.pending(self.local) if kind != 'dispatch' else (),
+                answered=reporting.answered_pairs(answered) | cc.answered_in(directive)), {}
+        return run
+
+    def main(self, moment, target='morning', synthetic=False):
+        def workspace(growth_, mode, report_mode, offline, observations, require, waiting=None, answered=()):
+            return self.work(report_mode, 'report' if mode == 'weekly' else 'daily', waiting, answered)
+
+        def runner(growth_, report_mode, dispatched=None, waiting=None, answered=()):
+            return self.work(report_mode, 'dispatch', waiting, answered)
+        args = types.SimpleNamespace(target=target, synthetic=synthetic, offline=True, observations=None,
+                                     require_existing_history=False)
+        real = cc.Client
+        with patch.object(reporting, 'utc_now', lambda: moment), patch.object(cc, 'workspace_work', workspace), \
+                patch.object(cc, 'runner_work', runner), patch.dict(os.environ, {cc.TOKEN_ENV: TOKEN}), \
+                patch.object(cc, 'Client', lambda base, token: real(self.server.url, token, loopback_for_tests=True)):
+            cc.main(args, types.SimpleNamespace(LOCAL=self.local))
+        saved = json.loads((Path(self.local) / 'control-center' / 'last.json').read_text(encoding='utf-8'))
+        kind = {'weekly': 'report', 'dispatch': 'dispatch'}.get(target, 'daily')
+        return saved, self.server.reports[reporting.run_id_for(reporting.london_today(moment), kind)]
+
+    def day(self, n, hour=6, **kw):
+        return self.main(dt.datetime(2026, 11, n, hour, 15, tzinfo=dt.timezone.utc), **kw)
+
+    def test_an_answered_post_never_waits_again_and_the_next_post_is_asked(self):
+        self.items = [post_item('A')]
+        saved, sent = self.day(2)
+        self.assertEqual(saved['waiting'], {'fulltime:post:YT_SYNTH_A': 'post'})
+        self.server.decide(sent['run_id'], 'fulltime:post:YT_SYNTH_A', 'declined', '2026-11-02T12:00:00Z')
+        self.items = [post_item('A'), post_item('B')]
+        saved, _ = self.day(3)                                  # reads his decline
+        self.assertEqual(saved['waiting'], {})
+        for n in (4, 5):
+            saved, sent = self.day(n)
+            self.assertIn('fulltime:post:YT_SYNTH_B', ids(sent))
+            self.assertNotIn('fulltime:post:YT_SYNTH_B', deferred(sent))
+            self.assertNotIn('fulltime:post:YT_SYNTH_A', saved['waiting'])
+            self.assertEqual(saved['waiting'], {'fulltime:post:YT_SYNTH_B': 'post'})
+        history = (Path(self.local) / 'control-center' / 'decisions.jsonl').read_text(encoding='utf-8').splitlines()
+        self.assertEqual([(json.loads(r)['proposal_id'], json.loads(r)['decision']) for r in history],
+                         [('fulltime:post:YT_SYNTH_A', 'declined')])
+
+    def test_an_answered_post_never_holds_back_a_queued_g2(self):
+        self.items = [post_item('A')]
+        _, sent = self.day(2)
+        self.server.decide(sent['run_id'], 'fulltime:post:YT_SYNTH_A', 'approved', '2026-11-02T12:00:00Z')
+        self.day(3)
+        g2 = reporting._proposal('fulltime-g2-2026-11-08', 'G2 pack', 'A synthetic pack.', 'prepared', 'post',
+                                 {'items': []}, 'creative_published', 'fulltime:2026-11-08:g2', channel='tiktok',
+                                 exact_payload=json.dumps({'items': []}))
+        with patch.object(gates, 'pending', lambda local: [g2]):
+            saved, sent = self.day(4)
+        self.assertIn('fulltime-g2-2026-11-08', ids(sent))
+        self.assertNotIn('fulltime-g2-2026-11-08', deferred(sent))
+        self.assertEqual(saved['waiting'], {'fulltime-g2-2026-11-08': 'post'})
+
+    def test_answered_rulings_go_one_at_a_time_and_then_the_kill(self):
+        self.rulings = growth.load_rulings()
+        pending = [r for r in ('D7', 'D2', 'D3') if self.rulings.get(r, {}).get('status') == 'pending']
+        self.kills = ('Stop the synthetic thing.',)
+        n = 2
+        for rid in pending:
+            saved, sent = self.day(n)
+            strategy = [p['proposal_id'] for p in sent['proposals'] if p['wall'] == 'strategy'
+                        and (p['proposal_id'], p['payload_sha256']) not in cc.answered_before(self.local)]
+            self.assertEqual(strategy, [f'fulltime:ruling:{rid}'])
+            self.server.decide(sent['run_id'], f'fulltime:ruling:{rid}', 'approved', f'2026-11-{n:02d}T12:00:00Z')
+            saved, _ = self.day(n + 1)
+            self.assertEqual(saved['waiting'], {})
+            n += 2
+        saved, sent = self.day(n, target='weekly')
+        self.assertEqual([k for k in saved['waiting']], [p for p in ids(sent) if p.startswith('fulltime:kill:')])
+        self.assertEqual(len(saved['waiting']), 1)
+
+    def g1(self):
+        from engine import spec
+        example = spec.load(Path(growth.HERE) / 'specs' / 'examples' / 'synthetic-week.json')
+        proposal = spec.proposal(example, '2026-11-09T20:00:00+00:00')
+        gates.prepare(self.local, 'g1', proposal)
+        return proposal['proposal_id']
+
+    def signed(self):
+        return (Path(self.local) / 'specs' / '2026-W45.signed.json').is_file()
+
+    def test_a_synthetic_run_or_a_dispatch_never_uses_up_his_answer(self):
+        for target, synthetic in (('morning', True), ('dispatch', False), ('dispatch', True)):
+            with self.subTest(target=target, synthetic=synthetic):
+                self.setUp()
+                pid = self.g1()
+                saved, sent = self.day(2)
+                read_at = saved['decisions_read_at']
+                self.server.decide(sent['run_id'], pid, 'approved', '2026-11-02T12:00:00Z')
+                saved, _ = self.day(3, target=target, synthetic=synthetic)
+                self.assertEqual(saved['decisions_read_at'], read_at)
+                self.assertFalse(self.signed())
+                self.assertFalse((Path(self.local) / 'control-center' / 'decisions.jsonl').exists())
+                saved, _ = self.day(4)
+                gate = json.loads((Path(self.local) / 'engine' / 'gates' / f'{pid}.json').read_text(encoding='utf-8'))
+                self.assertTrue(gate['settled_at'])
+                self.assertEqual(gate['decision'], 'approved')
+                self.assertTrue(self.signed())
+
+    def test_a_server_clock_behind_the_engine_never_drops_an_answer(self):
+        pid = self.g1()
+        fast = dt.timedelta(minutes=3)                           # the engine runs three minutes fast
+        real = dt.datetime(2026, 11, 2, 6, 15, tzinfo=dt.timezone.utc)
+        saved, sent = self.main(real + fast)
+        self.assertEqual(saved['decisions_read_at'], '2026-11-02T06:18:00Z')
+        self.server.decide(sent['run_id'], pid, 'approved', '2026-11-02T06:16:30Z')   # 90 s after the real read
+        saved, _ = self.main(real + dt.timedelta(days=1) + fast)
+        self.assertEqual(self.server.asked[-1], '2026-11-02T06:03:00Z')
+        self.assertTrue(self.signed())
+        saved, _ = self.main(real + dt.timedelta(days=2) + fast)   # read again in the overlap: taken once
+        lines = (Path(self.local) / 'control-center' / 'decisions.jsonl').read_text(encoding='utf-8').splitlines()
+        self.assertEqual(len(lines), 1)
+
+    def test_the_read_window_overlaps_and_falls_back_to_seven_days(self):
+        self.assertEqual(cc.read_from('2026-11-02T06:18:00Z'), '2026-11-02T06:03:00Z')
+        moment = dt.datetime(2026, 11, 2, 6, 0, tzinfo=dt.timezone.utc)
+        for value in (None, '', 'yesterday', '2026-11-02'):
+            self.assertEqual(cc.read_from(value, moment), '2026-10-26T06:00:00Z')
+
+
+class StandingRulingTests(unittest.TestCase):
+    def test_one_standing_ruling_per_report_d7_first_and_a_waiting_one_kept(self):
+        real = growth.load_rulings()
+        pending = [rid for rid in ('D7', 'D2', 'D3') if (real.get(rid) or {}).get('status') == 'pending']
+        first = report(rulings_file=real, kill_list=['Stop the synthetic thing.'], mode='live')
+        walled = [p['proposal_id'] for p in first['proposals'] if p['wall'] == 'strategy']
+        self.assertEqual(len(walled), 1)
+        if pending:
+            self.assertEqual(walled, [f'fulltime:ruling:{pending[0]}'])
+            for rid in pending[1:]:
+                self.assertIn(f'fulltime:ruling:{rid}', deferred(first))
+        self.assertTrue([p for p in deferred(first) if p.startswith('fulltime:kill:')])
+        two = rulings(D1='approved', D7='pending', D3='pending')
+        value = report(rulings_file=two)
+        self.assertEqual([p for p in ids(value) if p.startswith('fulltime:ruling:')], ['fulltime:ruling:D7'])
+        self.assertEqual(deferred(value), ['fulltime:ruling:D2', 'fulltime:ruling:D3'])
+        kept = report(rulings_file=two, waiting={'fulltime:ruling:D3': 'strategy'})
+        self.assertEqual([p for p in ids(kept) if p.startswith('fulltime:ruling:')], ['fulltime:ruling:D3'])
+        self.assertEqual(deferred(kept), ['fulltime:ruling:D7', 'fulltime:ruling:D2'])
+
+
 class VersionRefusalTests(ServedTests):
     def test_any_1x_is_taken_and_another_major_is_refused(self):
         for value in (None, '1.0.0', '1.1.0', '1.12.3'):
@@ -374,7 +578,7 @@ class VersionRefusalTests(ServedTests):
         self.assertEqual(self.loop(report())['status'], 'succeeded')
 
     def test_a_2x_decision_is_refused_and_counts_for_nothing(self):
-        value = report()
+        value = report(extra=[reporting.ruling_proposal('D1', RULINGS['D1'])])
         d2 = next(p for p in value['proposals'] if p['proposal_id'] == 'fulltime:ruling:D2')
         d1 = next(p for p in value['proposals'] if p['proposal_id'] == 'fulltime:ruling:D1')
         self.server.decisions = [

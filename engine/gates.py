@@ -5,17 +5,24 @@ propose --queue` and `growth.py pack propose --queue` into local/engine/gates/. 
 daily loop report carries every undecided gate until Krish answers it on its current
 digest. His answer on a G2 becomes one verdict per item in local/engine/verdicts.jsonl
 (engine/formats.py, g2_verdicts), and readiness is counted from that ledger alone. A
-signed G1 is kept as local/specs/<run>.signed.json. Nothing here sends, posts or spends.
+signed G1 is kept as local/specs/<run>.signed.json. Krish posts by hand; the permalinks
+read back from Buffer (engine/buffer_read.py, receipts) are kept in
+local/engine/receipts.jsonl and on each G2 gate, and an approved G2 closes with a
+creative_published event once every item he kept has one. Nothing here sends, posts
+or spends.
 """
 import json
 from pathlib import Path
 import re
 
-from . import formats
-from .records import atomic_json, now
+from . import formats, reporting
+from .clock import LONDON
+from .records import atomic_json, instant, now
 
 GATES = Path('engine') / 'gates'
 LEDGER = Path('engine') / 'verdicts.jsonl'
+RECEIPTS = Path('engine') / 'receipts.jsonl'
+RECEIPT_FIELDS = ('creative_id', 'channel', 'permalink', 'published_at')
 KINDS = ('g1', 'g2')
 CONTEXT = ('unit_cost_gbp', 'unit_minutes', 'checks')   # measured per item; null while unknown, never guessed
 # The pre-live checks pack.check itself performs. The rest of a recipe's checks (exact
@@ -196,3 +203,90 @@ def verdicts(local):
     if not ledger.is_file():
         return []
     return [json.loads(line) for line in ledger.read_text(encoding='utf-8').splitlines() if line.strip()]
+
+
+def _receipt(number, receipt):
+    if not isinstance(receipt, dict) or set(receipt) != set(RECEIPT_FIELDS):
+        raise ValueError(f'receipt {number} must carry exactly ' + ', '.join(RECEIPT_FIELDS))
+    cid, channel, link, at = (receipt[key] for key in RECEIPT_FIELDS)
+    if not (isinstance(cid, str) and cid.strip() and isinstance(channel, str) and channel.strip()):
+        raise ValueError(f'receipt {number} needs a creative_id and a channel')
+    if not isinstance(link, str) or not link.startswith('https://') or link != link.strip():
+        raise ValueError(f'receipt {number}: the permalink must be an https link')
+    if at is not None:
+        try:
+            instant(at)
+        except ValueError:
+            raise ValueError(f'receipt {number}: published_at must be an RFC 3339 time with its offset, '
+                             'or null when Buffer gave none') from None
+    return {key: receipt[key] for key in RECEIPT_FIELDS}
+
+
+def _pack_items(gate):
+    """(creative_id, channel) of each item in a G2 gate's pack, in pack order; none when
+    the pack cannot be read, so one bad gate never stops another."""
+    try:
+        items = json.loads(gate['proposal']['exact_payload'])['items']
+        return [(item['creative_id'], item.get('channel')) for item in items]
+    except (ValueError, KeyError, TypeError):
+        return []
+
+
+def record_receipts(local, receipts):
+    """Keep Krish's permalinks, as buffer_read.receipts returns them, once each (by
+    creative, channel and permalink) in local/engine/receipts.jsonl, and copy each onto
+    every G2 gate whose pack carries that creative on that channel; an item keeps the
+    first one. Reading back a post only records it. Returns how many were new and which
+    gates changed."""
+    rows = [_receipt(n, r) for n, r in enumerate(receipts or [], start=1)]
+    path = Path(local) / RECEIPTS
+    kept = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()
+            if line.strip()] if path.is_file() else []
+    seen = {(r['creative_id'], r['channel'], r['permalink']) for r in kept}
+    new = []
+    for row in rows:
+        if (row['creative_id'], row['channel'], row['permalink']) not in seen:
+            seen.add((row['creative_id'], row['channel'], row['permalink']))
+            new.append({**row, 'recorded_at': now()})
+    if new:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, 'a', encoding='utf-8', newline='\n') as out:
+            for row in new:
+                out.write(json.dumps(row, sort_keys=True, ensure_ascii=False) + '\n')
+    changed = []
+    for gate_path, gate in _gates(local):
+        if gate.get('kind') != 'g2':
+            continue
+        items, held = _pack_items(gate), gate.setdefault('receipts', {})
+        for row in kept + new:
+            if (row['creative_id'], row['channel']) in items and row['creative_id'] not in held:
+                held[row['creative_id']] = {k: row[k] for k in ('channel', 'permalink', 'published_at', 'recorded_at')}
+                if gate['proposal']['proposal_id'] not in changed:
+                    changed.append(gate['proposal']['proposal_id'])
+        if gate['proposal']['proposal_id'] in changed:
+            atomic_json(gate_path, gate)
+    return {'recorded': len(new), 'gates': changed}
+
+
+def events(local, since_date):
+    """creative_published events for the report: one per approved G2 ask, once every item
+    Krish kept (all but those he rejected) has his permalink, at the newest of their
+    times, with the first kept item's permalink as evidence, when that day (in London)
+    is on or after since_date. An ask he declined, or one still waiting, never closes."""
+    ledger, out = verdicts(local), []
+    for _, gate in _gates(local):
+        if gate.get('kind') != 'g2' or not gate.get('settled_at') or gate.get('decision') != 'approved':
+            continue
+        pid, sha = gate['proposal']['proposal_id'], gate['proposal']['payload_sha256']
+        rejected = {r.get('creative_id') for r in ledger if r.get('proposal_id') == pid
+                    and r.get('payload_sha256') == sha and r.get('verdict') == 'reject'}
+        kept = [cid for cid, _ in _pack_items(gate) if cid not in rejected]
+        held = gate.get('receipts') or {}
+        if not kept or not all(cid in held for cid in kept):
+            continue
+        at = max(instant(held[cid]['published_at'] or held[cid]['recorded_at']) for cid in kept)
+        if at.astimezone(LONDON).date().isoformat() < since_date:
+            continue
+        out.append({'event': 'creative_published', 'proposal_id': pid, 'at': reporting.iso(at),
+                    'evidence_url': held[kept[0]]['permalink']})
+    return out

@@ -47,9 +47,16 @@ def _add_v2(commands):
     session.add_argument('--kind'); session.add_argument('--crew', default='')
     session.add_argument('--spec'); session.add_argument('--check', action='store_true')
     session.add_argument('--date')
+    session.add_argument('--card', help='build: the task card JSON')
+    session.add_argument('--contact-sheet', help='review: the contact sheet path or link')
+    session.add_argument('--instance', help='production: the instance JSON')
+    session.add_argument('--locks', help='production: the format locks JSON')
     dispatch = commands.add_parser('dispatch', help='check a task card and print, never run, its Codex command')
-    dispatch.add_argument('card'); dispatch.add_argument('--plugin-root', required=True)
-    dispatch.add_argument('--reading'); dispatch.add_argument('--spend-decision')
+    dispatch.add_argument('card'); dispatch.add_argument('--plugin-root')
+    dispatch.add_argument('--reading')
+    dispatch.add_argument('--propose-spend', type=float, metavar='USD',
+                          help="prepare, never send, Krish's spend ask for this exact card (needs --expires-at)")
+    dispatch.add_argument('--expires-at')
     audience = commands.add_parser('audience', help='brand-profile visibility: action rulings, the daily plan, followers')
     audience.add_argument('operation', choices=['actions', 'plan', 'followers'])
     audience.add_argument('--minutes', type=float, default=10)
@@ -198,8 +205,16 @@ def _run_v2(args, growth):
         if not args.kind:
             raise ValueError('pack needs --kind')
         crew = [name for name in args.crew.split(',') if name]
-        text = session.pack(args.kind, Path(growth.HERE) / 'crew', crew,
-                            spec=spec.load(args.spec) if args.spec else None)
+        campaign = spec.load(args.spec) if args.spec else None
+        signed = None
+        if isinstance(campaign, dict) and 'signed_at' in campaign and 'spec' in campaign:
+            from . import reporting                   # local/specs/<week>.signed.json, written from G1's Clear
+            campaign = campaign['spec']
+            signed = reporting.canonical_sha256(campaign)
+        text = session.pack(args.kind, Path(growth.HERE) / 'crew', crew, spec=campaign, signed_sha256=signed,
+                            card=_json(args.card) if args.card else None, contact_sheet=args.contact_sheet,
+                            instance=_json(args.instance) if args.instance else None,
+                            locks=_json(args.locks) if args.locks else None)
         size = len(text.encode('utf-8'))
         return {'kind': args.kind, 'bytes': size, 'limit': session.PACK_LIMIT} if args.check else text
     if args.command == 'dispatch':
@@ -209,15 +224,30 @@ def _run_v2(args, growth):
         errors = dispatch.validate_card(card)
         if errors:
             raise ValueError('the card is refused: ' + '; '.join(errors))
-        dispatch.guard(card, _json(args.reading) if args.reading else None,
-                       dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
-                       _json(args.spend_decision) if args.spend_decision else None)
+        if args.propose_spend is not None:
+            if not args.expires_at:
+                raise ValueError('--propose-spend needs --expires-at, an RFC 3339 date and time with its offset')
+            return {'prepared': True, 'sent': False,
+                    'proposal': dispatch.spend_proposal(card, args.propose_spend, args.expires_at)}
+        if not args.plugin_root:
+            raise ValueError('dispatch needs --plugin-root, the Codex plugin folder')
+        reading = _json(args.reading) if args.reading else None
+        now = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+        approval = None
+        try:
+            dispatch.guard(card, reading, now)
+        except ValueError:
+            # Only Krish's approval of this exact card, as the loop recorded it, lets it through.
+            approval = dispatch.recorded_approval(growth.LOCAL, card)
+            dispatch.guard(card, reading, now, approval)
         prompt = Path(growth.LOCAL) / 'dispatch' / (card['card_id'] + '.md')
         prompt.parent.mkdir(parents=True, exist_ok=True)
         prompt.write_text(f'# Task card {card["card_id"]}\n\nDo exactly what this card says, inside its write_allow, '
                           'and nothing on its never list. Finish with the return shape it names.\n\n```json\n'
                           + json.dumps(card, indent=2, ensure_ascii=False) + '\n```\n', encoding='utf-8')
         return {'run_this': dispatch.command(card, args.plugin_root, prompt), 'prompt_file': str(prompt),
+                'spend_approval': {key: approval.get(key) for key in ('proposal_id', 'amount_usd', 'sha256')}
+                if approval else None,
                 'note': 'Printed, not run. Claude reruns the acceptance commands and checks the diff afterwards.'}
     if args.command == 'audience':
         from . import audience

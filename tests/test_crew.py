@@ -277,5 +277,51 @@ class CardMakerTests(unittest.TestCase):
                     crew.glyph_readback(slot, back)
 
 
+class CardLintTests(unittest.TestCase):
+    """The Card Maker's lint before acting: template, AI Pundit, marks and cut size."""
+    PINNED = ('DAtemplate0001', 'DAtemplate0002')
+
+    def card(self, **changes):
+        base = {'template_id': 'DAtemplate0001', 'text': 'The Doomer, an AI Pundit: Rovers bottle it',
+                'channel': 'x', 'width': 1080, 'height': 1350}
+        base.update(changes)
+        return base
+
+    def test_the_card_maker_lint_is_card_lint(self):
+        member = next(m for m in crew.CREW if m['id'] == 'card_maker')
+        self.assertEqual(member['lint'], 'engine.crew.card_lint')
+
+    def test_a_good_card_on_a_pinned_template_passes(self):
+        from engine import formats
+        recipe = formats.recipe('morning_card')
+        for channel in recipe['cuts']:
+            with self.subTest(channel=channel):
+                self.assertEqual(crew.card_lint(self.card(channel=channel), recipe, self.PINNED), [])
+
+    def test_a_bad_card_gets_every_reason(self):
+        from engine import formats
+        bad = self.card(template_id='DAunpinned', text='Premier League: the Doomer says Rovers bottle it',
+                        width=640, height=640)
+        reasons = crew.card_lint(bad, formats.recipe('morning_card'), self.PINNED)
+        self.assertEqual(len(reasons), 4, reasons)
+        for words in ('pinned Full Time template', 'AI Pundit', '"Premier League"', '640x640'):
+            self.assertTrue(any(words in r for r in reasons), words)
+        sky = crew.card_lint(self.card(text='AI Pundit, better than Sky Sports'), formats.recipe('morning_card'),
+                             self.PINNED)
+        self.assertEqual(len(sky), 1)
+        self.assertIn('no cut for this channel', crew.card_lint(self.card(channel='tiktok'),
+                                                                formats.recipe('morning_card'), self.PINNED)[0])
+
+    def test_bad_inputs_are_refused(self):
+        from engine import formats
+        recipe = formats.recipe('morning_card')
+        for card, rec, pinned in (('morning_card', recipe, self.PINNED), ({'text': 'AI Pundit'}, recipe, self.PINNED),
+                                  (self.card(), 'morning_card', self.PINNED), (self.card(), recipe, 'DAtemplate0001'),
+                                  (self.card(), recipe, None)):
+            with self.subTest(card=card, pinned=pinned):
+                with self.assertRaises(ValueError):
+                    crew.card_lint(card, rec, pinned)
+
+
 if __name__ == '__main__':
     unittest.main()

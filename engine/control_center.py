@@ -29,7 +29,7 @@ import urllib.request
 import uuid
 
 from . import gates, policy, reporting
-from .records import History, atomic_json
+from .records import History, atomic_json, instant
 
 DEFAULT_URL = 'https://controlcenter.krishraja.com'
 TOKEN_ENV = 'CONTROL_CENTER_ENGINE_TOKEN'
@@ -281,10 +281,20 @@ def classify(decisions, proposals):
     and counts for nothing. A decision declaring a protocol major other than 1 is refused.
     The engine still never acts on a yes by sending, posting or spending: an approved
     go-live becomes an instruction for Krish, and a ruling is recorded by an
-    interactive session."""
+    interactive session. `answered` maps each proposal he answered to the digest he
+    answered it on, with his decision and any version of his, for the history."""
     current = {p['proposal_id']: p for p in proposals}
     out = {'approved_current': [], 'approved_amended': [], 'approved_changed': [], 'amended_unverified': [],
-           'declined': [], 'done': [], 'not_in_report': [], 'refused': [], 'approved': {}, 'instructions': []}
+           'declined': [], 'done': [], 'not_in_report': [], 'refused': [], 'approved': {}, 'instructions': [],
+           'answered': {}}
+
+    def answer(pid, decision, sha, verified=True):
+        row = {'payload_sha256': sha, 'decision': decision.get('decision'), 'amended': decision.get('amended') is True,
+               'verified': verified, 'decided_at': decision.get('decided_at')}
+        if row['amended']:
+            row.update({key: decision.get(key) for key in ('exact_payload', 'amount_usd', 'amended_sha256')})
+        out['answered'][pid] = row
+
     for decision in decisions:
         pid = decision.get('proposal_id')
         if not version_supported(decision.get('schema_version')):
@@ -296,6 +306,7 @@ def classify(decisions, proposals):
         proposal, verdict = current[pid], decision.get('decision')
         if verdict in ('declined', 'done'):
             out[verdict].append(pid)
+            answer(pid, decision, decision.get('payload_sha256'))
             continue
         if verdict != 'approved':
             continue
@@ -307,10 +318,12 @@ def classify(decisions, proposals):
                 verified = False
             if not verified:
                 out['amended_unverified'].append(pid)
+                answer(pid, decision, decision.get('payload_sha256'), verified=False)
                 continue
         if decision.get('payload_sha256') != proposal['payload_sha256']:
             out['approved_changed'].append(pid)
             continue
+        answer(pid, decision, proposal['payload_sha256'])
         source = decision if amended else proposal
         approved = {'amended': amended, 'stage': proposal.get('stage') or decision.get('stage'),
                     'exact_payload': source.get('exact_payload'), 'amount_usd': source.get('amount_usd'),
@@ -322,17 +335,93 @@ def classify(decisions, proposals):
     return out
 
 
-def still_waiting(report, decided):
+def still_waiting(report, decided, answered=()):
     """What a live report leaves on Krish's list: its walled asks he has not answered on
-    their current digest. An ask approved on an older digest comes back to him, so it
-    still waits. A synthetic report puts nothing on his list, so it returns None."""
+    their current digest, in this run (`decided`) or any earlier one (`answered`, pairs
+    of proposal_id and payload_sha256). Control Center keeps an answered digest off his
+    list for good, so it never waits again. An ask answered on an older digest comes
+    back to him, so it still waits. A synthetic report puts nothing on his list, so it
+    returns None."""
     if report.get('mode') != 'live':
         return None
-    answered = set()
-    for key in ('approved_current', 'approved_amended', 'amended_unverified', 'declined', 'done'):
-        answered.update(decided[key])
+    done = reporting.answered_pairs(answered) | reporting.answered_pairs(
+        (pid, row.get('payload_sha256')) for pid, row in ((decided or {}).get('answered') or {}).items())
     return {p['proposal_id']: reporting.ask_kind(p) for p in report['proposals']
-            if p.get('wall') != 'none' and p['proposal_id'] not in answered}
+            if p.get('wall') != 'none' and (p['proposal_id'], p['payload_sha256']) not in done}
+
+
+def answered_in(directive):
+    """(proposal_id, payload_sha256) of each answer in the directive's decisions_since (his
+    last seven days), so a run with no history of its own, such as a clean runner, still
+    knows what he has answered and asks the next thing instead."""
+    found = ((directive or {}).get('directive') or {}).get('decisions_since')
+    return reporting.answered_pairs(
+        (d.get('proposal_id'), d.get('payload_sha256')) for d in (found if isinstance(found, list) else [])
+        if isinstance(d, dict) and d.get('decision') in ('approved', 'declined', 'done')
+        and version_supported(d.get('schema_version')))
+
+
+def _jsonl(path):
+    """The object rows of a local JSON-lines file; a line that cannot be read is skipped."""
+    rows = []
+    if Path(path).is_file():
+        for line in Path(path).read_text(encoding='utf-8').splitlines():
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(entry, dict):
+                rows.append(entry)
+    return rows
+
+
+def _append(path, rows):
+    if rows:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with Path(path).open('a', encoding='utf-8', newline='\n') as handle:
+            for row in rows:
+                handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + '\n')
+
+
+ANSWERS = Path('control-center') / 'decisions.jsonl'
+
+
+def record_answers(local, decided, at):
+    """Append each answer Krish gave (approved, declined, done, with his version when he
+    amended) once, by proposal, digest, decision and time, to the ignored
+    local/control-center/decisions.jsonl: his history of declines and amendments, and
+    what later runs know he answered. Returns how many were new."""
+    path = Path(local) / ANSWERS
+    key = lambda row: (row.get('proposal_id'), row.get('payload_sha256'), row.get('decision'), row.get('decided_at'))
+    seen = {key(row) for row in _jsonl(path)}
+    new = []
+    for pid, row in sorted(((decided or {}).get('answered') or {}).items()):
+        entry = {**row, 'proposal_id': pid, 'read_at': at}
+        if key(entry) not in seen:
+            seen.add(key(entry))
+            new.append(entry)
+    _append(path, new)
+    return len(new)
+
+
+def answered_before(local):
+    """Every (proposal_id, payload_sha256) Krish has answered, from decisions.jsonl."""
+    return reporting.answered_pairs((row.get('proposal_id'), row.get('payload_sha256'))
+                                    for row in _jsonl(Path(local) / ANSWERS))
+
+
+OVERLAP = dt.timedelta(minutes=15)
+
+
+def read_from(previous, moment=None):
+    """Where a run starts reading his decisions: the last read less fifteen minutes,
+    because decided_at is Control Center's clock and the read time is this machine's.
+    What is read twice is taken once (settle, record_answers and record_instructions
+    keep each answer once). With no valid last read, seven days back."""
+    try:
+        return reporting.iso(instant(previous) - OVERLAP)
+    except ValueError:
+        return reporting.iso((moment or reporting.utc_now()) - dt.timedelta(days=7))
 
 
 def waiting_from(value):
@@ -347,31 +436,20 @@ def record_instructions(local, instructions, at):
     """Append each new instruction once (by proposal and digest) to the ignored
     local/control-center/instructions.jsonl. Returns how many were new."""
     path = Path(local) / 'control-center' / 'instructions.jsonl'
-    seen = set()
-    if path.is_file():
-        for row in path.read_text(encoding='utf-8').splitlines():
-            try:
-                entry = json.loads(row)
-            except ValueError:
-                continue
-            if isinstance(entry, dict):
-                seen.add((entry.get('proposal_id'), entry.get('sha256')))
+    seen = {(entry.get('proposal_id'), entry.get('sha256')) for entry in _jsonl(path)}
     new = []
     for item in instructions or []:
         key = (item.get('proposal_id'), item.get('sha256'))
         if key not in seen:
             seen.add(key)
             new.append({**item, 'recorded_at': at})
-    if new:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open('a', encoding='utf-8') as handle:
-            for item in new:
-                handle.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + '\n')
+    _append(path, new)
     return len(new)
 
 
-def execute(client, command, run_id, work, since):
-    """The protocol loop. Returns a summary that names codes only."""
+def execute(client, command, run_id, work, since, answered=()):
+    """The protocol loop. Returns a summary that names codes only. `answered` is what
+    earlier runs know he answered (answered_before), for what still waits."""
     started = reporting.utc_now()
     attempt_id = f'{run_id}:{started.strftime("%Y%m%dT%H%M%SZ")}:{uuid.uuid4().hex[:6]}'
     summary = {'command': command, 'attempt_id': attempt_id, 'run_id': None, 'status': None,
@@ -432,7 +510,7 @@ def execute(client, command, run_id, work, since):
         return finish('failed', 'decisions', error.code, delivery['run_id'])
     summary['decisions'] = classify(decisions, delivery['report']['proposals'])
     summary['decisions_read_at'] = read_at
-    summary['waiting'] = still_waiting(delivery['report'], summary['decisions'])
+    summary['waiting'] = still_waiting(delivery['report'], summary['decisions'], answered)
     code = notes.get('error_code')
     return finish('failed' if code else 'succeeded', notes.get('phase', 'decisions') if code else 'decisions',
                   code, delivery['run_id'])
@@ -475,20 +553,48 @@ def measurement_lines(local, today, rows=None, directive=None):
                     f'untagged links{best}. Web landings on fulltime.fm, never listeners.']
 
 
-def library_check(local):
+LISTING_FRESH = dt.timedelta(days=7)
+
+
+def library_check(local, moment=None):
     """The weekly Growth Build reconcile (docs/ENGINE-V2.md, section 2a, rule 7): a
     listing a Claude session read back from Drive, against INDEX.csv, both under
-    local/library/. Returns (activity line, holds)."""
+    local/library/. The listing document says when it was read ({"read_at": RFC 3339,
+    "listing": [...]}), and only a read from the last seven days reconciles this week:
+    a missing, undated or older listing is a LIBRARY hold, since unknown is never clean.
+    Returns (activity line, holds)."""
     from . import library
+    moment = moment or reporting.utc_now()
     folder = Path(local) / 'library'
     listing, index = folder / 'listing.json', folder / 'INDEX.csv'
-    if not (listing.is_file() and index.is_file()):
-        return 'Growth Build library: not reconciled this week (no listing read back from Drive).', []
+
+    def unreconciled(why):
+        return (f'Growth Build library: not reconciled this week ({why}).',
+                [('LIBRARY', f'The library was not reconciled this week: {why}.')])
+
+    if not listing.is_file():
+        return unreconciled('no listing was read back from Drive into local/library/listing.json')
+    if not index.is_file():
+        return unreconciled('local/library/INDEX.csv is missing')
     try:
-        found = json.loads(listing.read_text(encoding='utf-8'))
-        found = found.get('listing') if isinstance(found, dict) else found
-        result = library.reconcile(found, library.read_index(index.read_text(encoding='utf-8')))
+        document = json.loads(listing.read_text(encoding='utf-8'))
+        found = document.get('listing') if isinstance(document, dict) else document
+        rows = library.read_index(index.read_text(encoding='utf-8'))
     except (ValueError, OSError) as error:
+        return f'Growth Build library: the listing or index was refused ({str(error)[:160]}).', [
+            ('LIBRARY', 'The weekly reconcile could not read its listing or index.')]
+    read_at = document.get('read_at') if isinstance(document, dict) else None
+    try:
+        read = instant(read_at)
+    except ValueError:
+        return unreconciled('the listing does not say when it was read (read_at, an RFC 3339 time)')
+    if read > moment + OVERLAP:
+        return unreconciled(f'the listing says it was read at {read_at}, which is in the future')
+    if moment - read > LISTING_FRESH:
+        return unreconciled(f'the newest listing was read at {read_at}, more than 7 days ago')
+    try:
+        result = library.reconcile(found, rows)
+    except ValueError as error:
         return f'Growth Build library: the listing or index was refused ({str(error)[:160]}).', [
             ('LIBRARY', 'The weekly reconcile could not read its listing or index.')]
     held = library.hold(result)
@@ -514,9 +620,11 @@ def max_actions(directive):
     return min(3, value) if type(value) is int and value >= 0 else 3
 
 
-def workspace_work(growth, mode, report_mode, offline, observations, require_existing, waiting=None):
+def workspace_work(growth, mode, report_mode, offline, observations, require_existing, waiting=None, answered=()):
     """The morning batch or weekly review in the persistent workspace, mapped to a report.
-    `waiting` is what the last live delivery left on Krish's list (one ask at a time)."""
+    `waiting` is what the last live delivery left on Krish's list (one ask at a time);
+    `answered` is what he has already answered (answered_before), with the directive's
+    own decisions_since added."""
     def work(directive):
         from .runner import run
         journal = History(Path(growth.LOCAL) / 'engine')
@@ -564,19 +672,22 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             reporting.run_id_for(today, kind), report_mode, reporting.iso(reporting.utc_now()), state,
             reporting.ready_creatives(saved['creatives']) + pack['items'], growth.load_rulings(),
             reporting.objectives(today, saved['observations'], saved['runs']),
-            activity, held_items=held, events=reporting.publication_events(saved['creatives'], start),
+            activity, held_items=held,
+            events=reporting.publication_events(saved['creatives'], start) + gates.events(growth.LOCAL, start),
             identity_known=identity_known,
             kill_list=record['native_weekly_review']['kill_list'] if mode == 'weekly' else (),
             degraded=degraded, max_actions=max_actions(directive), waiting=waiting,
-            gate_proposals=gates.pending(growth.LOCAL), extra_holds=library_holds)
+            gate_proposals=gates.pending(growth.LOCAL), extra_holds=library_holds,
+            answered=reporting.answered_pairs(answered) | answered_in(directive))
         return report, {}
     return work
 
 
-def runner_work(growth, report_mode, dispatched=None, waiting=None):
+def runner_work(growth, report_mode, dispatched=None, waiting=None, answered=()):
     """What a clean runner can see: the checks, the committed rulings and contracts,
-    and the public sources the hourly sync reads. No private history. `waiting` is as
-    for workspace_work; a clean runner has no ledger, so it is usually None."""
+    and the public sources the hourly sync reads. No private history. `waiting` and
+    `answered` are as for workspace_work; a clean runner has no ledger, so they are
+    usually empty and the directive's decisions_since says what he answered."""
     def work(directive):
         from .measurements import scorecard
         from .runner import constraints
@@ -633,7 +744,8 @@ def runner_work(growth, report_mode, dispatched=None, waiting=None):
         report = reporting.build(
             reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
             items, growth.load_rulings(), reporting.objectives(today, workspace=False), activity,
-            identity_known=None, degraded=degraded, max_actions=max_actions(directive), waiting=waiting)
+            identity_known=None, degraded=degraded, max_actions=max_actions(directive), waiting=waiting,
+            answered=reporting.answered_pairs(answered) | answered_in(directive))
         return report, notes
     return work
 
@@ -651,6 +763,11 @@ def main(args, growth):
     client = Client(base, token)
     del token
     report_mode = 'synthetic' if args.synthetic else 'live'
+    # Only a live workspace report carries every ask he can answer, the queued gates
+    # included, so only its run takes his decisions: it records his answers and
+    # instructions, settles gates and moves the read window. A synthetic run or a
+    # dispatch reads them and leaves every one for the next live workspace run.
+    takes = report_mode == 'live' and args.target != 'dispatch'
     ledger = Path(growth.LOCAL) / 'control-center' / 'last.json'
     previous, waiting = None, None
     try:
@@ -659,27 +776,31 @@ def main(args, growth):
         waiting = waiting_from(saved.get('waiting'))
     except (OSError, ValueError, AttributeError):
         pass
-    since = previous or reporting.iso(reporting.utc_now() - dt.timedelta(days=7))
+    answered = answered_before(growth.LOCAL)
+    since = read_from(previous)
     today = reporting.london_today()
     if args.target == 'dispatch':
         dispatched = os.environ.get('CC_DIRECTIVE_ID', '').strip()[:120] or None
         summary = execute(client, 'dispatch', reporting.run_id_for(today, 'dispatch'),
-                          runner_work(growth, report_mode, dispatched, waiting), since)
+                          runner_work(growth, report_mode, dispatched, waiting, answered=answered), since, answered)
     else:
         kind = 'report' if args.target == 'weekly' else 'daily'
         summary = execute(client, args.target, reporting.run_id_for(today, kind),
                           workspace_work(growth, args.target, report_mode, args.offline, args.observations,
-                                         args.require_existing_history, waiting), since)
+                                         args.require_existing_history, waiting, answered=answered), since, answered)
     summary['mode'] = report_mode
-    summary['decisions_read_at'] = summary.get('decisions_read_at') or previous
     if summary.get('waiting') is None:   # a synthetic or failed run leaves his list as it was
         summary['waiting'] = waiting
-    instructions = (summary.get('decisions') or {}).get('instructions') or []
-    record_instructions(growth.LOCAL, instructions, summary['decisions_read_at'])
-    if summary.get('mode') == 'live' and summary.get('decisions'):
-        settled = gates.settle(growth.LOCAL, summary['decisions'])
+    decided = summary.get('decisions')
+    instructions = (decided or {}).get('instructions') or []
+    if takes and decided is not None and summary.get('decisions_read_at'):
+        record_answers(growth.LOCAL, decided, summary['decisions_read_at'])
+        record_instructions(growth.LOCAL, instructions, summary['decisions_read_at'])
+        settled = gates.settle(growth.LOCAL, decided)
         if settled:
             summary['verdicts_recorded'] = len(settled)
+    else:
+        summary['decisions_read_at'] = previous     # nothing taken, so the next live run reads it all again
     atomic_json(ledger, summary)
     shown = dict(summary)
     if shown.get('decisions'):

@@ -10,12 +10,16 @@ The growth North Star is "New listeners a week who arrived through a fan's share
 
 1. **A share action on every edition.** Use the phone's own share sheet from the player and from Today. Each share mints a token `s`, stored server-side: the token (random, unguessable), a hashed anonymous sharer ID, `drop_id`, `pundit`, the asset type (show, clip or card), the target app if the share sheet reports it, and the time created. The shared URL keeps today's deep link: `https://fulltime.fm/?drop=<drop>&pundit=<pundit>&s=<token>`.
 2. **The recipient lands on that AI Pundit's show** and may preview it. The shared choice never overwrites the recipient's own saved AI Pundit (brand system rule).
-3. **First touch, stored once.** On a new anonymous identity's first visit, keep `s` and the `utm_*` tags with the landing time. Never overwrite them.
-4. **The join, inside the product's own data.**
-   - share-arrived new listener: an identity whose first finished show (actual playback completion, not a switch or a load) happens within 7 days of a first touch carrying a valid `s`;
-   - brand-post new listener: the same with a `utm_content` creative ID and no `s`;
-   - untokenised new listener: a new finished listener with neither.
-5. **A weekly aggregate export**, read-only and authenticated, in the MEASUREMENT.md version 1 shape: `share_arrived_new_listeners`, `brand_post_new_listeners` (with a breakdown by `utm_content`), `untokenised_new_listeners` and `shares_created`, over whole London weeks, each with a versioned `query_ref`. Counts only: no person IDs, devices, addresses or event payloads leave the product.
+3. **First touch, stored once.** On a new anonymous identity's first visit, keep `s` and the `utm_*` tags with the landing time. Never overwrite them: a later share link does not change the first touch, so someone who first arrived from search and opened a fan's link two days later is untokenised, not share-arrived.
+4. **The join, inside the product's own data.** MEASUREMENT.md states the same rule in the same words:
+
+   > A new listener counts as share-arrived when their first touch, stored once on their first visit and never overwritten, carried a valid share token `s` and their first finished show came within 7 days of it; they count in the London week of that first finished show.
+
+   - share-arrived new listener: as above. A first finished show is actual playback completion, not a switch or a load;
+   - brand-post new listener: the same join for a first touch carrying a `utm_content` creative ID and no valid `s`;
+   - untokenised new listener: a new finished listener whose first touch carried neither a valid `s` nor a creative ID;
+   - a new listener whose first touch carried `s` or a creative ID but whose first finished show came more than 7 days later is in none of the three.
+5. **A weekly aggregate export**, read-only and authenticated, in the MEASUREMENT.md version 1 shape: `share_arrived_new_listeners`, `brand_post_new_listeners`, `untokenised_new_listeners` and `shares_created`, over whole London weeks, each with a versioned `query_ref` and read after the week's last London day ended. The breakdown of brand-post arrivals by `utm_content` is one more `brand_post_new_listeners` row per creative carrying `creative_id`, beside the total row that carries none. Counts only: no person IDs, devices, addresses or event payloads leave the product.
 6. **Per-edition share previews.** Open Graph title and image per edition, so a shared link shows the AI Pundit and the match, and the missing glyphs on the published share image are fixed.
 7. **Close D7 before the first public post.** PostHog and Google Analytics consent, with counsel's check as `docs/11-legal.md` requires. Ruling (Krish, 2026-10-27): organic brand posts may recruit pilot testers before release, per take, once D7 is closed.
 
@@ -23,6 +27,7 @@ The growth North Star is "New listeners a week who arrived through a fan's share
 
 - One controlled journey works end to end: share from device A, open on device B, finish the show, and the export reports one share-arrived new listener for that week.
 - A brand link with `utm_content` and no token counts as a brand-post arrival, never as a share.
+- A visitor who first arrived without a token and opened a fan's share link two days later, then finished the show, counts as untokenised, never as a share.
 - The export contains no person-level field, and its counts match a direct query for the same window.
 
 ## Not asked
