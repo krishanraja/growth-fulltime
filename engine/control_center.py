@@ -589,8 +589,9 @@ def runner_work(growth, report_mode, dispatched=None, waiting=None):
         for name, script in (('Self-test', ['growth.py', '--self-test']),
                              ('Repository verification', ['scripts/verify_repository.py'])):
             quiet_env = {k: v for k, v in os.environ.items() if k != TOKEN_ENV}
-            proc = subprocess.run([sys.executable] + script, cwd=here, capture_output=True, text=True,
-                                  timeout=300, env=quiet_env)
+            quiet_env['PYTHONIOENCODING'] = 'utf-8'     # a Windows child would otherwise write its code page (R35)
+            proc = subprocess.run([sys.executable] + script, cwd=here, capture_output=True, text=True, encoding='utf-8',
+                                  errors='replace', timeout=300, env=quiet_env)
             last = (proc.stdout.strip().splitlines() or [''])[-1][:300]
             if proc.returncode == 0:
                 activity.append((f'{name} passed: {last}', run_url))

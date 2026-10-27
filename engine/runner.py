@@ -40,7 +40,7 @@ def run(growth, mode, offline=False, observation_file=None, run_date=None):
     history = History(Path(growth.LOCAL) / 'engine')
     rows = history.read()['observations']
     if observation_file:
-        incoming = validate_export(json.loads(Path(observation_file).read_text()))
+        incoming = validate_export(json.loads(Path(observation_file).read_text(encoding='utf-8')))
         with history.transaction() as journal:
             known = {fingerprint(x) for x in journal['observations']}
             journal['observations'] += [x for x in incoming if fingerprint(x) not in known]

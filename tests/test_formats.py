@@ -92,6 +92,16 @@ class RegistryTests(unittest.TestCase):
                 formats.load_registry(tmp)
             self.assertIn('not a registered step', str(caught.exception))
 
+    def test_only_the_match_ad_may_link_to_today_and_a_list_is_refused_not_a_crash(self):
+        for fmt in ('take_clip', 'morning_card', 'row'):
+            recipe = copy.deepcopy(formats.recipe(fmt))
+            recipe['links_to'] = 'today'
+            recipe['prelive_checks'] = list(recipe['prelive_checks']) + ['today_live', 'no_show_claim']
+            self.assertIn('only match_ad may link to Today', ' '.join(formats.recipe_errors(recipe, fmt)), fmt)
+        recipe = copy.deepcopy(formats.recipe('match_ad'))
+        recipe['links_to'] = ['today']
+        self.assertIn('exact_show or today', ' '.join(formats.recipe_errors(recipe, 'match_ad')))
+
     def test_recipe_rules(self):
         base = formats.recipe('match_ad')
         cases = [(lambda d: d.__setitem__('script_text', 'x'), 'unknown field'),
@@ -176,6 +186,28 @@ class ReadinessTests(unittest.TestCase):
         two = [dict(v, **live_numbers) for v in three_clean()[:2]]
         self.assertFalse(formats.readiness(two, 'take_clip', LOCK_A)['ready'])
 
+    def test_one_decisions_verdicts_count_together_whatever_the_item_order(self):
+        import itertools
+        same = lambda fixture: verdict(fixture, 5)                        # one G2 decision: one instant
+        items = [same('fx-1'), same('fx-2'), same('fx-3'), verdict('fx-4', 5, 'reject')]
+        for order in itertools.permutations(items):
+            result = formats.readiness(list(order), 'take_clip', LOCK_A)
+            self.assertEqual((result['ready'], result['streak']), (False, 0), order)
+        clean = [same('fx-1'), same('fx-2'), same('fx-3')]
+        for order in itertools.permutations(clean):
+            self.assertTrue(formats.readiness(list(order), 'take_clip', LOCK_A)['ready'])
+
+    def test_rolling_back_to_an_old_lock_does_not_revive_its_streak(self):
+        history = [verdict('fx-1', 1), verdict('fx-2', 2), verdict('fx-3', 3, 'reject', lock=LOCK_B),
+                   verdict('fx-4', 4, 'edit', lock=LOCK_B), verdict('fx-5', 8)]
+        result = formats.readiness(history, 'take_clip', LOCK_A)
+        self.assertEqual((result['ready'], result['streak']), (False, 1))
+        self.assertIn('another lock', result['reason'])
+
+    def test_a_lock_with_a_trailing_newline_is_refused(self):
+        with self.assertRaises(ValueError):
+            formats.readiness([], 'take_clip', LOCK_A + '\n')
+
     def test_order_comes_from_decided_at_not_the_list(self):
         verdicts = three_clean() + [verdict('synthetic-fixture-004', 5, 'edit')]
         shuffled = list(verdicts)
@@ -252,18 +284,44 @@ class G2VerdictTests(unittest.TestCase):
                                {'creative_id': IG, 'verdict': 'reject', 'note': None},
                                {'creative_id': YT, 'verdict': 'post_it', 'note': 'This one is right.'}])
 
-    def test_an_unchanged_amendment_is_post_it_and_a_new_item_is_refused(self):
+    def test_an_unchanged_amendment_is_post_it_and_a_new_item_is_ignored(self):
         out = formats.g2_verdicts(sent(), amended(lambda items: None))
         self.assertEqual([v['verdict'] for v in out], ['post_it'] * 3)
         out = formats.g2_verdicts(sent(), amended(lambda items: items.reverse()))
         self.assertEqual([v['verdict'] for v in out], ['post_it'] * 3)
         out = formats.g2_verdicts(sent(), amended(lambda items: items[2].__setitem__('media_sha256', 'f' * 64)))
         self.assertEqual([v['verdict'] for v in out], ['post_it', 'post_it', 'edit'])
-        with self.assertRaises(ValueError) as caught:
-            formats.g2_verdicts(sent(), amended(lambda items: items.append({'creative_id': X, 'channel': 'x'})))
-        self.assertIn(X, str(caught.exception))
+        # An item Krish adds was never sent: it gets no verdict, and the others are still judged,
+        # so one addition never loses the decision (review of 27 October, a lost reject).
+        added = amended(lambda items: (items.append({'creative_id': X, 'channel': 'x'}), items.pop(0)))
+        out = formats.g2_verdicts(sent(), added)
+        self.assertEqual([v['verdict'] for v in out], ['reject', 'post_it', 'post_it'])
+        self.assertNotIn(X, [v['creative_id'] for v in out])
+        self.assertEqual(formats.added_items(sent(), added), [X])
         out = formats.g2_verdicts(sent(), amended(lambda items: items.clear()))
         self.assertEqual([v['verdict'] for v in out], ['reject'] * 3)
+
+    def test_a_note_the_engine_sent_is_not_his_reason(self):
+        with_note = json.loads(sent())
+        with_note['items'][0]['note'] = 'engine: alt hook tested last week'
+        text = reporting.canonical(with_note)
+        edit = json.loads(text)
+        edit['items'][0]['caption'] = 'His line.'
+        payload = reporting.canonical(edit)
+        decision = {'decision': 'approved', 'amended': True, 'exact_payload': payload}
+        out = formats.g2_verdicts(text, decision)
+        self.assertEqual((out[0]['verdict'], out[0]['note']), ('edit', None))
+        edit['items'][0]['note'] = 'Too cold for a derby.'
+        decision['exact_payload'] = reporting.canonical(edit)
+        self.assertEqual(formats.g2_verdicts(text, decision)[0]['note'], 'Too cold for a derby.')
+
+    def test_each_verdict_carries_the_match_and_lock_from_the_sent_item(self):
+        bound = json.loads(sent())
+        for i, item in enumerate(bound['items']):
+            item.update(format_id='take_clip', lock_version=LOCK_A, fixture_ref=f'fx-{i}')
+        out = formats.g2_verdicts(reporting.canonical(bound), {'decision': 'approved'})
+        self.assertEqual([(v['fixture_ref'], v['lock_version']) for v in out],
+                         [('fx-0', LOCK_A), ('fx-1', LOCK_A), ('fx-2', LOCK_A)])
 
     def test_malformed_payloads_and_decisions_are_refused(self):
         decision = amended(lambda items: None)

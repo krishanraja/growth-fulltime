@@ -6,12 +6,28 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import time
 import uuid
 
 
 def now():
     return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+RFC3339 = re.compile(r'(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?(Z|[+-]\d{2}:\d{2})')
+
+
+def instant(value):
+    """A moment with its offset, read the same way on every Python from 3.9: RFC 3339
+    only (date, T, time, optional fraction, then Z or +HH:MM). Python 3.11 and later
+    accept far more in fromisoformat, so it is never trusted alone."""
+    found = RFC3339.fullmatch(value) if isinstance(value, str) else None
+    if not found:
+        raise ValueError(f'{value!r} is not an RFC 3339 date and time with its offset')
+    day, clock, fraction, offset = found.groups()
+    fraction = '.' + (fraction + '000000')[:6] if fraction else ''
+    return dt.datetime.fromisoformat(f'{day}T{clock}{fraction}{"+00:00" if offset == "Z" else offset}')
 
 
 def fingerprint(value):

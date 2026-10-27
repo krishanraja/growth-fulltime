@@ -88,7 +88,7 @@ def v2_errors(root=ROOT):
 
 def main():
     paths = subprocess.check_output(['git', 'ls-files', '--cached', '--others', '--exclude-standard'],
-                                    cwd=ROOT, text=True).splitlines()
+                                    cwd=ROOT, text=True, encoding='utf-8').splitlines()
     errors, json_count, link_count = [], 0, 0
     for name in sorted(set(paths)):
         path = ROOT / name

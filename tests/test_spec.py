@@ -27,9 +27,21 @@ def errors_for(change):
     return spec.validate(value)
 
 
-def all_gates(value):
-    return {'readiness': {f['format_id']: True for f in value['formats']}, 'organic_in_force': True,
-            'd7_in_force': True, 'identity_verified': {c['channel']: True for c in value['channels']}}
+def evidence(value):
+    """What a live week needs, as the engine reads it: three clean verdicts on three matches
+    for every format under its lock, ORGANIC and D7 in force, and a fresh brand identity
+    on every platform the spec's channels use."""
+    verdicts = [{'format_id': f['format_id'], 'lock_version': f['lock_version'], 'fixture_ref': f'fx-{n}',
+                 'creative_id': f'TT_CLASH_CLIP_C0{n}_H01_V1_2026110{n}', 'verdict': 'post_it',
+                 'prelive_checks_passed': True, 'unit_cost_recorded': True, 'unit_minutes_recorded': True,
+                 'decided_at': f'2026-11-0{n}T09:00:00+00:00'} for f in value['formats'] for n in (1, 2, 3)]
+    state = {'rulings': {'ORGANIC': {'in_force': True}, 'D7': {'in_force': True}}}
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    hosts = {'tiktok': 'tiktok.com', 'instagram': 'instagram.com', 'youtube': 'youtube.com', 'threads': 'threads.net',
+             'x': 'x.com', 'facebook': 'facebook.com', 'whatsapp_channel': 'whatsapp.com'}
+    identities = {p: {'platform': p, 'verified': True, 'account_scope': 'brand', 'verified_at': now,
+                      'source_url': f'https://{h}/@fulltime'} for p, h in hosts.items()}
+    return verdicts, state, identities
 
 
 def live(value=None):
@@ -139,11 +151,17 @@ class ValidateTests(unittest.TestCase):
                  (lambda v: v['window'].__setitem__('tz', 'UTC'), 'spec.window.tz'),
                  (lambda v: v['window'].__setitem__('end', '2026-11-02'), 'start must be before end'),
                  (lambda v: v['window'].__setitem__('end', '2026-11-10'), 'more than 7 days'),
-                 (lambda v: v['window'].update(start='2026-11-09', end='2026-11-15'), 'not in the week')]
+                 (lambda v: v['window'].update(start='2026-11-09', end='2026-11-15'), 'Monday to Sunday'),
+                 (lambda v: v['window'].__setitem__('end', '2026-11-09'), 'Monday to Sunday'),
+                 (lambda v: v.__setitem__('run_id', 'fulltime:2026-W45\n'), 'fulltime:YYYY-Www'),
+                 (lambda v: v['fixtures'][0].__setitem__('kickoff', '2027-03-13T15:00:00+00:00'),
+                  'outside the spec window'),
+                 (lambda v: v.__setitem__('objectives', []), 'must include share_arrived_new_listeners'),
+                 (lambda v: v['objectives'].pop(), 'must include marketing_cash_gbp')]
         for change, expected in cases:
             errors = errors_for(change)
             self.assertTrue(any(expected in e for e in errors), (expected, errors))
-        self.assertEqual(errors_for(lambda v: v['window'].__setitem__('end', '2026-11-09')), [])
+        self.assertEqual(errors_for(lambda v: None), [])          # 2 to 8 November, Monday to Sunday
 
     def test_mode_and_objectives(self):
         cases = [(lambda v: v.__setitem__('mode', 'test'), 'spec.mode'),
@@ -260,7 +278,7 @@ class DigestAndCompileTests(unittest.TestCase):
 
     def test_proof_mode_compiles_without_any_gate(self):
         value = example()
-        run = spec.compile(value, {})
+        run = spec.compile(value)
         self.assertEqual(set(run), {'run_id', 'mode', 'formats', 'channels', 'payload_sha256'})
         self.assertEqual((run['run_id'], run['mode']), ('fulltime:2026-W45', 'proof'))
         self.assertEqual(run['payload_sha256'], spec.digest(value))
@@ -273,36 +291,34 @@ class DigestAndCompileTests(unittest.TestCase):
         value['mode'] = 'test'
         value['channels'][0]['cap_per_day'] = 9
         with self.assertRaises(ValueError) as caught:
-            spec.compile(value, {})
+            spec.compile(value)
         self.assertIn('spec.mode', str(caught.exception))
         self.assertIn('cap_per_day', str(caught.exception))
 
-    def test_live_mode_compiles_only_with_every_gate(self):
+    def test_live_mode_compiles_only_with_every_gate_computed_from_evidence(self):
         value = live()
-        run = spec.compile(value, all_gates(value))
+        verdicts, state, identities = evidence(value)
+        run = spec.compile(value, verdicts, state, identities)
         self.assertEqual(run['mode'], 'live')
         missing = {
-            'take_clip is not ready': lambda g: g['readiness'].__setitem__('take_clip', False),
-            'match_ad is not ready': lambda g: g['readiness'].pop('match_ad'),
-            'ORGANIC exception is not in force': lambda g: g.__setitem__('organic_in_force', False),
-            'D7, the analytics consent item, is not in force': lambda g: g.pop('d7_in_force'),
-            'identity on threads is not verified': lambda g: g['identity_verified'].__setitem__('threads', False),
-            'identity on yt_shorts is not verified': lambda g: g['identity_verified'].pop('yt_shorts'),
+            'take_clip is not ready': lambda v, st, ids: v.__setitem__(0, {**v[0], 'verdict': 'edit'}),
+            'match_ad is not ready': lambda v, st, ids: [v.remove(x) for x in list(v) if x['format_id'] == 'match_ad'],
+            'ORGANIC exception is not in force': lambda v, st, ids: st['rulings'].pop('ORGANIC'),
+            'D7, the analytics consent item, is not in force': lambda v, st, ids: st['rulings']['D7'].update(in_force='yes'),
+            'identity on threads is not verified': lambda v, st, ids: ids.pop('threads'),
+            'identity on yt_shorts is not verified': lambda v, st, ids: ids['youtube'].update(account_scope='personal'),
         }
         for expected, change in missing.items():
-            gates = all_gates(value)
-            change(gates)
+            verdicts, state, identities = evidence(value)
+            change(verdicts, state, identities)
             with self.assertRaises(ValueError) as caught:
-                spec.compile(value, gates)
+                spec.compile(value, verdicts, state, identities)
             self.assertIn(expected, str(caught.exception))
-        gates = all_gates(value)
-        gates['organic_in_force'] = 'yes'
-        with self.assertRaises(ValueError):
-            spec.compile(value, gates)
         with self.assertRaises(ValueError) as caught:
-            spec.compile(value, None)
+            spec.compile(value)
         for expected in ('row is not ready', 'ORGANIC', 'D7', 'identity on tiktok'):
             self.assertIn(expected, str(caught.exception))
+        self.assertFalse(spec.gates(value)['readiness']['take_clip'])    # nothing to read means not ready
 
 
 class ProposalTests(unittest.TestCase):

@@ -25,6 +25,7 @@ CHANNEL_PREFIX = {'tiktok': 'TT', 'ig_reels': 'IG', 'ig_feed': 'IG', 'yt_shorts'
 MODES = ('proof', 'live')
 OBJECTIVE_KEYS = ('share_arrived_new_listeners', 'brand_post_new_listeners', 'marketing_cash_gbp',
                   'attributed_new_completers')
+REQUIRED_OBJECTIVES = ('share_arrived_new_listeners', 'marketing_cash_gbp')   # plan section 1
 ROLES = ('push', 'derived')
 ARM_UNITS = ('matchweek', 'match')
 TIMEZONE = 'Europe/London'
@@ -74,7 +75,7 @@ def _text(value):
 
 
 def _date(value):
-    if not isinstance(value, str) or not DATE.match(value):
+    if not isinstance(value, str) or not DATE.fullmatch(value):
         return None
     try:
         return dt.date.fromisoformat(value)
@@ -83,10 +84,9 @@ def _date(value):
 
 
 def _datetime_with_offset(value):
-    if not isinstance(value, str) or 'T' not in value:
-        return False
+    from .records import instant
     try:
-        return dt.datetime.fromisoformat(value.replace('Z', '+00:00')).tzinfo is not None
+        return instant(value).tzinfo is not None
     except ValueError:
         return False
 
@@ -153,9 +153,14 @@ def _window(spec, out):
             out.append('spec.window: start must be before end')
         elif (end - start).days > MAX_WINDOW_DAYS:
             out.append(f'spec.window: covers more than {MAX_WINDOW_DAYS} days')
-    match = RUN_ID.match(spec.get('run_id') or '') if isinstance(spec.get('run_id'), str) else None
-    if start and match and tuple(start.isocalendar())[:2] != (int(match.group(1)), int(match.group(2))):
-        out.append('spec.window.start: is not in the week the run_id names')
+    match = RUN_ID.fullmatch(spec.get('run_id') or '') if isinstance(spec.get('run_id'), str) else None
+    if start and end and match:
+        try:
+            monday = dt.date.fromisocalendar(int(match.group(1)), int(match.group(2)), 1)
+        except ValueError:
+            return
+        if (start, end) != (monday, monday + dt.timedelta(days=6)):
+            out.append(f'spec.window: one matchweek, Monday to Sunday: {monday} to {monday + dt.timedelta(days=6)}')
 
 
 def _objectives(spec, out):
@@ -175,10 +180,15 @@ def _objectives(spec, out):
             out.append(f'{path}.target: must be a number of 0 or more')
         elif key == 'marketing_cash_gbp' and target != 0:
             out.append(f'{path}.target: marketing cash must be exactly 0')
+    for key in REQUIRED_OBJECTIVES:
+        if key not in seen:
+            out.append(f'spec.objectives: must include {key}')
 
 
 def _fixtures(spec, out):
     ranks, refs = set(), set()
+    window = spec.get('window') if isinstance(spec.get('window'), dict) else {}
+    first, last = _date(window.get('start')), _date(window.get('end'))
     for i, item in enumerate(_list(spec, 'fixtures', out)):
         path = f'spec.fixtures[{i}]'
         if not _shape(item, FIXTURE, path, out):
@@ -191,6 +201,12 @@ def _fixtures(spec, out):
         refs.add(ref if isinstance(ref, str) else None)
         if not _datetime_with_offset(item.get('kickoff')):
             out.append(f'{path}.kickoff: must be an ISO date and time with its UTC offset')
+        elif first and last:
+            from .clock import LONDON
+            from .records import instant
+            day = instant(item['kickoff']).astimezone(LONDON).date()
+            if not first <= day <= last:
+                out.append(f'{path}.kickoff: {day} is outside the spec window')
         for side in ('home', 'away'):
             if not _text(item.get(side)):
                 out.append(f'{path}.{side}: must be a non-empty string')
@@ -222,7 +238,7 @@ def _formats(spec, registry, out):
             recipe = registry[fid]
         seen.add(fid if isinstance(fid, str) else None)
         lock = item.get('lock_version')
-        if lock != 'unlocked' and not (isinstance(lock, str) and LOCK.match(lock)):
+        if lock != 'unlocked' and not (isinstance(lock, str) and LOCK.fullmatch(lock)):
             out.append(f'{path}.lock_version: must be a 64-character lowercase SHA-256 or "unlocked"')
         most = item.get('max_per_matchday')
         if not _is_int(most) or not 1 <= most <= 6:
@@ -294,7 +310,7 @@ def validate(spec, registry=None):
     if spec.get('spec_version') != SPEC_VERSION:
         out.append(f'spec.spec_version: must be {SPEC_VERSION}')
     run_id = spec.get('run_id')
-    match = RUN_ID.match(run_id) if isinstance(run_id, str) else None
+    match = RUN_ID.fullmatch(run_id) if isinstance(run_id, str) else None
     if not match:
         out.append('spec.run_id: must look like fulltime:YYYY-Www')
     else:
@@ -331,26 +347,38 @@ def digest(spec):
     return reporting.canonical_sha256(spec)
 
 
-def compile(spec, gates, registry=None):
-    """The run the spec allows, or ValueError with every reason it is refused.
+def gates(campaign, verdicts=(), state=None, identities=None):
+    """The gates a live week needs, computed from evidence and never written by hand:
+    readiness from Krish's verdict ledger under each format's own lock, ORGANIC and D7
+    from the synced state, and each channel's brand identity from the verified registry."""
+    from . import formats, policy
+    state = state if isinstance(state, dict) else {}
+    rulings = state.get('rulings') if isinstance(state.get('rulings'), dict) else {}
+    found = [x for x in (identities or {}).values()] if isinstance(identities, dict) else []
+    return {'readiness': formats.readiness_gate(list(verdicts or []), campaign),
+            'organic_in_force': policy.organic_in_force(state),
+            'd7_in_force': (rulings.get('D7') or {}).get('in_force') is True,
+            'identity_verified': {item['channel']: any(policy.identity_verified(x, CHANNEL_PLATFORM[item['channel']])
+                                                       for x in found) for item in campaign['channels']}}
 
-    gates = {'readiness': {format_id: bool}, 'organic_in_force': bool,
-             'd7_in_force': bool, 'identity_verified': {channel: bool}}.
-    Proof mode posts nothing, so only live mode reads the gates."""
+
+def compile(spec, verdicts=(), state=None, identities=None, registry=None):
+    """The run the spec allows, or ValueError with every reason it is refused.
+    Proof mode posts nothing, so only live mode reads the gates, and it computes them
+    itself (gates()): a ready format needs three clean verdicts on three matches in
+    the ledger, so no session can declare it."""
     errors = validate(spec, registry)
     if not errors and spec['mode'] == 'live':
-        gates = gates if isinstance(gates, dict) else {}
-        ready = gates.get('readiness') if isinstance(gates.get('readiness'), dict) else {}
-        verified = gates.get('identity_verified') if isinstance(gates.get('identity_verified'), dict) else {}
+        found = gates(spec, verdicts, state, identities)
         for item in spec['formats']:
-            if ready.get(item['format_id']) is not True:
+            if found['readiness'].get(item['format_id']) is not True:
                 errors.append(f'live mode: {item["format_id"]} is not ready (three post it verdicts on three matches)')
-        if gates.get('organic_in_force') is not True:
+        if found['organic_in_force'] is not True:
             errors.append('live mode: the ORGANIC exception is not in force')
-        if gates.get('d7_in_force') is not True:
+        if found['d7_in_force'] is not True:
             errors.append('live mode: D7, the analytics consent item, is not in force')
         for item in spec['channels']:
-            if verified.get(item['channel']) is not True:
+            if found['identity_verified'].get(item['channel']) is not True:
                 errors.append(f'live mode: the Full Time identity on {item["channel"]} is not verified')
     if errors:
         raise ValueError('; '.join(errors))
