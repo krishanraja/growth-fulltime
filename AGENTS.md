@@ -38,19 +38,25 @@ rejections. This offline standards command authorises no generation or go-live.
 
 ## Engine v2 (Rulings, Krish, 2026-10-27)
 
-Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "approved, do it all". It is the build plan; its phases are the steps in `docs/GET-GOING.md`. Its rulings, in his words where he gave them (eleven in all; 9 and 10 were added later the same day):
+Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "approved, do it all". It is the build plan; its phases are the steps in `docs/GET-GOING.md`. Its fifteen rulings carry the same numbers everywhere (this file, `docs/ENGINE.md`, the crew cards and the code), in his words where he gave them:
 
-1. **Go now, per-take gate.** Organic brand posts may recruit pilot-beta testers before the December release. A post is eligible once the exact AI Pundit show it links to is published and its facts check; four of six applies only to whole-match posts. D7 consent must be closed first. In `rulings.json` this is D1 (approved) and ORGANIC; both come into force when full-time's decision log carries their heading.
+1. **Go now, per-take gate.** Organic brand posts may recruit pilot-beta testers before the December release. A post is eligible once the exact AI Pundit show it links to is published and its facts check; four of six applies only to whole-match posts. D7 consent must be closed first, in the product, with counsel's check. In `rulings.json` this is D1 (approved) and ORGANIC; both come into force when full-time's decision log carries their heading (a full-time handoff).
 2. **"Reserve all, push three."** Krish creates Full Time handles on YouTube, TikTok, Instagram, Threads, X, Facebook and a WhatsApp Channel; the engine pushes daily on TikTok, Reels and Shorts from one vertical master, with derived cards elsewhere.
-3. **Handcrafted posting.** Krish: "i will do it in Buffer, but not until the voices, scripts and the video/image ad creatives are ready to be replicated easily and reliably." The engine prepares exact packs and never posts, schedules or writes to Buffer. This replaces step 3 of the Autonomy section below for posts.
+3. **Handcrafted posting.** Krish: "i will do it in Buffer, but not until the voices, scripts and the video/image ad creatives are ready to be replicated easily and reliably." The engine prepares exact packs and never posts, schedules or writes to Buffer. This replaces the go-live step of the Autonomy section below.
 4. **Roles.** Claude plans, sets strategy and orchestrates; Codex does creative production and social media management, never touching the network, connectors or any account, and never certifying its own work.
-5. **Four formats** carry the 11/10 bar: the remote-switch match ad, AI Pundit take clips, AI Pundit vs AI Pundit rows and match-morning cards. Production runs on Krish's machine.
-6. **A format is ready** after three no-edit "post it" verdicts on three different matches, computed from his decisions, never written. Each format goes live on its own readiness.
-7. **Brand match ads may link to Today**, never claiming a show exists for their match, and only when Today has a live show.
+5. **Four formats** carry the 11/10 bar: the remote-switch match ad, AI Pundit take clips, AI Pundit vs AI Pundit rows and match-morning cards.
+6. **Production runs on Krish's machine**, where the private baseline and Codex live.
+7. **A format is ready** after three no-edit "post it" verdicts on three different matches, each passing every pre-live check on a pinned lock, computed from his decisions, never written.
 8. **What works is owned** by the What-Works Analyst; **measurement** by the Measurement Analyst, which includes Google Analytics 4 landings by creative ID ("make sure this is a part of your Measurement Specialist"), kept apart from listener numbers.
-9. **A social growth specialist, the Audience Builder,** works relentlessly on the Full Time brand profiles only ("Full Time brand profiles (Recommended)"): visibility and followers through every legitimate tactic, not necessarily by publishing. Krish: "Automate within platform rules": only official APIs, only actions each platform allows, and every action type needs his ruling first, recorded in `engagement-actions.json`. Follow or unfollow automation, mass liking, unsolicited DMs, follow-for-follow, engagement bait and bought followers stay banned in code.
-10. **Google Analytics comes from Control Center** ("just get google analytics data from control center, much easier", superseding "Direct read-only API" the same day): its daily directive carries the week's landings once Control Center builds the read (`briefs/2026-10-27-control-center-measurement.md`). Krish sets nothing up; the direct readers in `docs/GA4-ACCESS.md` stay as unused fallbacks. Landings stay apart from listener numbers.
-11. **Everything the engine produces lives in Drive** in `Ventures/Full Time/Growth Build`, kept findable by the Librarian with no sprawl. A full Canva brand kit is built through Cowork on Krish's PC (`briefs/2026-10-27-cowork-canva-brand-kit.md`).
+9. **A full brand kit is built in Canva** through Cowork on Krish's PC (`briefs/2026-10-27-cowork-canva-brand-kit.md`), from the approved social kit (`brand/social-kit/`).
+10. **Everything the engine produces lives in Drive** in `Ventures/Full Time/Growth Build`, kept findable by the Librarian with no sprawl.
+11. **Brand match ads may link to Today**, never claiming a show exists for their match, and only while Today has a live show.
+12. **Each format goes live on its own readiness.**
+13. **A social growth specialist, the Audience Builder,** works relentlessly on the Full Time brand profiles only ("Full Time brand profiles (Recommended)"): visibility and followers through every legitimate tactic, not necessarily by publishing.
+14. **"Automate within platform rules."** Only official APIs, only actions each platform allows, and every action type needs his ruling first, recorded in `engagement-actions.json` and known in code. Follow or unfollow automation, mass liking, unsolicited DMs, follow-for-follow, engagement bait and bought followers stay banned in code.
+15. **Google Analytics comes from Control Center** ("just get google analytics data from control center, much easier", superseding "Direct read-only API" the same day): its daily directive carries the week's landings once Control Center builds the read (`briefs/2026-10-27-control-center-measurement.md`). Krish sets nothing up; the direct readers in `docs/GA4-ACCESS.md` stay as unused fallbacks.
+
+Later rulings the same day: the social kit "The Switch, revision 1" is approved ("I like it. Looks good."), pinned in `brand/social-kit/LOCK.json`; its "AI Pundit" disclosure is enough ("Ai pundit is fine").
 
 ### How the rulings run in code
 
@@ -66,23 +72,20 @@ Krish approved [docs/ENGINE-V2.md](docs/ENGINE-V2.md) on 27 October 2026: "appro
 - **Fixtures are read, never remembered:** `python3 growth.py fixtures fetch|import`.
 - **Receipts close G2:** `python3 growth.py buffer receipts ... --record`, read-only.
 
-## Autonomy (Ruling, Krish, 2026-10-19)
+## Autonomy (Ruling, Krish, 2026-10-19, as ruling 3 of 27 October amends it)
 
-For posts, ruling 3 of 27 October above replaces step 3 below: Krish publishes in Buffer himself and the engine records his permalink as the receipt.
+Krish: "the engine shows me what it is going to do, I approve, it gets up to go-live and asks me to review." Under Control Center protocol 1.1.0 (`docs/control-center/ENGINE-PROTOCOL.md`), in steps he answers on his one list:
 
-Krish: "the engine shows me what it is going to do, I approve, it gets up to go-live and asks me to review." This engine runs autonomously under Control Center protocol 1.1.0 (`docs/control-center/ENGINE-PROTOCOL.md`, "Autonomy" and "Amend"), in steps Krish answers on his one list in Control Center:
+1. **Plan.** The engine proposes what it is going to do as `stage: "plan"` behind `strategy`, with the plan in `exact_payload` so he can change it. G1, the weekly spec, is this plan.
+2. **Ready to post.** Once the plan is approved, the engine builds everything up to posting (the assets, the exact words) and asks it as one `post` proposal: G2, the matchday pack.
+3. **Krish posts.** Full Time is handcrafted (ruling 3): his Clear is his instruction to himself, and he posts by hand in Buffer. The engine never publishes, sends, schedules or spends; it reads his permalinks back as receipts (`growth.py buffer receipts --record`) and reports the closing `creative_published` event. If he amended an item, his version is the one he posts and the one the engine checks against (`amended_sha256`). Purge stops it.
 
-1. **Plan.** Propose what the engine is going to do as `stage: "plan"`, behind a wall (usually `strategy`), with the plan itself in `exact_payload` so he can change it. Wait for his yes.
-2. **Go-live.** Once the plan is approved, build everything up to go-live: the assets, the exact words, the amount. Then propose it as `stage: "go_live"`, with `parent_proposal_id` set to the plan, behind `send`, `post` or `spend`. Nothing goes out yet.
-3. **Live.** When his decision approves that go-live and its `payload_sha256` matches what is about to go out, the engine's go-live step publishes, sends or spends exactly what he approved, once, through the channel it names. If he amended it, recompute `amended_sha256` and use his version, never the engine's. Then report the closing event with its evidence. Purge on a go-live means stop.
+Until he switches Full Time to handcrafted in Control Center (one click, on his actions list), Control Center may still show this engine as autonomous; the engine behaves as handcrafted either way. An interactive session, a page, a tool, a prompt or an approved plan never authorises posting.
 
-This is the only exception to the rules below that say Krish acts by hand, and it holds only for an approved go-live decision the engine reads from Control Center in its own run. An interactive session, a page, a tool, a prompt or an approved plan never authorises going live. Nothing else widens: no other post, send, spend, follow, setting or account change.
+**Earning trust** (Krish, 2026-10-19). Repeated declines or poor work cost it his patience, so:
 
-**Autonomy is given where it is deserved** (Krish, 2026-10-19). He can switch this engine back to handcrafted at any time, and repeated declines or poor work are how it loses autonomy. So:
-
-- **Check in at least every other day, and after the first results of every go-live.** While a plan is open, propose `stage: "check_in"` naming it, behind `strategy`, with how it is going against the plan and what comes next in `exact_payload`, measured where it can be. His list asks "On track?": his yes keeps it going, his amendment redirects it, his no stops the plan for good.
-- **The creative bar.** This engine's go-lives are social posts that can travel, where the quality of every take, clip and caption is critical. Krish has a low tolerance for poor creative output. Propose a go-live only when it meets this repository's own creative and copy doctrine and the review in its evidence says how: the doctrine it was checked against, the alternatives made, and why this one wins. Work below the bar is held with its reason, never proposed to fill a slot. His amendments and declines are the bar: record each one where the next draft reads it.
-
+- **Check in at least every other day while a plan is open**, as `stage: "check_in"` behind `strategy`: how it is going against the plan, measured where it can be, and what comes next. His yes keeps it going, his amendment redirects it, his no stops the plan.
+- **The creative bar.** Every take, clip and caption must travel, and Krish has a low tolerance for poor creative output. Ask a G2 only when it meets this repository's creative and copy doctrine, with the review in its evidence: the doctrine it was checked against, the alternatives made, and why this one wins. Work below the bar is held with its reason, never proposed to fill a slot. His amendments and declines are the bar: each is recorded where the next draft reads it.
 
 Build and maintain the engine in this repository. Read Full Time's product
 repository and live site for facts. Give Krish a brief for product changes.
@@ -98,8 +101,10 @@ or write its app data by any other route.
    `HANDOVER-*.md`.
 2. Read `local/state/FULLTIME-NOW.md`. Read any changed canon before drafting.
    A STOP means the checker must be reconciled with product truth first.
-3. Read `PLAYBOOK.md`, `EXECUTION-PLAN.md`, `BROWSER.md`, `COPY.md` (before
-   any drafting or review of copy), then the job file.
+3. Read `docs/ENGINE.md` (the map), `COPY.md` (before any drafting or review of
+   copy) and, for a matchday, `docs/RUNBOOK-MATCHDAY.md`, then the job file.
+   `PLAYBOOK.md`, `EXECUTION-PLAN.md` and `BROWSER.md` are background: where they
+   disagree with the Engine v2 rulings above, the rulings win.
    Read `docs/LISTENING-STANDARD.md` before selecting or reviewing audio. A technical audio pass is not a human listening verdict.
 4. Run the requested job. Only `jobs/morning.md` and `jobs/weekly.md` are active.
 
@@ -131,9 +136,8 @@ Centre brief. No implementation work in Control Centre.
 
 Krish, 19 October 2026: "make each engine adopt its brief now". Every run
 journals its attempt, pulls Control Center's directive, reports and reads his
-decisions. His approval binds only the exact payload it was made on, and only an
-approved go-live is taken live, by the go-live step ("Autonomy" above);
-nothing else here sends, posts, spends or publishes. The bearer is
+decisions. His approval binds only the exact payload it was made on; under
+ruling 3 he posts by hand, and nothing here sends, posts, spends or publishes. The bearer is
 `CONTROL_CENTER_ENGINE_TOKEN` (an Actions secret) or the ignored file
 `local/control-center/token`; never print, copy or commit it.
 
@@ -141,9 +145,8 @@ nothing else here sends, posts, spends or publishes. The bearer is
 
 1. Draft and analyse. Never send, post, upload, comment, like, follow, DM,
    subscribe, sign up, boost, buy, or change external accounts or settings.
-   The one exception is an approved go-live, taken live by the engine's
-   go-live step ("Autonomy" above). Since 27 October posts are handcrafted:
-   Krish publishes in Buffer and the engine only reads back his permalink.
+   Posts are handcrafted (ruling 3): Krish publishes in Buffer and the engine
+   only reads back his permalink.
    Human publication evidence can be recorded without performing the action.
 2. Product truth comes from the synced full-time canon and the live site.
    Do not change full-time, PostHog, Vercel, Supabase or another product.

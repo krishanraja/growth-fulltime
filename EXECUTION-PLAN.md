@@ -1,5 +1,7 @@
 # Full Time growth execution and handoff
 
+> **Status: background, written before engine v2 (27 October 2026).** Where this file disagrees with the Engine v2 rulings in [AGENTS.md](AGENTS.md) or with [docs/ENGINE.md](docs/ENGINE.md), those win. Its targets and channel limits are history; the live ones are in `docs/NORTH_STAR.md` and AGENTS.md.
+
 The growth-side implementation is complete. Product implementation and Control
 Centre implementation belong to separate sessions using the briefs below.
 The engine never turns incomplete access or product gates into a success claim.

@@ -6,7 +6,8 @@ import sys
 
 from .records import History, atomic_json
 
-V2 = ('spec', 'formats', 'pack', 'buffer', 'library', 'session', 'dispatch', 'audience', 'fixtures', 'actions')
+V2 = ('spec', 'formats', 'pack', 'buffer', 'library', 'session', 'dispatch', 'audience', 'fixtures', 'actions',
+      'invariants')
 
 
 def _json(path):
@@ -42,7 +43,10 @@ def _add_v2(commands):
     fixtures.add_argument('operation', choices=['fetch', 'import', 'show'])
     fixtures.add_argument('file', nargs='?', help='import: a football-data.org or API-Football reply saved as JSON')
     fixtures.add_argument('--date', help='a day in the week to read (YYYY-MM-DD); today in London by default')
-    commands.add_parser('actions', help="Krish's actions today and the engine's own to-do")
+    actions = commands.add_parser('actions', help="Krish's actions today and the engine's own to-do")
+    actions.add_argument('--all', action='store_true', help='every open one-off setup step, not only the first three')
+    invariants = commands.add_parser('invariants', help='check every invariant in invariants/registry.json')
+    invariants.add_argument('operation', choices=['check'])
     buffer.add_argument('--channels', required=True,
                         help="Buffer's own channel records (list_channels), so every ID is matched to its service and name")
     library = commands.add_parser('library', help='the Growth Build library: names, reconcile, bundles')
@@ -219,8 +223,15 @@ def _run_v2(args, growth):
     if args.command == 'actions':
         from . import actions, reporting
         state = growth.load_state() or {}
-        result = actions.compute(growth.LOCAL, reporting.london_today(), state, growth.load_rulings())
+        result = actions.compute(growth.LOCAL, reporting.london_today(), state, growth.load_rulings(),
+                                 setup_shown=None if args.all else actions.SETUP_SHOWN)
         return '\n'.join(actions.lines(result))
+    if args.command == 'invariants':
+        from . import invariants
+        result = invariants.check()
+        if not result.get('ok'):
+            raise ValueError('invariants failed: ' + json.dumps(result, allow_nan=False)[:2000])
+        return result
     if args.command == 'session':
         from . import session, spec
         if args.operation == 'minutes':

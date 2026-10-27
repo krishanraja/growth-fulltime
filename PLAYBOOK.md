@@ -1,5 +1,7 @@
 # Full Time growth operating system
 
+> **Status: background, written before engine v2 (27 October 2026).** Where this file disagrees with the Engine v2 rulings in [AGENTS.md](AGENTS.md) or with [docs/ENGINE.md](docs/ENGINE.md), those win. Its targets and channel limits are history; the live ones are in `docs/NORTH_STAR.md` and AGENTS.md.
+
 Read AGENTS.md and EXECUTION-PLAN.md first. Krish's current constraints override
 the historical channel banks in knowledge/. That source is research history,
 not an active calendar or permission to recruit through personal accounts.

@@ -15,7 +15,9 @@ Center changes are handoff briefs. Nothing here sends or publishes marketing.
 - **How it works now (engine v2):** [docs/ENGINE.md](docs/ENGINE.md), the 6 KB map a
   fresh session starts from. The approved plan is [docs/ENGINE-V2.md](docs/ENGINE-V2.md).
 - **What happened last:** the newest `HANDOVER-*.md`.
-- **What waits on Krish today:** `python3 growth.py actions`.
+- **What waits on Krish today:** `python3 growth.py actions` (`--all` for every step).
+- **Everything open, with its holder:** [docs/OPEN.md](docs/OPEN.md).
+- **One matchday, step by step:** [docs/RUNBOOK-MATCHDAY.md](docs/RUNBOOK-MATCHDAY.md).
 
 The daily shape of v2: each morning the engine reads the product and the week's
 fixtures, prepares one matchday pack (G2) when a show is published, and reports

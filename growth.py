@@ -1258,7 +1258,27 @@ def self_test():
 
 ENGINE_COMMANDS = ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export', 'cc',
                    'spec', 'formats', 'pack', 'buffer', 'library', 'session', 'dispatch', 'audience', 'ga4',
-                   'fixtures', 'actions')
+                   'fixtures', 'actions', 'invariants')
+
+
+ENGINE_HELP = """engine commands (python3 growth.py <command> --help for each):
+  run morning|weekly       the daily batch or weekly review, saved locally
+  cc morning|weekly|dispatch   the Control Center loop: report, read Krish's decisions
+  actions [--all]          Krish's actions today and the engine's own to-do
+  fixtures fetch|import|show   this London week's Premier League fixtures
+  spec check|digest|compile|propose   the weekly plan, G1
+  formats list|readiness|lock  the formats, and readiness computed from verdicts
+  pack check|propose       a matchday pack, G2
+  buffer query|receipts    read-only Buffer: Krish's permalinks close a G2
+  assets fetch|render      a published edition's audio, and a take clip render
+  library name|reconcile|canva|stamp|bundle|assemble   the Growth Build library
+  session pack|minutes     the 36 KB pack a fresh session starts from
+  dispatch CARD            a Codex task card, behind the allowance guard
+  audience actions|plan|followers   brand-profile actions within platform rules
+  invariants check         every invariant in invariants/registry.json
+  ga4 doctor|report|authorize   the fallback Google Analytics reader
+  history, creative, experiment, metrics, export, standards   the ledger and creative system
+None of these posts, sends, schedules or spends."""
 
 
 def main():
@@ -1268,7 +1288,9 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] in ENGINE_COMMANDS:
         from engine.cli import main as operations_main
         return operations_main(sys.argv[1:], sys.modules[__name__])
-    ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    ap = argparse.ArgumentParser(
+        description=__doc__.split('\n')[0], formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=ENGINE_HELP)
     ap.add_argument('--self-test', action='store_true')
     sub = ap.add_subparsers(dest='cmd')
     sy = sub.add_parser('sync'); sy.add_argument('--publish', action='store_true'); sy.add_argument('--quiet', action='store_true')

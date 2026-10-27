@@ -23,7 +23,7 @@ Crew card (docs/ENGINE-V2.md, section 3), loaded for every pack and every review
 | STOP: Full Time's rules changed | Stop; a person updates growth.py |
 | The linked show is not on the rail | Refuse the item (ruling 1, per take) |
 | A whole-match claim on a match under 4 of 6 | Refuse it |
-| Today carries no published show | Hold every match ad (ruling 7) |
+| Today carries no published show | Hold every match ad (ruling 11) |
 | The endpoint does not verify the edition | Refuse the media; render nothing |
 | Working offline | Synced rail only; match ads fail closed |
 

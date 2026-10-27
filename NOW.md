@@ -41,15 +41,19 @@ Lifecycle: building. Engine v2 ([docs/ENGINE-V2.md](docs/ENGINE-V2.md), approved
 
 ## What is next and what is waiting on Krish
 
-`python3 growth.py actions` gives the live list. Today, in order:
+`python3 growth.py actions` is the live list; `--all` shows every step, and
+[docs/OPEN.md](docs/OPEN.md) holds everything open with its holder. On 27 October,
+in the order it asks:
 
-1. Rule on D7 (PostHog and Google Analytics consent) in Control Center. It must close before the first post.
+1. Rule on D7 (consent) in Control Center; it closes in the product with counsel's check, before the first post.
 2. Switch Full Time to handcrafted in Control Center (one click).
-3. Create the Full Time handles on YouTube (a Brand Account), TikTok and Instagram (Business), with the brand inbox, then connect them to Buffer.
-4. Listen to the whole Liverpool v8 mix once and give one verdict.
-5. Approve the two product briefs (share attribution, rail supply) and start a Control Center session with `briefs/2026-10-27-control-center-measurement.md`.
+3. Listen to the whole Liverpool v8 mix once and give one verdict.
+4. Put the per-take ruling into force: approve `briefs/2026-10-27-decision-log-rulings.md` for a full-time session.
+5. Then the briefs (share attribution, rail supply, Control Center), the handles and Buffer, the Canva kit and the baseline: six one-off steps behind these.
 
-The engine's next work, without asking: render proof zero (take clips in the approved kit on the published editions) as the first G2, read fixtures each morning, and propose each week's plan on Monday.
+The engine's next work, without asking: read fixtures each morning, propose each
+week's plan on Monday, and run proof zero (take clips with real audio, in the
+approved kit) as the first G2 on Krish's machine ([the runbook](docs/RUNBOOK-MATCHDAY.md)).
 
 North Star check (2026-10-27): holds; U4 until attribution exists.
 
@@ -57,6 +61,8 @@ North Star check (2026-10-27): holds; U4 until attribution exists.
 
 - `docs/NORTH_STAR.md`: the North Star, its number and its weekly ladder.
 - `docs/ENGINE.md`: the 6 KB map a fresh session starts from.
+- `docs/RUNBOOK-MATCHDAY.md`: one matchday, from a published show to Krish's ask.
+- `docs/OPEN.md`: everything open, with its holder.
 - `HANDOVER-2026-10-27-ENGINE-V2.md`: what was built, how it was proved, what is open.
 - `README.md`: what this repository is and how it runs.
 

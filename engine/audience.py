@@ -332,7 +332,7 @@ def _account_refusals(platform, account, allowlist):
 
 def _kind_refusals(action_id, entry):
     """Every banned kind of action this one does, whatever its id: read from the id, the
-    title and the official API (ruling 9: these tactics stay banned in code)."""
+    title and the official API (ruling 14: these tactics stay banned in code)."""
     title = re.sub(r'[^A-Za-z0-9]+', ' ', str(entry.get('title') or ''))
     words = ' '.join((re.sub(r'[^A-Za-z0-9]+', ' ', str(action_id)), title,
                       re.sub(r'[^A-Za-z0-9]+', ' ', str(entry.get('official_api') or ''))))

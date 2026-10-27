@@ -282,7 +282,7 @@ def objectives(today, rows=None, runs=None, workspace=True):
                 _objective('marketing_cash_gbp', 'GBP', None, 'missing', why, window)]
     from .measurements import scorecard
     rows = list(rows or [])
-    # A Google Analytics row is landings on fulltime.fm, never completers (ruling 8), so it
+    # A Google Analytics row is landings on fulltime.fm, never completers (rulings 8 and 15), so it
     # never enters this count, whatever its label; the product's own row still counts.
     landings = [r for r in rows if isinstance(r, dict) and r.get('metric') == 'attributed_new_completers'
                 and _from_ga4(r)]

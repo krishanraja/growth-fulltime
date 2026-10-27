@@ -10,23 +10,27 @@ Full Time's growth engine: a public repository, Python 3.9+ standard library onl
 
 By 31 January 2027, most new Full Time listeners arrive because a fan shared an AI Pundit's take. The number is new listeners a week who arrived through a fan's shared link or clip: 1,250 by 25 January 2027, 49 by 16 November. Its value and urgency (U1 to U5) are on the first line under "Where it is right now" in [NOW.md](../NOW.md): U4 on 27 October, unmeasured until share attribution is wired.
 
-## Rulings of 27 October (Krish), numbered as in AGENTS.md
+## Rulings of 27 October (Krish), numbered as in AGENTS.md and ENGINE-V2
 
-1. Go now, per take: a brand post may recruit pilot-beta testers once the exact show it links to is published and its facts check. Four of six applies only to whole-match posts. D7 consent closes first.
-2. Reserve every handle, push three: TikTok, Reels and Shorts daily from one vertical master; derived cards elsewhere.
-3. Handcrafted posting: Krish posts in Buffer himself. The engine prepares exact packs and never posts, schedules or writes to Buffer.
-4. Roles: Claude plans and orchestrates; Codex makes creative and packs, never touches the network, connectors or accounts, nor certifies its own work.
-5. Four formats carry the 11/10 bar: the remote-switch match ad, take clips, Pundit vs Pundit rows and match-morning cards. Production runs on Krish's machine.
-6. A format is ready after three no-edit "post it" verdicts on three matches, computed, never written. Each goes live on its own.
-7. A match ad may link to Today only while Today has a live show, and never claims a show exists for its match.
-8. What works is owned by the What-Works Analyst; measurement by the Measurement Analyst, including Google Analytics 4 landings by creative ID.
-9. The Audience Builder grows the Full Time brand profiles only, within platform rules: official APIs, every action type ruled by Krish first. Follow automation, mass liking and bought followers stay banned in code.
-10. Google Analytics comes from Control Center's daily directive (`ga4_landings`); Krish sets nothing up. Landings never count as listeners.
-11. Everything the engine produces lives in Drive `Growth Build`, filed by the Librarian with no sprawl. A full Canva brand kit is built through Cowork.
+1. Per take: a post may go once the exact show it links to is published and checked; 4 of 6 only for whole-match posts; D7 first.
+2. Reserve every handle; push TikTok, Reels and Shorts daily from one vertical master.
+3. Handcrafted: Krish posts in Buffer. The engine never posts, schedules or writes to Buffer.
+4. Claude plans and orchestrates; Codex makes, never touches network or accounts, never certifies itself.
+5. Four formats: match ad, take clip, Pundit vs Pundit row, morning card.
+6. Production runs on Krish's machine.
+7. Ready = three no-edit "post it" verdicts on three matches, on a pinned lock, computed.
+8. What-Works Analyst owns what works; the Measurement Analyst owns the number.
+9. A full Canva brand kit, built through Cowork from the approved social kit.
+10. Everything lives in Drive `Growth Build`, filed by the Librarian.
+11. A match ad may link to Today only while Today has a live show.
+12. Each format goes live on its own readiness.
+13. The Audience Builder grows the brand profiles only.
+14. Automate within platform rules: official APIs, each action kind ruled and known in code.
+15. Google Analytics comes from Control Center's `ga4_landings`; landings are never listeners.
 
 ## The crew
 
-Each has `crew/<name>/card.md` (3 KB at most) and a reviewer's `lens.md` (1 KB). Ruling 9 added the eleventh.
+Each has `crew/<name>/card.md` (3 KB at most) and a reviewer's `lens.md` (1 KB). Ruling 13 added the eleventh.
 
 1. Product Truth: every claim and link points at something live now.
 2. Match Clock: the match fans are arguing about, timed from the product's publish.
@@ -43,7 +47,7 @@ Each has `crew/<name>/card.md` (3 KB at most) and a reviewer's `lens.md` (1 KB).
 ## Gates, one ask at a time on Krish's list
 
 - G1, each Monday: the weekly spec as a `plan` behind `strategy`, with last week's check-in folded in, then that week's `spend`.
-- G2, each matchday: one handcrafted `post` ask listing every item. Clear is "post it" for all, Purge rejects all, Change it first gives a verdict per item by diff.
+- G2, each matchday: one handcrafted `post` ask listing every item. Clear is "post it" for all, Purge rejects all, Change it first gives a verdict per item by diff, Bump waits a day.
 - No questions mid-turn: they go in `open_questions[]` and the session ends at the gate.
 
 ## Sessions
@@ -75,3 +79,4 @@ None of these posts, sends, schedules or spends; `--help` gives options.
 - [creative-system/README.md](../creative-system/README.md): characters, voices and visuals.
 - [ENGINE-V2.md](ENGINE-V2.md): the approved v2 plan; [GET-GOING.md](GET-GOING.md): the build steps.
 - [NORTH_STAR.md](NORTH_STAR.md): the ambition.
+- [RUNBOOK-MATCHDAY.md](RUNBOOK-MATCHDAY.md): one matchday; [OPEN.md](OPEN.md): what is open, and who holds it.

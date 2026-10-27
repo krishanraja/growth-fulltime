@@ -73,19 +73,9 @@ posts by hand in Buffer. Nothing in this repository posts, sends, schedules or s
 
 ## Open, and who holds it
 
-| Item | Holder | Next step |
-|---|---|---|
-| D7 consent | Krish | Rule in Control Center; it must close before the first post |
-| Handcrafted mode, handles, Buffer channels | Krish | `growth.py actions` lists them with minutes |
-| Liverpool v8 listening | Krish | One verdict on the whole mix |
-| Share attribution and rail supply | full-time, after Krish approves the briefs | Without them the number stays U4 and there is little fresh to post |
-| `ga4_landings` and the two objective keys | Control Center, after Krish starts the session | `briefs/2026-10-27-control-center-measurement.md` |
-| Proof zero | engine, on Krish's machine | The renderer is proved on a synthetic tone; render take clips with each published edition's real audio and ask them as the first G2 |
-| Caption timing and motion | engine | Word timings would light the current word; the tab blink, seal stamp and the cut variant are specified but not yet animated |
-| Canva templates | engine and Krish | Rebuild the Cowork brief's six templates from the approved kit; uploads need his yes |
-| Baseline from Krish's machine | Krish's machine | `scripts/baseline.py` with his Codex and Claude logs; until then the baseline is cloud-only |
-| v1 briefs with the old stamp form | Librarian | Archive to `99_Archive/2026-W44/` at week close (Sunday) |
-| Hosted task prompts | Krish or a hosted session | Copy `automations.json`'s two prompts into the hosted tasks |
+One register: [docs/OPEN.md](docs/OPEN.md). Krish's own steps are also what
+`python3 growth.py actions --all` prints. A matchday, step by step:
+[docs/RUNBOOK-MATCHDAY.md](docs/RUNBOOK-MATCHDAY.md).
 
 ## Do not trust
 

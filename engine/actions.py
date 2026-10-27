@@ -24,7 +24,7 @@ DAILY_MINUTES = 20
 SETUP_SHOWN = 3
 RULING_ORDER = ('D7', 'D2', 'D3')
 PUSHED = ('tiktok', 'instagram', 'youtube')          # ruling 2: the three pushed daily
-CHECKS = ('handcrafted', 'identity_verified', 'allowlist', 'ga4_landings', 'manual')
+CHECKS = ('handcrafted', 'identity_verified', 'allowlist', 'ga4_landings', 'organic_in_force', 'manual')
 
 
 def load_owner(path=OWNER_FILE):
@@ -60,7 +60,11 @@ def _seen(local, state, directive):
         allowlist = False
     body = (directive or {}).get('directive') if isinstance(directive, dict) else None
     landings = None if body is None else 'ga4_landings' in body
-    return {'handcrafted': None if autonomy is None else autonomy == 'handcrafted',
+    try:
+        organic = policy.organic_in_force(state or {}) if state else None
+    except (KeyError, TypeError, ValueError):
+        organic = None
+    return {'handcrafted': None if autonomy is None else autonomy == 'handcrafted', 'organic_in_force': organic,
             'identity_verified': identity, 'allowlist': allowlist, 'ga4_landings': landings}
 
 
@@ -91,7 +95,7 @@ def _week(day):
     return f'{year}-W{week:02d}'
 
 
-def compute(local, today, state=None, rulings=None, directive=None, now=None, owner=None):
+def compute(local, today, state=None, rulings=None, directive=None, now=None, owner=None, setup_shown=SETUP_SHOWN):
     """{'krish': [...], 'engine': [...], 'minutes': his minutes today, 'over_budget': bool}.
     Each action is {'id', 'kind', 'minutes', 'text'}; kind is decision, post or setup."""
     local = Path(local)
@@ -108,8 +112,9 @@ def compute(local, today, state=None, rulings=None, directive=None, now=None, ow
     ruling = _next_ruling(rulings)
     if ruling:
         title = (rulings[ruling].get('title') or '').rstrip('.')
+        advice = (rulings[ruling].get('recommendation') or '').strip()
         krish.append({'id': f'ruling-{ruling}', 'kind': 'decision', 'minutes': 2,
-                      'text': f'Rule on {ruling} in Control Center: {title}.'})
+                      'text': f'Rule on {ruling} in Control Center: {title}.' + (f' {advice}' if advice else '')})
     unposted = _unposted(local)
     if unposted:
         channels = sorted({c for _, _, c in unposted if c})
@@ -124,7 +129,8 @@ def compute(local, today, state=None, rulings=None, directive=None, now=None, ow
             continue
         note = ' (the engine cannot see this yet; it shows until it can)' if seen.get(check) is None and check != 'manual' else ''
         setup.append({'id': entry['id'], 'kind': 'setup', 'minutes': entry['minutes'], 'text': entry['text'] + note})
-    krish += setup[:SETUP_SHOWN]
+    shown = setup if setup_shown is None else setup[:setup_shown]
+    krish += shown
     minutes = sum(a['minutes'] for a in krish if a['kind'] != 'setup')
 
     # The engine's own to-do: what the next session does without asking him.
@@ -153,7 +159,8 @@ def compute(local, today, state=None, rulings=None, directive=None, now=None, ow
     if unposted:
         engine.append({'id': 'receipts', 'text': 'Read back Buffer receipts for the approved items '
                                                  '(growth.py buffer receipts --record).'})
-    return {'krish': krish, 'engine': engine, 'minutes': minutes, 'over_budget': minutes > DAILY_MINUTES}
+    return {'krish': krish, 'engine': engine, 'minutes': minutes, 'over_budget': minutes > DAILY_MINUTES,
+            'more_setup': len(setup) - len(shown)}
 
 
 def lines(result):
@@ -165,6 +172,9 @@ def lines(result):
     for n, a in enumerate(krish, start=1):
         label = 'one-off' if a['kind'] == 'setup' else a['kind']
         out.append(f'Your action {n} of {len(krish)} ({a["minutes"]} min, {label}): {a["text"]}')
+    if result.get('more_setup'):
+        out.append(f'{result["more_setup"]} more one-off step{"s" if result["more_setup"] != 1 else ""} wait behind these: '
+                   'growth.py actions --all lists them.')
     if result['over_budget']:
         out.append(f'Your answers and posts today come to {result["minutes"]} minutes, over the '
                    f'{DAILY_MINUTES}-minute day: the engine asks fewer things tomorrow.')

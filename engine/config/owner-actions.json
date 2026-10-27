@@ -9,6 +9,27 @@
       "done_on": null
     },
     {
+      "id": "liverpool-v8",
+      "text": "Listen to the whole Liverpool v8 mix once, on headphones, and give it one verdict: post it, change it (say what), or bin it.",
+      "minutes": 3,
+      "done_when": "manual",
+      "done_on": null
+    },
+    {
+      "id": "decision-log",
+      "text": "Approve briefs/2026-10-27-decision-log-rulings.md and start a full-time session with it, so the per-take ruling (D1 and ORGANIC) comes into force.",
+      "minutes": 2,
+      "done_when": "organic_in_force",
+      "done_on": null
+    },
+    {
+      "id": "briefs",
+      "text": "Approve the two product briefs (share attribution and rail supply) so a full-time session can build them.",
+      "minutes": 5,
+      "done_when": "manual",
+      "done_on": null
+    },
+    {
       "id": "handles",
       "text": "Create the Full Time handles on YouTube (a Brand Account), TikTok and Instagram (Business) first, with one handle everywhere and the brand inbox, never a personal email. Then reserve Threads, X, Facebook and a WhatsApp Channel.",
       "minutes": 30,
@@ -23,24 +44,24 @@
       "done_on": null
     },
     {
-      "id": "liverpool-v8",
-      "text": "Listen to the whole Liverpool v8 mix once, on headphones, and give it one verdict: post it, change it (say what), or bin it.",
-      "minutes": 3,
-      "done_when": "manual",
-      "done_on": null
-    },
-    {
-      "id": "briefs",
-      "text": "Approve the two product briefs (share attribution and rail supply) so a full-time session can build them.",
-      "minutes": 5,
-      "done_when": "manual",
-      "done_on": null
-    },
-    {
       "id": "ga4-landings",
       "text": "Start a Control Center session with briefs/2026-10-27-control-center-measurement.md, so its directive carries ga4_landings and registers the two new objective keys.",
       "minutes": 2,
       "done_when": "ga4_landings",
+      "done_on": null
+    },
+    {
+      "id": "canva-kit",
+      "text": "Run the Cowork prompt in briefs/2026-10-27-cowork-canva-brand-kit.md on your PC: the Full Time brand kit and six templates in Canva, built from the approved social kit.",
+      "minutes": 20,
+      "done_when": "manual",
+      "done_on": null
+    },
+    {
+      "id": "baseline",
+      "text": "Let a session on your PC run scripts/baseline.py over your Codex and Claude logs, so the 20x cost target has a real baseline.",
+      "minutes": 5,
+      "done_when": "manual",
       "done_on": null
     }
   ]

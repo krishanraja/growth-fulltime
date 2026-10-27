@@ -2,7 +2,7 @@
 check after acting (docs/ENGINE-V2.md, section 3).
 
 CREW lists the ten specialists of the plan in order, then the Audience Builder that
-ruling 9 added. Each names its runner, a lint and a check as dotted paths to real
+ruling 13 added. Each names its runner, a lint and a check as dotted paths to real
 callables in this repository, and its card (3 KB at most) and lens (1 KB at most)
 under crew/<id>/. errors() proves every path imports and is callable and every card
 and lens exists within its budget; load_crew() refuses a registry that fails it.

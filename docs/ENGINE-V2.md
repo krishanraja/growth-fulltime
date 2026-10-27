@@ -108,13 +108,16 @@ docs/       ENGINE-V2.md, FAILURE-REGISTER.md (R01 to R45 filed), GET-GOING.md (
 ```
 
 **New CLI verbs** (stdlib, offline-first, in `engine/`):
-- `spec check|compile|digest`
-- `formats readiness`
-- `pack build|check`
-- `session pack --kind K`
+As built (27 October; `python3 growth.py --help` lists them all):
+- `spec check|digest|compile|propose`
+- `formats list|readiness|lock`
+- `pack check|propose`
+- `session pack|minutes --kind K`
 - `dispatch CARD`
 - `invariants check`
-- `proof run|verdicts`
+- `actions`, `fixtures fetch|import|show`, `buffer query|receipts`, `library name|reconcile|canva|stamp|bundle|assemble`, `audience actions|plan|followers`, `ga4 doctor|report|authorize`
+
+Proof runs use `pack propose` in proof mode; their verdicts come back through `gates.settle`, so no separate `proof` verb was needed.
 
 Every existing command keeps working unchanged as the fallback until v2 has run one full real matchweek.
 
@@ -145,7 +148,7 @@ Growth Build/
 
 **Adopting what is already there.** The previous session's 17 files sat at the root of Growth Build. On 27 October they moved together, unrenamed, into `06_Reference/creative-handoff/2026-10-27/`. Drive file IDs survive a move, and the handoff JSON identifies every part by ID and SHA-256, so restore keeps working. The new `00_START-HERE/START-HERE.md` links to that folder first, and the repo's HANDOVER-2026-10-27-CREATIVES.md and NOW.md get a one-line pointer update in the same PR. Their numbered-part method and `assemble_fulltime_handoff.py`, which exist because the Drive connector caps uploads at 100 MB, become the Librarian's backup component (`library bundle|assemble`), with tests.
 
-**Rules, enforced in code** (`engine/library.py`; `growth.py library file|reconcile|doctor`):
+**Rules, enforced in code** (`engine/library.py`; `growth.py library name|reconcile|canva|stamp|bundle|assemble`):
 1. **One writer.** Only the Librarian files into Growth Build. Every other specialist hands its output to the Librarian.
 2. **Fixed tree.** The numbered folders above are the only ones allowed, nothing sits at the root, and the depth is 4 or less. An ad-hoc folder is refused.
 3. **Names in one pattern.**
@@ -468,7 +471,7 @@ A run only fills slots. One 1080x1920 master gets a creative ID per channel, all
   - `growth.py invariants check`;
   - `growth.py spec check specs/examples/synthetic-week.json`;
   - `growth.py session pack --kind orchestrator --check`;
-  - `growth.py formats readiness --offline` against stand-in decisions.
+  - `growth.py formats readiness` against stand-in decisions.
 - **End to end:**
   - proof zero on a real edition;
   - G2 through the stand-in, then live;

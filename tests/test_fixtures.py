@@ -131,6 +131,21 @@ class ActionsTests(unittest.TestCase):
         self.assertTrue(lines[0].startswith('Your action 1 of 3 (2 min, decision): Rule on D7'))
         self.assertTrue(all(len(x) <= 500 and '—' not in x for x in lines))
 
+    def test_the_list_says_how_many_steps_wait_and_all_shows_them(self):
+        owner = [{'id': f'step-{n}', 'text': f'Step {n}.', 'minutes': 1, 'done_when': 'manual'} for n in range(5)]
+        short = actions.compute(self.local, dt.date(2026, 10, 28), {}, {}, owner=owner)
+        self.assertEqual(len(short['krish']), 3)
+        self.assertTrue(any('2 more one-off steps wait' in x for x in actions.lines(short)))
+        every = actions.compute(self.local, dt.date(2026, 10, 28), {}, {}, owner=owner, setup_shown=None)
+        self.assertEqual(len(every['krish']), 5)
+        self.assertFalse(any('more one-off' in x for x in actions.lines(every)))
+
+    def test_a_ruling_carries_its_recommendation(self):
+        rulings = {'D7': {'status': 'pending', 'title': 'Close consent',
+                          'recommendation': "Approve, with counsel's check."}}
+        first = actions.compute(self.local, dt.date(2026, 10, 28), {}, rulings, owner=[])['krish'][0]
+        self.assertEqual(first['text'], "Rule on D7 in Control Center: Close consent. Approve, with counsel's check.")
+
     def test_the_owner_file_is_valid(self):
         self.assertTrue(actions.load_owner())
 
