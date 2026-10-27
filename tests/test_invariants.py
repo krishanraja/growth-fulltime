@@ -499,7 +499,8 @@ class RuleTests(unittest.TestCase):
                  'mcp__buffer', 'publish_video', 'media_publish', 'schedule_post')
         hosts = {'fulltime.fm', 'www.fulltime.fm', 'github.com', 'api.github.com', 'raw.githubusercontent.com',
                  'controlcenter.krishraja.com', 'accounts.google.com', 'oauth2.googleapis.com',
-                 'analyticsdata.googleapis.com', 'www.googleapis.com', 'archive.ubuntu.com', '127.0.0.1'}
+                 'analyticsdata.googleapis.com', 'www.googleapis.com', 'archive.ubuntu.com', '127.0.0.1',
+                 'api.football-data.org'}   # the Match Clock's fixtures: GET only (tests/test_fixtures.py)
         files = sorted(ROOT.glob('engine/*.py')) + sorted(ROOT.glob('scripts/*.py')) + [ROOT / 'growth.py']
         for path in files:
             text = path.read_text(encoding='utf-8')

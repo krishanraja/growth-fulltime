@@ -1,0 +1,47 @@
+{
+  "about": "Krish's one-off setup actions for engine v2 (docs/ENGINE-V2.md, Krish's actions). engine/actions.py closes each one itself when its done_when check passes; a 'manual' one closes only when a session records his confirmation here with the date, never on its own guess. Order is the order he is asked.",
+  "actions": [
+    {
+      "id": "handcrafted",
+      "text": "Switch Full Time to handcrafted in Control Center (one click), so every approved post comes back to you to post by hand.",
+      "minutes": 1,
+      "done_when": "handcrafted",
+      "done_on": null
+    },
+    {
+      "id": "handles",
+      "text": "Create the Full Time handles on YouTube (a Brand Account), TikTok and Instagram (Business) first, with one handle everywhere and the brand inbox, never a personal email. Then reserve Threads, X, Facebook and a WhatsApp Channel.",
+      "minutes": 30,
+      "done_when": "identity_verified",
+      "done_on": null
+    },
+    {
+      "id": "buffer",
+      "text": "Connect the three Full Time channels to Buffer and put their Buffer channel IDs in local/buffer-channels.json (copy examples/buffer-channels.example.json).",
+      "minutes": 10,
+      "done_when": "allowlist",
+      "done_on": null
+    },
+    {
+      "id": "liverpool-v8",
+      "text": "Listen to the whole Liverpool v8 mix once, on headphones, and give it one verdict: post it, change it (say what), or bin it.",
+      "minutes": 3,
+      "done_when": "manual",
+      "done_on": null
+    },
+    {
+      "id": "briefs",
+      "text": "Approve the two product briefs (share attribution and rail supply) so a full-time session can build them.",
+      "minutes": 5,
+      "done_when": "manual",
+      "done_on": null
+    },
+    {
+      "id": "ga4-landings",
+      "text": "Start a Control Center session with briefs/2026-10-27-control-center-measurement.md, so its directive carries ga4_landings and registers the two new objective keys.",
+      "minutes": 2,
+      "done_when": "ga4_landings",
+      "done_on": null
+    }
+  ]
+}

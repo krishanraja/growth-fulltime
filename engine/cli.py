@@ -6,7 +6,7 @@ import sys
 
 from .records import History, atomic_json
 
-V2 = ('spec', 'formats', 'pack', 'buffer', 'library', 'session', 'dispatch', 'audience')
+V2 = ('spec', 'formats', 'pack', 'buffer', 'library', 'session', 'dispatch', 'audience', 'fixtures', 'actions')
 
 
 def _json(path):
@@ -36,6 +36,13 @@ def _add_v2(commands):
     buffer = commands.add_parser('buffer', help='read-only Buffer receipts for the Full Time allowlist')
     buffer.add_argument('operation', choices=['query', 'receipts'])
     buffer.add_argument('--posts'); buffer.add_argument('--pack')
+    buffer.add_argument('--record', action='store_true',
+                        help='keep the receipts and close each approved G2 whose kept items are all posted')
+    fixtures = commands.add_parser('fixtures', help="the Match Clock: this London week's Premier League fixtures")
+    fixtures.add_argument('operation', choices=['fetch', 'import', 'show'])
+    fixtures.add_argument('file', nargs='?', help='import: a football-data.org or API-Football reply saved as JSON')
+    fixtures.add_argument('--date', help='a day in the week to read (YYYY-MM-DD); today in London by default')
+    commands.add_parser('actions', help="Krish's actions today and the engine's own to-do")
     buffer.add_argument('--channels', required=True,
                         help="Buffer's own channel records (list_channels), so every ID is matched to its service and name")
     library = commands.add_parser('library', help='the Growth Build library: names, reconcile, bundles')
@@ -193,7 +200,27 @@ def _run_v2(args, growth):
             raise ValueError('receipts needs --posts (what list_posts returned) and --pack')
         posts = _json(args.posts)
         posts = posts.get('posts') if isinstance(posts, dict) else posts
-        return {'receipts': buffer_read.receipts(posts, _json(args.pack), allowlist, records)}
+        found = buffer_read.receipts(posts, _json(args.pack), allowlist, records)
+        if args.record:
+            from . import gates
+            return {'receipts': found, 'recorded': gates.record_receipts(growth.LOCAL, found)}
+        return {'receipts': found}
+    if args.command == 'fixtures':
+        import datetime as dt
+        from . import fixtures, reporting
+        day = dt.date.fromisoformat(args.date) if args.date else reporting.london_today()
+        if args.operation == 'fetch':
+            return fixtures.fetch(growth.LOCAL, day)
+        if args.operation == 'import':
+            if not args.file:
+                raise ValueError('import needs the saved reply file')
+            return fixtures.save(growth.LOCAL, _json(args.file), day)
+        return fixtures.latest(growth.LOCAL) or {'fixtures': None, 'why': 'not read yet: growth.py fixtures fetch or import'}
+    if args.command == 'actions':
+        from . import actions, reporting
+        state = growth.load_state() or {}
+        result = actions.compute(growth.LOCAL, reporting.london_today(), state, growth.load_rulings())
+        return '\n'.join(actions.lines(result))
     if args.command == 'session':
         from . import session, spec
         if args.operation == 'minutes':

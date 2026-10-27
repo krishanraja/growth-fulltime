@@ -413,6 +413,26 @@ def push_gate(rail, state=None):
     return gate
 
 
+def public_actions(s):
+    """Krish's open actions this public reading can see: the one ruling asked next and the
+    one-off setup steps not yet seen done (engine/actions.py holds the full list)."""
+    from engine import actions, policy as _policy
+    out = []
+    pending = {rid: {'status': r['status'], 'title': t} for (rid, r), t in
+               ((item, load_rulings().get(item[0], {}).get('title', '')) for item in s.get('rulings', {}).items())}
+    ruling = actions._next_ruling(pending)
+    if ruling:
+        out.append(f'- Rule on {ruling} in Control Center: {pending[ruling]["title"].rstrip(".")}.')
+    identities = s.get('brand_identities') or {}
+    seen = {'identity_verified': any(_policy.identity_verified(x, p) for x in identities.values()
+                                     for p in actions.PUSHED)}
+    for entry in actions.load_owner():
+        if entry.get('done_on') or seen.get(entry['done_when']) is True:
+            continue
+        out.append(f'- {entry["text"]} ({entry["minutes"]} min, one-off)')
+    return out or ['- Nothing waits on Krish that this reading can see.']
+
+
 def read_feed():
     xml = http(FEED, accept_json=False)
     items = []
@@ -581,6 +601,9 @@ def now_md(s):
         lines += [f'- changed: `{p}`' for p in s['changed_since_last_sync']]
         lines += [f'- newly canon: `{p}`' for p in s['canon_added']]
         lines += [f'- no longer canon: `{p}`' for p in s['canon_removed']]
+    lines += ['', "## Krish's actions", '', 'His matchday and plan answers wait in Control Center; `growth.py actions` '
+              'lists them with the rest. From what this public reading can see:', '']
+    lines += public_actions(s)
     lines += ['', '## Rulings the playbook needs', '', '| Ruling | Here | In full-time\'s decision log | In force |', '|---|---|---|---|']
     titles = {k: v.get('title', '') for k, v in load_rulings().items()}
     for rid, r in s['rulings'].items():
@@ -1234,7 +1257,8 @@ def self_test():
 
 
 ENGINE_COMMANDS = ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export', 'cc',
-                   'spec', 'formats', 'pack', 'buffer', 'library', 'session', 'dispatch', 'audience', 'ga4')
+                   'spec', 'formats', 'pack', 'buffer', 'library', 'session', 'dispatch', 'audience', 'ga4',
+                   'fixtures', 'actions')
 
 
 def main():

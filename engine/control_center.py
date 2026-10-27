@@ -615,6 +615,16 @@ def directive_line(directive, dispatched=None):
     return lines
 
 
+def action_lines(growth, today, state, directive):
+    """Krish's actions today and the engine's to-do (engine/actions.py), as activity
+    lines. A failure to compute them is said plainly and never stops the report."""
+    from . import actions
+    try:
+        return actions.lines(actions.compute(growth.LOCAL, today, state, growth.load_rulings(), directive))
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        return [f'Your actions today could not be worked out: {type(error).__name__}.']
+
+
 def max_actions(directive):
     value = ((directive.get('directive') or {}).get('constraints') or {}).get('max_actions')
     return min(3, value) if type(value) is int and value >= 0 else 3
@@ -666,6 +676,7 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             activity.append(line)
         activity += directive_line(directive)
         activity += measurement_lines(growth.LOCAL, today, saved['observations'], directive)
+        activity += action_lines(growth, today, state, directive)
         degraded = [] if record.get('rail') is not None else ['The live rail was not read; fulltime.fm did not answer.']
         start = reporting.week_window(today)[0].isoformat()
         report = reporting.build(
@@ -741,6 +752,7 @@ def runner_work(growth, report_mode, dispatched=None, waiting=None, answered=())
                         'the persistent workspace; this runner reports only what it can see.')
         activity += directive_line(directive, dispatched)
         activity += measurement_lines(growth.LOCAL, today, directive=directive)
+        activity += action_lines(growth, today, state, directive)
         report = reporting.build(
             reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
             items, growth.load_rulings(), reporting.objectives(today, workspace=False), activity,
