@@ -1,0 +1,13 @@
+{
+  "kit": "The Switch",
+  "revision": 1,
+  "approved_by": "Krish",
+  "approval": "I like it. Looks good.",
+  "approved_on": "2026-10-27",
+  "hashing": "sha256 of each file's bytes with CRLF read as LF, so a Windows checkout hashes the same",
+  "files": {
+    "spec.md": "fe8e7fa4c01ba313a2d968e55b6387d5aa2aba1ff8508a37a5b69066b8313249",
+    "templates.js": "46b5d06445858704012d55c6a02d8b5d6dbab60b774c1e923a6be6a6bcc78346",
+    "slots.json": "4cad598650dc5e91b8c4b0b1032911f32bf595102a28d4df678659d56a960bba"
+  }
+}

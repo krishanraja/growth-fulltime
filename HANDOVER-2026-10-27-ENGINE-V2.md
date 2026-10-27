@@ -32,7 +32,8 @@ ships share tokens: that brief waits on Krish's approval.
 | Audience Builder | `engine/audience.py`, `engagement-actions.json` | Brand-profile actions only, each kind known in code and ruled by Krish |
 | Protocol 1.1.0 | `engine/control_center.py`, `engine/reporting.py` | Stages, amendments, one ask of each kind at a time, the capabilities check |
 | Daily autonomy | `engine/actions.py`, `engine/fixtures.py`, `jobs/` | Krish's actions and the engine's to-do in every report; fixtures read, never remembered |
-| Social kit | `brand/social-kit/` (landing next) | The approved look, to be pinned by `LOCK.json`, and the take_clip renderer built from it |
+| Social kit | `brand/social-kit/` | The approved look, pinned by `LOCK.json` (CI fails on any unapproved change), rendering byte-identical to the frames Krish approved |
+| take_clip renderer | `brand/social-kit/take_clip.js`, `engine/assets.py` | Kit layers from Playwright, composed by FFmpeg over the show audio: frame 0 for one second, caption plates, the lime progress fill; every existing check kept, `RENDERER_VERSION` 4 |
 | Windows | `engine/clock.py`, CI | London time without tzdata, UTF-8 everywhere, a Windows CI job |
 
 ## How a day runs
@@ -79,7 +80,9 @@ posts by hand in Buffer. Nothing in this repository posts, sends, schedules or s
 | Liverpool v8 listening | Krish | One verdict on the whole mix |
 | Share attribution and rail supply | full-time, after Krish approves the briefs | Without them the number stays U4 and there is little fresh to post |
 | `ga4_landings` and the two objective keys | Control Center, after Krish starts the session | `briefs/2026-10-27-control-center-measurement.md` |
-| Proof zero | engine | Render take clips in the approved kit on the published editions and ask them as the first G2 |
+| Proof zero | engine, on Krish's machine | The renderer is proved on a synthetic tone; render take clips with each published edition's real audio and ask them as the first G2 |
+| Caption timing and motion | engine | Word timings would light the current word; the tab blink, seal stamp and the cut variant are specified but not yet animated |
+| AI disclosure wording | Krish | The kit shows "AI Pundit" and "Made by AI from checked match facts"; the old renderer also said "synthetic voices". He may rule whether the new wording is enough |
 | Canva templates | engine and Krish | Rebuild the Cowork brief's six templates from the approved kit; uploads need his yes |
 | Baseline from Krish's machine | Krish's machine | `scripts/baseline.py` with his Codex and Claude logs; until then the baseline is cloud-only |
 | v1 briefs with the old stamp form | Librarian | Archive to `99_Archive/2026-W44/` at week close (Sunday) |

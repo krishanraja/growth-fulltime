@@ -29,7 +29,7 @@ Football fans who become Full Time's returning listeners. It proves Mindmake can
 Lifecycle: building. Engine v2 ([docs/ENGINE-V2.md](docs/ENGINE-V2.md), approved by Krish on 27 October: "approved, do it all") is built through its engine phases and waits on Krish and the product for the rest.
 
 - **Built and verified:** the weekly plan (G1) and matchday pack (G2) gates, readiness computed from Krish's own verdicts, eleven crew cards, the invariant registry (116 entries, 80 enforced by passing tests), session packs, the Codex dispatch guard, the Growth Build library rules, the read-only Buffer reader and receipts, attribution and learning, protocol 1.1.0, the Match Clock's fixtures reader, and Krish's daily actions list in every report. Two independent review waves found real defects; every confirmed one is fixed with a regression test. CI is green on Linux, Python 3.9 and Windows.
-- **The social kit is approved:** "The Switch, revision 1" (Krish: "I like it. Looks good."), landing in `brand/social-kit/`, pinned by `LOCK.json`. It is the look every take clip, card and thumbnail is rendered in.
+- **The social kit is approved:** "The Switch, revision 1" (Krish: "I like it. Looks good."), in `brand/social-kit/`, pinned by `LOCK.json`. The take_clip renderer draws it: a published show becomes a 1080x1920 clip in the approved look, proved here on a synthetic tone.
 - **Nothing is posted yet,** by design: the handles, D7 consent and a published show to link to come first, and every format must earn readiness from three no-edit "post it" verdicts.
 - **Supply is the binding constraint:** four published editions in five weeks, each with 1 of 6 AI Pundits, none since 19 October (`briefs/2026-10-27-rail-supply.md`).
 

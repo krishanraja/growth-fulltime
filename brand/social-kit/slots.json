@@ -1,0 +1,40 @@
+{
+  "cta": "Pick your channel. Free pilot beta at fulltime.fm",
+  "matches": {
+    "tc": {"slug": "2026-10-19_tottenham-coventry", "home": "Tottenham", "away": "Coventry", "score": [3, 1], "date": "2026-10-19", "shows": ["zen"]},
+    "pf": {"slug": "2026-10-11_crystal-palace-nottingham-forest", "home": "Crystal Palace", "away": "Nottingham Forest", "score": [3, 1], "date": "2026-10-11", "shows": ["zen"]},
+    "cs": {"slug": "2026-09-20_manchester-city-sunderland", "home": "Manchester City", "away": "Sunderland", "score": [5, 3], "date": "2026-09-20", "shows": ["romantic"]},
+    "tv": {"slug": "2026-09-19_tottenham-aston-villa", "home": "Tottenham", "away": "Aston Villa", "score": [2, 3], "date": "2026-09-19", "shows": ["gaffer"]}
+  },
+  "posts": {
+    "take_first_zen":      {"format": "take_first", "pundit": "zen",      "match": "tc", "quote": "Calm, clear, and first with the facts.", "sample": true},
+    "take_first_romantic": {"format": "take_first", "pundit": "romantic", "match": "cs", "quote": "This is the kind of night you tell your kids about.", "sample": true},
+    "take_first_gaffer":   {"format": "take_first", "pundit": "gaffer",   "match": "tv", "quote": "Football is choices. I would have made different ones.", "sample": true},
+    "take_first_stats":    {"format": "take_first", "pundit": "stats",    "match": "pf", "quote": "Do not tell me how it felt. Show me the count, then let me count it again.", "sample": true, "fill": true},
+    "take_first_doomer":   {"format": "take_first", "pundit": "doomer",   "match": "tv", "quote": "Enjoy it while it lasts. I am already worried.", "sample": true, "fill": true},
+    "take_first_banter":   {"format": "take_first", "pundit": "banter",   "match": "tc", "quote": "Your lot will not like this one. Good.", "sample": true, "fill": true},
+    "take_first_safe":     {"format": "take_first", "pundit": "zen",      "match": "tc", "quote": "Calm, clear, and first with the facts.", "sample": true, "overlay": "safe"},
+    "take_slots":          {"format": "take_first", "pundit": "zen",      "match": "tc", "quote": "Calm, clear, and first with the facts.", "sample": true, "overlay": "slots"},
+    "take_first_variant_cut": {"format": "take_first", "pundit": "zen", "match": "tc", "shows": ["zen", "banter"], "quote": "Forget the noise. Here is how it really went.", "rival_quote": "Calm down. It is only football.", "sample": true, "hypothetical": true},
+    "take_mid":            {"format": "take_mid", "pundit": "zen", "match": "tc", "said": "Forget the noise. Here is how", "now": "it", "next": "really went.", "progress": 0.38, "time": "0:34", "sample": true},
+    "take_mid_romantic":   {"format": "take_mid", "pundit": "romantic", "match": "cs", "said": "Some games you watch. This", "now": "one", "next": "you feel.", "progress": 0.81, "time": "1:12", "sample": true},
+    "morning":             {"format": "morning", "pundit": "zen", "match": "tc"},
+    "morning_long":        {"format": "morning", "pundit": "zen", "match": "pf"},
+    "row":                 {"format": "row", "a": "stats", "b": "romantic", "match": "cs", "shows": ["stats", "romantic"], "qa": "Feelings are lovely. The count does not lie.", "qb": "Count all you like. I felt every minute.", "sample": true, "hypothetical": true},
+    "end_card":            {"format": "end_card", "lit": "zen"},
+    "share":               {"format": "share", "lit": "zen"},
+    "thumb":               {"format": "thumb", "pundit": "zen", "match": "tc"},
+    "thumb_long":          {"format": "thumb", "pundit": "zen", "match": "pf"}
+  },
+  "grid": [
+    {"format": "take_first", "pundit": "zen", "match": "tc", "quote": "Calm, clear, and first with the facts."},
+    {"format": "morning", "pundit": "zen", "match": "tc"},
+    {"format": "take_first", "pundit": "romantic", "match": "cs", "quote": "This is the kind of night you tell your kids about."},
+    {"format": "take_first", "pundit": "gaffer", "match": "tv", "quote": "Football is choices. I would have made different ones."},
+    {"format": "take_first", "pundit": "zen", "match": "pf", "quote": "Strip out the shouting and this one is simple."},
+    {"format": "end_card", "lit": "zen"},
+    {"format": "take_first", "pundit": "romantic", "match": "cs", "quote": "Some games you watch. This one you feel."},
+    {"format": "morning", "pundit": "zen", "match": "pf"},
+    {"format": "take_first", "pundit": "zen", "match": "tc", "quote": "Forget the noise. Here is how it really went."}
+  ]
+}

@@ -4,13 +4,22 @@ A render manifest may also name its canvas ('size', 720x1280 by default or a
 1080x1920 master), the 'master_id' its channel cuts share, and a 'fontfile' and
 'fontsdir' for FFmpeg builds with no default font, such as those on Windows (or
 FULLTIME_FONT_FILE and FULLTIME_FONTS_DIR in the environment). With none of
-these, a render is made exactly as before."""
+these, a render is made exactly as before.
+
+A manifest that also names 'layers' and 'instance' renders a take_clip in the
+approved social kit (brand/social-kit/README.md): the kit's still layers, made by
+brand/social-kit/take_clip.js, are composed over the published audio. Frame 0
+holds for the first second, then one plate per caption segment, with the lime
+progress fill drawn here, in the exact rectangle the layers record. Every check
+above still applies, and the layers, the instance and the kit's lock are checked
+too."""
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import shutil
+import struct
 import subprocess
 import tempfile
 import textwrap
@@ -21,7 +30,7 @@ from .records import atomic_json, fingerprint, now
 from . import policy
 
 STORAGE_HOST = 'hzadscrqmyilbisexvyz.supabase.co'
-RENDERER_VERSION = 3
+RENDERER_VERSION = 4
 # Creative ID codes the renderer takes, and the platform each posts to. WEB is a private
 # site preview: it has no brand identity, so it stays held for CHANNEL.
 RENDER_PLATFORMS = {'TT': 'tiktok', 'YT': 'youtube', 'IG': 'instagram', 'TH': 'threads', 'FB': 'facebook',
@@ -30,8 +39,22 @@ SIZES = {'720x1280': (720, 1280), '1080x1920': (1080, 1920)}
 DEFAULT_SIZE = '720x1280'
 MASTER_ID = re.compile(r'^[A-Za-z0-9][A-Za-z0-9:._-]{0,79}$')   # the shape engine/pack.py accepts
 REQUIRED_FIELDS = {'schema_version', 'creative_id', 'drop_id', 'segments', 'caption_alignment_verified'}
-OPTIONAL_FIELDS = {'identity_ref', 'size', 'master_id', 'fontfile', 'fontsdir'}
+OPTIONAL_FIELDS = {'identity_ref', 'size', 'master_id', 'fontfile', 'fontsdir', 'layers', 'instance'}
 FONT_ENV = {'fontfile': 'FULLTIME_FONT_FILE', 'fontsdir': 'FULLTIME_FONTS_DIR'}
+# The approved social kit (The Switch). Its take_clip is a 1080x1920 master at 30 frames a second.
+KIT_DIR = Path(__file__).resolve().parent.parent / 'brand' / 'social-kit'
+KIT_SIZE = '1080x1920'
+KIT_FPS = 30
+FRAME0_SECONDS = 1.0
+INSTANCE_FIELDS = {'schema_version', 'pundit', 'drop', 'home', 'away', 'score', 'date', 'shows', 'quote', 'captions', 'audio'}
+LAYERS_FIELDS = {'schema_version', 'kit', 'revision', 'lock_sha256', 'instance', 'instance_sha256', 'size', 'width',
+                 'height', 'time_label', 'frame0', 'plates', 'progress', 'rendered_at'}
+LAYER_FILE = re.compile(r'^[a-z0-9][a-z0-9-]{0,40}\.png$')
+HEX_COLOUR = re.compile(r'^#[0-9a-f]{6}$')
+# The mid frame's ground plate (spec.md, "Mid frame"): the progress track sits inside it.
+GROUND_PLATE = (64, 1068, 940, 1480)
+KIT_LABELS = ('AI Pundit', 'Free pilot beta')
+PLATE_LABEL = 'Made by AI from checked match facts'
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -196,6 +219,11 @@ def checked_segments(growth, manifest):
         if key in manifest and (not isinstance(manifest[key], str) or not manifest[key].strip()):
             raise ValueError(f'{key} must be a path')
     fonts(manifest)
+    if ('layers' in manifest) != ('instance' in manifest):
+        raise ValueError('a social kit render names both its layers folder and its instance')
+    for key in ('layers', 'instance'):
+        if key in manifest and (not isinstance(manifest[key], str) or not manifest[key].strip()):
+            raise ValueError(f'{key} must be a path')
     segments = manifest['segments']
     if not isinstance(segments, list) or not 1 <= len(segments) <= 2:
         raise ValueError('render one published edition or two distinct editions of the same match')
@@ -241,7 +269,201 @@ def checked_segments(growth, manifest):
         verified.append((segment, source))
     if total > 30:
         raise ValueError('the combined clip must be thirty seconds or shorter')
+    if 'layers' in manifest:
+        checked_kit(growth, manifest, verified, match, state)
     return verified, match, total
+
+
+def lf_sha(path):
+    """SHA-256 of a text file with CRLF read as LF, so a Windows checkout hashes the same."""
+    return hashlib.sha256(Path(path).read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+
+
+def kit_lock(directory=None):
+    """The approved social kit's LOCK.json with its own sha256. Refused if any locked file
+    differs from the approved revision: a change needs a new revision Krish approves."""
+    directory = Path(directory) if directory is not None else KIT_DIR
+    lock = json.loads((directory / 'LOCK.json').read_text(encoding='utf-8'))
+    changed = sorted(name for name, digest in lock['files'].items() if lf_sha(directory / name) != digest)
+    if changed:
+        raise ValueError('the social kit differs from its approved lock (' + ', '.join(changed) + '); '
+                         'a change needs a new revision Krish approves')
+    return {**lock, 'lock_sha256': lf_sha(directory / 'LOCK.json')}
+
+
+def png_size(path):
+    """(width, height) from a PNG header."""
+    with open(path, 'rb') as handle:
+        head = handle.read(24)
+    if len(head) < 24 or head[:8] != b'\x89PNG\r\n\x1a\n' or head[12:16] != b'IHDR':
+        raise ValueError('a layer is not a PNG')
+    return struct.unpack('>II', head[16:24])
+
+
+def kit_timeline(captions, duration, fps=KIT_FPS):
+    """Frames for each layer: frame 0 for the first second, then one plate per caption from its
+    start (the first from the end of frame 0) to the next caption's start, the last to the end."""
+    marks = [0.0, FRAME0_SECONDS] + [c['start'] for c in captions[1:]] + [duration]
+    frames = [int(round(mark * fps)) for mark in marks]
+    counts = [b - a for a, b in zip(frames, frames[1:])]
+    if any(count < 1 for count in counts):
+        raise ValueError('each caption after the first must start after frame 0 and after the caption before it')
+    return counts
+
+
+def _copy_ok(growth, state, text):
+    return not growth.problems({'platform': 'other', 'text': 'Caption: ' + text}, state)
+
+
+def checked_kit(growth, manifest, verified, match, state):
+    """The social kit's checks for a take_clip: the instance agrees with the published edition,
+    its quote and captions are exact quotations, the layers are the ones take_clip.js recorded
+    for this instance under the approved lock, and each carries its AI label. Returns the
+    instance, the layers record, the layers folder, the lock and the frame counts."""
+    if manifest.get('size') != KIT_SIZE:
+        raise ValueError('a social kit take_clip is the 1080x1920 master: set size to 1080x1920')
+    if len(verified) != 1:
+        raise ValueError('a social kit take_clip is one published edition')
+    segment, source = verified[0]
+    local = Path(growth.LOCAL).resolve()
+    instance_path = Path(manifest['instance']).resolve()
+    folder = Path(manifest['layers']).resolve()
+    if local not in instance_path.parents:
+        raise ValueError('the instance must stay inside local/')
+    if (local / 'brand-kit' / 'layers') not in folder.parents:
+        raise ValueError('layers must stay inside local/brand-kit/layers/')
+    instance = json.loads(instance_path.read_text(encoding='utf-8'))
+    if not isinstance(instance, dict) or not INSTANCE_FIELDS <= set(instance) or set(instance) - INSTANCE_FIELDS - {'sample'}:
+        raise ValueError('instance must have exactly the documented take_clip fields')
+    if instance['schema_version'] != 1 or type(instance.get('sample', False)) is not bool:
+        raise ValueError('instance must be schema_version 1, with sample true or false')
+    if (instance['pundit'] != source['pundit'] or instance['drop'] != manifest['drop_id']
+            or instance['home'] != match.get('home') or instance['away'] != match.get('away')
+            or list(instance['score'] if isinstance(instance['score'], list) else []) != list(match.get('score') or [])
+            or ('date' in match and instance['date'] != match['date'])):
+        raise ValueError('instance does not name this published edition and its match')
+    shows = instance['shows']
+    if not isinstance(shows, list) or len(set(map(str, shows))) != len(shows) or set(shows) != set(match['pundits']):
+        raise ValueError('instance shows must be exactly the AI Pundits published for this match')
+    audio = instance['audio']
+    if (not isinstance(audio, dict) or set(audio) != {'source_record', 'start_seconds', 'end_seconds'}
+            or not isinstance(audio['source_record'], str)
+            or Path(audio['source_record']).resolve() != Path(segment['source_record']).resolve()
+            or audio['start_seconds'] != segment['start_seconds'] or audio['end_seconds'] != segment['end_seconds']):
+        raise ValueError('instance audio must be the manifest segment of the published audio')
+    transcript = normalise(source['transcript'])
+    quote = instance['quote']
+    if (not isinstance(quote, str) or not quote.strip() or len(quote.strip()) > 90 or '\n' in quote
+            or normalise(quote) not in transcript or not _copy_ok(growth, state, quote)):
+        raise ValueError('the frame 0 quote must be an exact transcript line of 90 characters or fewer that passes the copy checks')
+    duration = segment['end_seconds'] - segment['start_seconds']
+    captions, previous = instance['captions'], 0.0
+    if not isinstance(captions, list) or not 1 <= len(captions) <= 60:
+        raise ValueError('captions must be a list of one to sixty segments')
+    for caption in captions:
+        if not isinstance(caption, dict) or set(caption) != {'start', 'end', 'text'}:
+            raise ValueError('each caption must be exactly {start, end, text}')
+        start, end, text = caption['start'], caption['end'], caption['text']
+        if type(start) not in (int, float) or type(end) not in (int, float) or not previous - 1e-9 <= start < end <= duration + 1e-6:
+            raise ValueError('captions must run in order inside the clip')
+        if (not isinstance(text, str) or not text.strip() or len(text) > 120 or any(ord(c) < 32 for c in text)
+                or normalise(text) not in transcript or not _copy_ok(growth, state, text)):
+            raise ValueError('each caption must be an exact transcript quotation that passes the copy checks')
+        previous = end
+    if normalise(' '.join(c['text'] for c in captions)) != normalise(segment['quote']):
+        raise ValueError('the captions together must be exactly the segment quote')
+    counts = kit_timeline(captions, duration)
+    lock = kit_lock()
+    record_path = folder / 'layers.json'
+    if not record_path.is_file():
+        raise ValueError('the layers folder has no layers.json: run brand/social-kit/take_clip.js for this instance')
+    record = json.loads(record_path.read_text(encoding='utf-8'))
+    if not isinstance(record, dict) or set(record) != LAYERS_FIELDS or record['schema_version'] != 1:
+        raise ValueError('layers.json must have exactly the documented fields')
+    if (record['revision'], record['lock_sha256']) != (lock['revision'], lock['lock_sha256']):
+        raise ValueError('the layers were made under another social kit lock')
+    if record['instance_sha256'] != sha(instance_path):
+        raise ValueError('the layers were made for another instance')
+    if (record['size'], record['width'], record['height']) != (KIT_SIZE, *SIZES[KIT_SIZE]):
+        raise ValueError('the layers must be 1080x1920')
+    plates = record['plates']
+    if not isinstance(plates, list) or len(plates) != len(captions):
+        raise ValueError('the layers need one plate per caption')
+    names = set()
+    for number, layer in enumerate([record['frame0']] + plates):
+        if not isinstance(layer, dict) or not isinstance(layer.get('file'), str) or not LAYER_FILE.fullmatch(layer['file']):
+            raise ValueError('each layer must be a PNG file in the layers folder')
+        names.add(layer['file'])
+        path = folder / layer['file']
+        if not path.is_file() or sha(path) != layer.get('sha256') or path.stat().st_size != layer.get('bytes'):
+            raise ValueError(f'layer {layer["file"]} is missing or changed since take_clip.js made it')
+        if png_size(path) != SIZES[KIT_SIZE]:
+            raise ValueError(f'layer {layer["file"]} is not 1080x1920')
+        text = layer.get('text')
+        if not isinstance(text, list) or not all(isinstance(x, str) for x in text):
+            raise ValueError('each layer records the text it carries')
+        joined = ' '.join(text)
+        needed = KIT_LABELS + ((PLATE_LABEL,) if number else ()) + (('Sample line',) if instance.get('sample') else ())
+        missing = [label for label in needed if label not in joined]
+        if missing:
+            raise ValueError(f'layer {layer["file"]} lacks ' + ', '.join(missing))
+        if not _copy_ok(growth, state, joined):
+            raise ValueError(f'layer {layer["file"]} does not pass the public-copy checks')
+        if number and (layer.get('start'), layer.get('end'), layer.get('caption')) != (
+                captions[number - 1]['start'], captions[number - 1]['end'], captions[number - 1]['text']):
+            raise ValueError('each plate must carry its caption segment, in order')
+    if len(names) != len(plates) + 1:
+        raise ValueError('each layer must be its own file')
+    progress = record['progress']
+    if (not isinstance(progress, dict) or set(progress) != {'x', 'y', 'w', 'h', 'color'}
+            or any(type(progress[k]) is not int for k in 'xywh') or not isinstance(progress['color'], str)
+            or not HEX_COLOUR.fullmatch(progress['color'])):
+        raise ValueError('the progress fill must be a whole-pixel rectangle and a #rrggbb colour')
+    left, top, right, bottom = GROUND_PLATE
+    if not (left <= progress['x'] and progress['x'] + progress['w'] <= right and top <= progress['y']
+            and progress['y'] + progress['h'] <= bottom and progress['w'] >= 100 and progress['h'] >= 2):
+        raise ValueError('the progress fill must sit inside the mid frame ground plate')
+    return {'instance': instance, 'instance_path': instance_path, 'record': record, 'record_path': record_path,
+            'folder': folder, 'lock': lock, 'counts': counts}
+
+
+def kit_filters(counts, progress, duration):
+    """Frame 0 and the plates in caption order, then the lime progress fill: a box in the exact
+    track rectangle that grows with the audio, shown from the end of frame 0."""
+    n = len(counts)
+    x, y, w, h = progress['x'], progress['y'], progress['w'], progress['h']
+    parts = [f'[{i}:v]format=rgb24,setsar=1,trim=end_frame={count},setpts=PTS-STARTPTS[l{i}]'
+             for i, count in enumerate(counts)]
+    parts.append(''.join(f'[l{i}]' for i in range(n)) + f'concat=n={n}:v=1:a=0[base]')
+    parts.append('[base]split[b0][b1]')
+    parts.append(f'[b1]crop={w}:{h}:{x}:{y}[track]')
+    parts.append(f"[track][{n}:v]overlay=x='-w+floor(w*min(1,t/{duration}))':y=0:shortest=1[fill]")
+    parts.append(f"[b0][fill]overlay=x={x}:y={y}:enable='gte(t,{FRAME0_SECONDS})',"
+                 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p[v]')
+    return ';'.join(parts)
+
+
+def compose_kit(kit, segment, source, output, work):
+    """The kit's take_clip, composed by FFmpeg from its layers over the published audio."""
+    record, folder, counts = kit['record'], kit['folder'], kit['counts']
+    duration = segment['end_seconds'] - segment['start_seconds']
+    progress = record['progress']
+    command = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y']
+    for layer in [record['frame0']] + record['plates']:
+        command += ['-loop', '1', '-framerate', str(KIT_FPS), '-i', str(folder / layer['file'])]
+    command += ['-f', 'lavfi', '-i', f'color=c=0x{progress["color"][1:]}:s={progress["w"]}x{progress["h"]}:r={KIT_FPS}:d={duration}',
+                '-ss', str(segment['start_seconds']), '-t', str(duration), '-i', source['audio'],
+                '-filter_complex', kit_filters(counts, progress, duration),
+                '-map', '[v]', '-map', f'{len(counts) + 1}:a:0', '-t', str(duration), '-r', str(KIT_FPS),
+                '-c:v', 'libx264', '-preset', 'veryfast', '-threads', '2', '-pix_fmt', 'yuv420p',
+                '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709',
+                '-c:a', 'aac', '-ar', '48000', '-ac', '2', '-movflags', '+faststart', str(Path(output).resolve())]
+    result = subprocess.run(command, cwd=work, capture_output=True, timeout=300)
+    if result.returncode:
+        raise ValueError('social kit composition failed; check FFmpeg and the layers')
+    captions = [f'{n}\n{timestamp(c["start"])} --> {timestamp(c["end"])}\n{textwrap.fill(c["text"], 36)}\n'
+                for n, c in enumerate(kit['instance']['captions'], 1)]
+    return captions
 
 
 def timestamp(seconds):
@@ -257,9 +479,14 @@ def render(growth, manifest_path):
     size = manifest.get('size', DEFAULT_SIZE)
     width, height = SIZES[size]
     font = fonts(manifest)
+    kit = checked_kit(growth, manifest, segments, match, growth.load_state() or {}) if 'layers' in manifest else None
     key = {'renderer': RENDERER_VERSION, 'manifest': manifest}
     if font:
         key['fonts'] = font
+    if kit:
+        # The layer files and the instance can change under the same paths: the key names their contents.
+        key['kit'] = {'lock': kit['lock']['lock_sha256'], 'layers': sha(kit['record_path']),
+                      'instance': sha(kit['instance_path'])}
     root = Path(growth.LOCAL) / 'renders' / manifest['creative_id'] / fingerprint(key)[:16]
     root.mkdir(parents=True, exist_ok=True)
     output, receipt_path = root / 'clip.mp4', root / 'render.json'
@@ -276,7 +503,9 @@ def render(growth, manifest_path):
     with tempfile.TemporaryDirectory(prefix='fulltime-render-') as temporary:
         work = Path(temporary)
         parts = []
-        for number, (segment, source) in enumerate(segments, 1):
+        if kit:
+            captions = compose_kit(kit, segments[0][0], segments[0][1], output, work)
+        for number, (segment, source) in enumerate([] if kit else segments, 1):
             duration = segment['end_seconds'] - segment['start_seconds']
             subtitle = f'1\n{timestamp(0)} --> {timestamp(duration)}\n' + textwrap.fill(segment['quote'], 36) + '\n'
             (work / 'caption.srt').write_text(subtitle, encoding='utf-8')
@@ -305,17 +534,20 @@ def render(growth, manifest_path):
             parts.append(part)
             captions.append(f'{number}\n{timestamp(offset)} --> {timestamp(offset + duration)}\n{textwrap.fill(segment["quote"],36)}\n')
             offset += duration
-        (work / 'parts.txt').write_text('\n'.join(f"file '{p.name}'" for p in parts), encoding='utf-8')
-        result = subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '1',
-                                 '-i', 'parts.txt', '-c', 'copy', '-movflags', '+faststart', str(output.resolve())],
-                                cwd=work, capture_output=True, timeout=60)
-        if result.returncode:
-            raise ValueError('render concatenation failed')
+        if not kit:
+            (work / 'parts.txt').write_text('\n'.join(f"file '{p.name}'" for p in parts), encoding='utf-8')
+            result = subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '1',
+                                     '-i', 'parts.txt', '-c', 'copy', '-movflags', '+faststart', str(output.resolve())],
+                                    cwd=work, capture_output=True, timeout=60)
+            if result.returncode:
+                raise ValueError('render concatenation failed')
     metadata = probe(output)
     video = next((x for x in metadata['streams'] if x['codec_type'] == 'video'), {})
     audio = next((x for x in metadata['streams'] if x['codec_type'] == 'audio'), {})
     if (video.get('width'), video.get('height')) != (width, height) or not audio or abs(float(metadata['format']['duration']) - total) > 1:
         raise ValueError('render failed size, duration or audio verification')
+    if kit and int(video.get('nb_frames') or 0) != sum(kit['counts']):
+        raise ValueError('render failed the social kit timeline verification')
     (root / 'captions.srt').write_text('\n'.join(captions), encoding='utf-8')
     thumb = subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(output),
                             '-frames:v', '1', '-update', '1', str(root / 'thumbnail.jpg')], capture_output=True, timeout=30)
@@ -340,5 +572,16 @@ def render(growth, manifest_path):
                             for segment, source in segments],
                'holds': holds, 'generated_media_calls': 0, 'marketing_cash_gbp': 0,
                'publication_status': 'private_preview', 'reused': False}
+    if kit:
+        record, lock = kit['record'], kit['lock']
+        receipt['design'] = {'kit': lock['kit'], 'revision': lock['revision'], 'lock_sha256': lock['lock_sha256'],
+                             'approval': lock['approval'], 'approved_on': lock['approved_on']}
+        receipt['instance'] = str(kit['instance_path'])
+        receipt['instance_sha256'] = sha(kit['instance_path'])
+        receipt['layers'] = {'folder': str(kit['folder']), 'manifest_sha256': sha(kit['record_path']),
+                             'frame0_sha256': record['frame0']['sha256'],
+                             'plates_sha256': [plate['sha256'] for plate in record['plates']],
+                             'progress': record['progress']}
+        receipt['timeline'] = {'fps': KIT_FPS, 'frame0_seconds': FRAME0_SECONDS, 'frames': kit['counts']}
     atomic_json(receipt_path, receipt)
     return receipt
