@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "61de3b1db09532d5",
-    "NOW.md": "9a3c714855a6cc54",
+    "NOW.md": "8fad3fe94a014a49",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -17,21 +17,13 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "AGENTS.md",
-    "NOW.md",
-    "docs/00-product.md",
-    "docs/12-roadmap.md"
+    "NOW.md"
   ],
   "commits": [
     {
-      "date": "2026-10-27T11:53:37Z",
-      "sha": "0bbe707048",
-      "subject": "Merge pull request #102 from krishanraja/codex/alpha-readiness-closeout"
-    },
-    {
-      "date": "2026-10-27T11:52:09Z",
-      "sha": "ce10e52f35",
-      "subject": "feat: align solo pundit alpha with spoken quality and evidence handoff"
+      "date": "2026-10-27T23:52:16Z",
+      "sha": "836957b485",
+      "subject": "docs(steward): 2026-10-27 trim NOW.md to limit, stamp head"
     }
   ],
   "decisions": [
@@ -60,10 +52,10 @@
       "branch": "harness/canon-sync",
       "number": 97,
       "title": "Sync the canon block",
-      "updated": "2026-10-27T00:04:27Z"
+      "updated": "2026-10-27T23:59:41Z"
     }
   ],
-  "previous_sha": "b27280fe8408cde9d5d310867b1ba9489bf30175",
+  "previous_sha": "0bbe7070489ca733adad132e70c15ec54847583b",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -178,6 +170,6 @@
       "status": "pending"
     }
   },
-  "sha": "0bbe7070489ca733adad132e70c15ec54847583b",
-  "synced_at": "2026-10-27T16:43:20+00:00"
+  "sha": "836957b485066507bdb2e38e001898f69cb4406e",
+  "synced_at": "2026-10-28T00:34:01+00:00"
 }

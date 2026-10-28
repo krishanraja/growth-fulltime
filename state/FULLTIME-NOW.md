@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `0bbe707048` and from fulltime.fm on 2026-10-27T16:43:20+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `836957b485` and from fulltime.fm on 2026-10-28T00:34:01+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -20,10 +20,7 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 Read these again before drafting anything:
 
-- changed: `AGENTS.md`
 - changed: `NOW.md`
-- changed: `docs/00-product.md`
-- changed: `docs/12-roadmap.md`
 
 ## Rulings the playbook needs
 
@@ -68,8 +65,7 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `0bbe707048` 2026-10-27 Merge pull request #102 from krishanraja/codex/alpha-readiness-closeout
-- `ce10e52f35` 2026-10-27 feat: align solo pundit alpha with spoken quality and evidence handoff
+- `836957b485` 2026-10-27 docs(steward): 2026-10-27 trim NOW.md to limit, stamp head
 
 ## Work in flight (open pull requests)
 
