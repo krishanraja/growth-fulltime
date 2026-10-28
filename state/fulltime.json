@@ -1,6 +1,6 @@
 {
   "canon": {
-    "AGENTS.md": "61de3b1db09532d5",
+    "AGENTS.md": "6a0b49439d2964a2",
     "NOW.md": "8fad3fe94a014a49",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
@@ -17,13 +17,13 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "NOW.md"
+    "AGENTS.md"
   ],
   "commits": [
     {
-      "date": "2026-10-27T23:52:16Z",
-      "sha": "836957b485",
-      "subject": "docs(steward): 2026-10-27 trim NOW.md to limit, stamp head"
+      "date": "2026-10-28T18:27:31Z",
+      "sha": "88378a102c",
+      "subject": "docs(canon): sync the canon block to v2026.10.27.2 (#97)"
     }
   ],
   "decisions": [
@@ -47,15 +47,8 @@
     }
   ],
   "notes": [],
-  "open_pulls": [
-    {
-      "branch": "harness/canon-sync",
-      "number": 97,
-      "title": "Sync the canon block",
-      "updated": "2026-10-27T23:59:41Z"
-    }
-  ],
-  "previous_sha": "0bbe7070489ca733adad132e70c15ec54847583b",
+  "open_pulls": [],
+  "previous_sha": "836957b485066507bdb2e38e001898f69cb4406e",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -170,6 +163,6 @@
       "status": "pending"
     }
   },
-  "sha": "836957b485066507bdb2e38e001898f69cb4406e",
-  "synced_at": "2026-10-28T00:34:01+00:00"
+  "sha": "88378a102cc60134c802c2d2779f5dcafc1abf4a",
+  "synced_at": "2026-10-28T19:38:23+00:00"
 }
