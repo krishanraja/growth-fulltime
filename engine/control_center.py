@@ -23,7 +23,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-from . import activation, policy, reporting
+from . import activation, credits, policy, reporting
 from .records import History, atomic_json
 
 DEFAULT_URL = 'https://controlcenter.krishraja.com'
@@ -367,6 +367,9 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
         degraded = [] if record.get('rail') is not None else ['The live rail was not read; fulltime.fm did not answer.']
         start = reporting.week_window(today)[0].isoformat()
         objectives_list = reporting.objectives(today, saved['observations'], saved['runs'])
+        pools = credits.read(directive)
+        activity += credits.lines(pools, is_held)
+        guard = credits.Guard(pools, is_held)
         if is_held:
             activity.append(held_line(sources))
             report = reporting.held_build(
@@ -381,7 +384,7 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             activity, held_items=held, events=reporting.publication_events(saved['creatives'], start),
             identity_known=identity_known,
             kill_list=record['native_weekly_review']['kill_list'] if mode == 'weekly' else (),
-            degraded=degraded, max_actions=max_actions(directive))
+            degraded=degraded, max_actions=max_actions(directive), credits_spent=guard.credits_spent())
         return report, {}
     return work
 
@@ -441,6 +444,9 @@ def runner_work(growth, report_mode, dispatched=None):
                         'the persistent workspace; this runner reports only what it can see.')
         activity += directive_line(directive, dispatched)
         is_held, sources = activation.held(directive)
+        pools = credits.read(directive)
+        activity += credits.lines(pools, is_held)
+        guard = credits.Guard(pools, is_held)
         if is_held:
             activity.append(held_line(sources))
             report = reporting.held_build(
@@ -450,7 +456,8 @@ def runner_work(growth, report_mode, dispatched=None):
         report = reporting.build(
             reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
             items, growth.load_rulings(), reporting.objectives(today, workspace=False), activity,
-            identity_known=None, degraded=degraded, max_actions=max_actions(directive))
+            identity_known=None, degraded=degraded, max_actions=max_actions(directive),
+            credits_spent=guard.credits_spent())
         return report, notes
     return work
 

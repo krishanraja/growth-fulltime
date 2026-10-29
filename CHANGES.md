@@ -5,6 +5,11 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-29: the credits step is built.
+  Krish, 2026-10-29: "Scheduled sessions". `engine/credits.py` reads the
+  share and guards any spend; the daily session in docs/CREDITS-SESSION.md
+  spends it through Control Center's reserve and settle, never while held.
+  No job, schedule or wall changed.
 - 2026-10-29: Control Center protocol 1.16.0, prepaid credits.
   Ruling (Krish, 2026-10-29): a growth engine may spend up to its placement
   share of a tool's prepaid credits each cycle with no per-batch approval, and

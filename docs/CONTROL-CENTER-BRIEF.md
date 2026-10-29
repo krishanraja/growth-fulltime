@@ -94,6 +94,8 @@ What to do:
 
 The walls do not move: never past `remaining_for_you`, never a top-up, a plan change or new money, and nothing made is published, posted or sent without its own approval (the go-live step in AGENTS.md).
 
+**Who spends it.** The GitHub runner holds no generator keys and spends nothing: it reads the block into its activity (`engine/credits.py`). The share is spent by one scheduled Claude session a day with the Control Center, Higgsfield, Runway and 21st Dev connectors attached (Krish, 2026-10-29: "Scheduled sessions"), by [CREDITS-SESSION.md](CREDITS-SESSION.md). It reads the share with `get_engine_credits`, calls `reserve_credit_spend` before every generation and `settle_credit_spend` after it, and Control Center takes those spends off the share. So the runner's report never repeats them in `credits_spent`, which stays for a spend a run itself makes.
+
 **Held.** This engine is held by Krish (`activation.json`, `now-notes/2026-10-29-held.md`). A held engine proposes nothing and spends nothing, so this share applies only once he releases it.
 
 ## Acceptance

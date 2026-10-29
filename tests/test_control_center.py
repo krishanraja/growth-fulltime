@@ -17,12 +17,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import growth
 from engine import activation
+from engine import credits
 from engine import control_center as cc
 from engine import reporting
 from engine.records import History
 
 TOKEN = 'gen1_' + 'T' * 43
 SCHEMA_PROPS = set(reporting.load_schema()['properties'])
+SCHEMA_VERSIONS = set(reporting.load_schema()['properties']['schema_version']['enum'])
 # Control Center's words to a held engine (control-center src/lib/growthEngines.ts, HELD_RULE).
 HELD_RULE = ('Krish has held this engine until it is ready. Propose nothing and ask him nothing. '
              'Report one hold that names what stops you being ready and what would clear it.')
@@ -42,6 +44,7 @@ class StandIn:
         self.attempts, self.reports, self.calls = {}, {}, []
         self.decisions = []
         self.held = False         # the directive a held engine receives
+        self.credits = None       # the 1.16.0 credits block, when the directive carries one
         self.refuse = {}          # (method, route) -> status
         self.force_conflict = False
         outer = self
@@ -102,14 +105,21 @@ class StandIn:
         return h._send(200, {'ok': True, 'attempt': body})
 
     def get_directive(self, h, route, query, body):
+        payload = self._directive()
+        if self.credits is not None:
+            payload['directive']['schema_version'] = '1.16.0'
+            payload['directive']['credits'] = self.credits
+        return h._send(200, payload)
+
+    def _directive(self):
         if self.held:
-            return h._send(200, {'ok': True, 'chosen_by': 'rule', 'directive': {
+            return ({'ok': True, 'chosen_by': 'rule', 'directive': {
                 'schema_version': '1.0.0', 'directive_id': 'fulltime:2026-10-29', 'engine_id': 'growth-fulltime',
                 'for_date': '2026-10-29', 'aim': 'fixture', 'objectives': [],
                 'next_action': {'proposal_id': None, 'instruction': HELD_RULE,
                                 'why': 'Krish held it: it is not ready yet.', 'close_condition': None},
                 'decisions_since': [], 'constraints': {'walls': 'fixture', 'spend_cap_usd': 0, 'max_actions': 5}}})
-        return h._send(200, {'ok': True, 'chosen_by': 'rule', 'directive': {
+        return ({'ok': True, 'chosen_by': 'rule', 'directive': {
             'schema_version': '1.0.0', 'directive_id': 'fulltime:2026-10-19', 'engine_id': 'growth-fulltime',
             'for_date': '2026-10-19', 'aim': 'fixture', 'objectives': [],
             'next_action': {'proposal_id': 'fulltime:action:rail', 'instruction': 'fixture', 'why': 'fixture',
@@ -119,6 +129,11 @@ class StandIn:
     def post_reports(self, h, route, query, body):
         if set(body) - SCHEMA_PROPS:
             return h._send(400, {'error': 'unknown_field'})
+        if body['schema_version'] not in SCHEMA_VERSIONS:
+            return h._send(400, {'error': 'schema_version'})
+        # A field newer than the version sent is refused, as Control Center refuses it.
+        if 'credits_spent' in body and tuple(map(int, body['schema_version'].split('.'))) < (1, 16, 0):
+            return h._send(400, {'error': 'credits_spent_needs_1.16.0'})
         if h.headers.get('Idempotency-Key') != body['run_id']:
             return h._send(400, {'error': 'idempotency_key'})
         if independent_digest(body) != body['payload_sha256']:
@@ -590,6 +605,81 @@ class HeldTests(unittest.TestCase):
         self.assertEqual(len(report['holds']), 1)
         self.assertIn('The live rail was not read.', report['holds'][0]['detail'])
         self.assertLessEqual(len(report['holds'][0]['detail']), 1000)
+
+
+CREDITS = {'rule': 'fixture', 'pools': [
+    {'pool': 'higgsfield', 'tool': 'Higgsfield', 'unit': 'credits', 'share': 'some', 'share_amount': 600,
+     'spent_this_cycle': 0, 'remaining_for_you': 600, 'pool_balance': None, 'balance_as_of': None,
+     'use_by': '2026-11-23', 'resets_on': '2026-11-24', 'days_left': 26, 'unit_costs': []},
+    {'pool': 'apify', 'tool': 'Apify', 'unit': 'usd', 'share': 'some', 'share_amount': 2,
+     'spent_this_cycle': 0, 'remaining_for_you': 1.5, 'pool_balance': None, 'balance_as_of': None,
+     'use_by': '2026-11-20', 'resets_on': '2026-11-21', 'days_left': 23, 'unit_costs': []}]}
+
+
+class CreditsTests(unittest.TestCase):
+    """Protocol 1.16.0, prepaid credits (docs/CONTROL-CENTER-BRIEF.md). The runner spends nothing;
+    the share is spent by the daily session in jobs/credits.md."""
+    setUp, tearDown, run_cli = EntryPointTests.setUp, EntryPointTests.tearDown, EntryPointTests.run_cli
+    dispatch = HeldTests.dispatch
+
+    def test_no_credits_block_spends_nothing_and_keeps_the_version(self):
+        self.assertIsNone(credits.read({'directive': {}}))
+        guard = credits.Guard(None, held=False)
+        with self.assertRaises(credits.CreditRefused) as refused:
+            guard.reserve('higgsfield', 1, 'a still')
+        self.assertEqual(refused.exception.code, 'unknown')
+        report = self.dispatch()
+        self.assertEqual(report['schema_version'], '1.0.0')
+        self.assertNotIn('credits_spent', report)
+        self.assertTrue(any('share is unknown' in a['line'] for a in report['activity']))
+
+    def test_the_share_is_read_into_activity_and_the_runner_spends_none_of_it(self):
+        self.server.credits = copy.deepcopy(CREDITS)
+        report = self.dispatch()
+        lines = [a['line'] for a in report['activity']]
+        self.assertTrue(any('Higgsfield 600 credits left' in line for line in lines), lines)
+        self.assertTrue(any('Apify $1.50 left' in line for line in lines), lines)
+        self.assertNotIn('credits_spent', report)
+        self.assertEqual(report['schema_version'], '1.0.0')
+
+    def test_a_spend_past_the_share_is_refused(self):
+        guard = credits.Guard(credits.read({'directive': {'credits': CREDITS}}), held=False)
+        guard.reserve('higgsfield', 420, 'two Seedance clips', 'attributed_new_completers')
+        with self.assertRaises(credits.CreditRefused) as refused:
+            guard.reserve('higgsfield', 181, 'one more clip')
+        self.assertEqual(refused.exception.code, 'over_share')
+        with self.assertRaises(credits.CreditRefused) as other:
+            guard.reserve('runway', 1, 'a clip')
+        self.assertEqual(other.exception.code, 'no_pool')
+        self.assertEqual(guard.left('higgsfield'), 180)
+
+    def test_held_never_spends(self):
+        self.server.held = True
+        self.server.credits = copy.deepcopy(CREDITS)
+        report = self.dispatch()
+        self.assertNotIn('credits_spent', report)
+        self.assertTrue(any('Held, so none of it is spent' in a['line'] for a in report['activity']))
+        guard = credits.Guard(credits.read({'directive': {'credits': CREDITS}}), held=True)
+        with self.assertRaises(credits.CreditRefused) as refused:
+            guard.reserve('higgsfield', 1, 'a still')
+        self.assertEqual(refused.exception.code, 'held')
+
+    def test_a_report_with_credits_spent_is_1_16_0_and_the_stand_in_takes_it(self):
+        guard = credits.Guard(credits.read({'directive': {'credits': CREDITS}}), held=False)
+        guard.reserve('higgsfield', 2.75, 'one GPT Image still for the rail concept', 'attributed_new_completers')
+        today = dt.date(2026, 10, 29)
+        report = reporting.build('fulltime:2026-10-29:dispatch', 'synthetic', '2026-10-29T05:12:00Z', sample_state(),
+                                 [], growth.load_rulings(), reporting.objectives(today, workspace=False), ['A line.'],
+                                 identity_known=False, credits_spent=guard.credits_spent())
+        self.assertEqual(report['schema_version'], '1.16.0')
+        self.assertEqual(reporting.schema_errors(report), [])
+        self.assertTrue(reporting.schema_errors({**report, 'credits_spent': [{'pool': 'higgsfield', 'amount': 0, 'asset': 'x'}]}))
+        client = self.real_client(self.server.url, TOKEN, loopback_for_tests=True)
+        delivered = client.deliver(report)
+        self.assertTrue(delivered['readback'])
+        older = reporting.seal({**report, 'schema_version': '1.0.0'})
+        with self.assertRaises(cc.ControlCenterError):
+            client.deliver({**older, 'run_id': 'fulltime:2026-10-29:old'})
 
 
 if __name__ == '__main__':
