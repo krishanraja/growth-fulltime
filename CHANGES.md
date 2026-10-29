@@ -5,6 +5,15 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-29: the engine is held until Krish releases it.
+  Ruling (Krish, 2026-10-29): Not ready means a held activation state: no
+  wake, no asks on his list, no growth council move, and the bearer stays
+  valid. Full Time is a few weeks from being in motion. While Control Center's
+  directive or the tracked `activation.json` (held by default) says held,
+  each report has no proposals and one `NOT_READY` hold naming the readiness
+  gates: the rail at 4 of 6, the release decision, D7, attribution, the
+  workspace, and D1, still pending until its full-time decision-log entry
+  exists. No ruling status, schedule or wall changed.
 - 2026-10-26: connected creative releases to the product-owned personality core.
   Exact committed exports are verified and imported without activation; linked
   character variants receive only their selected core identity plus shared

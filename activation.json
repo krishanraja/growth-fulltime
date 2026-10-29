@@ -1,0 +1,8 @@
+{
+ "_about": "Whether this engine is held (Ruling, Krish, 2026-10-29: Not ready means a held activation state: no wake, no asks on his list, no growth council move, and the bearer stays valid). While held, every Control Center report carries no proposals and exactly one NOT_READY hold naming what would make it ready. A missing or unknown state is held. Only Krish releases it: an interactive session sets state to 'released' with his words and the date and adds a dated line to CHANGES.md. Control Center can also hold the engine from its side; either one holding is enough.",
+ "state": "held",
+ "since": "2026-10-29",
+ "why": "Krish, 2026-10-29: Full Time is a few weeks from being in motion, and Control Center marks it held.",
+ "released_on": "",
+ "released_words": ""
+}
