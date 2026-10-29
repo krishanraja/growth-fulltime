@@ -127,6 +127,12 @@ def schema_errors(value, schema=None, path='report'):
             out.append(f'{path}: not a date-time with a time zone')
     if type(value) in (int, float) and 'minimum' in schema and value < schema['minimum']:
         out.append(f'{path}: below {schema["minimum"]}')
+    if type(value) in (int, float) and 'exclusiveMinimum' in schema and value <= schema['exclusiveMinimum']:
+        out.append(f'{path}: not above {schema["exclusiveMinimum"]}')
+    if type(value) in (int, float) and 'maximum' in schema and value > schema['maximum']:
+        out.append(f'{path}: above {schema["maximum"]}')
+    if isinstance(value, str) and 'minLength' in schema and len(value) < schema['minLength']:
+        out.append(f'{path}: shorter than {schema["minLength"]}')
     if isinstance(value, dict):
         props = schema.get('properties', {})
         for key in schema.get('required', []):
@@ -384,8 +390,10 @@ def held_build(run_id, mode, observed_at, state, objectives_list, activity, even
 
 
 def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list, activity,
-          held_items=(), events=(), identity_known=None, kill_list=(), degraded=(), max_actions=3):
-    """The whole protocol report, sealed. `degraded` names sources that were missing."""
+          held_items=(), events=(), identity_known=None, kill_list=(), degraded=(), max_actions=3,
+          credits_spent=()):
+    """The whole protocol report, sealed. `degraded` names sources that were missing. `credits_spent`
+    (engine/credits.py Guard) raises the report to 1.16.0 only when this run spent something."""
     state = state or {}
     proposals, release_done = [], False
     for item in [x for x in items if not holds(x)][:max(0, min(3, max_actions))]:
@@ -412,6 +420,9 @@ def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list
               'activity': [{'line': a[0][:500], 'evidence_url': a[1]} if isinstance(a, tuple)
                            else {'line': a[:500], 'evidence_url': None} for a in activity][:40],
               'proposals': proposals[:10], 'events': list(events)[:40], 'holds': hold_list}
+    if credits_spent:
+        report['schema_version'] = '1.16.0'
+        report['credits_spent'] = [dict(c) for c in credits_spent][:40]
     return seal(report)
 
 
