@@ -63,6 +63,7 @@ Today's live report (2026-10-19) was `held`:
 - [ ] **Step 3.** Build `attributed_new_completers`: define the query (a shared take to a first finished show), its window and timezone, and implement it against what full-time exposes. Where the data is not there, name the exact gap.
 - [ ] **Step 4.** Diagnose the thin rail from stored verdicts and propose the fix.
 - [ ] **Step 5.** Update the two hosted tasks so their prompts match `automations.json`, and make the workspace runs stop loudly when the token is missing (`local/control-center/token` or `CONTROL_CENTER_ENGINE_TOKEN`).
+- [ ] **Step 6 (added 2026-10-29; waits while held).** Prepaid credits, protocol 1.16.0 (docs/CONTROL-CENTER-BRIEF.md, "Prepaid credits"). Read the directive's optional `credits` block; once Krish releases the engine, spend up to each pool's `remaining_for_you` on work that moves the objectives with no proposal (stills before video; nothing published, posted or sent without its own approval; never past `remaining_for_you`, never a top-up or new money), and report each spend in `credits_spent[]` at `schema_version: "1.16.0"`, proved against the stand-in. A missing `credits` block means unknown: spend nothing.
 
 ## Checks
 

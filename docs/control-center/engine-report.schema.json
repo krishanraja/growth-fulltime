@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://controlcenter.krishraja.com/schemas/engine-report-1.0.0.json",
-  "title": "Growth engine report, protocol 1.0.0 (ADR-038)",
+  "title": "Growth engine report, protocol 1.0.0 to 1.13.0 (ADR-038)",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -20,9 +20,21 @@
       "enum": [
         "1.0.0",
         "1.1.0",
-        "1.2.0"
+        "1.2.0",
+        "1.3.0",
+        "1.4.0",
+        "1.5.0",
+        "1.6.0",
+        "1.7.0",
+        "1.8.0",
+        "1.9.0",
+        "1.10.0",
+        "1.11.0",
+        "1.12.0",
+        "1.13.0",
+        "1.14.0"
       ],
-      "description": "1.1.0 adds a proposal's stage and parent_proposal_id, 1.2.0 its subject_ref; an older report carrying a newer field is refused."
+      "description": "1.1.0 adds a proposal's stage and parent_proposal_id, 1.2.0 its subject_ref; an older report carrying a newer field is refused. 1.3.0 adds scoped context/outcome reads and exact action execution without changing report fields. 1.4.0 and 1.5.0 change only the directive. 1.6.0 adds a proposal's row, rank, reach, amplifier_kind, features, serves and source_revision, and allows 40 proposals (ENGINE-PROTOCOL.md, The five rows). 1.7.0 adds a row proposal's because and brief, which a row then needs. 1.8.0 adds a row proposal's card, the full card a tap opens, which a row then needs. 1.9.0 lets a visibility or events row's email action (exact_payload) name Jonny's box (mailbox), and changes no report field. 1.10.0 adds web_analytics to the directive of an engine whose product has a Google Analytics site with the per-post breakdown, origin_candidates to the report of the engine whose meetings Control Center reads (Mindmake, features.meetings), and a row action's kind show_notes_ask (exact_payload), Jonny's show-notes note after a booking. 1.11.0 adds the prior-outreach read and changes no report field. 1.12.0 lets a version 2 email action (exact_payload) carry prior_mindmake, the Mindmake record its words were written from, and reads a send's version 2 action whole (ENGINE-PROTOCOL.md, Legibility drafts in his own box). 1.13.0 changes only the directive, the capabilities and the research desk. 1.14.0 adds a proposal's kind copy_open, the engagement task: a version 2 action (exact_payload) on channel engage with taps, each the exact words Krish copies and the public page he opens and posts on himself, behind the post wall, to no person, with no stage; it is refused on any older version."
     },
     "engine_id": {
       "type": "string",
@@ -159,7 +171,7 @@
     },
     "proposals": {
       "type": "array",
-      "maxItems": 10,
+      "maxItems": 40,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -227,7 +239,8 @@
               "string",
               "null"
             ],
-            "maxLength": 8000
+            "maxLength": 8000,
+            "description": "The exact words to approve. On a row proposal (1.6.0), a version 2 action as JSON text: { version: 2, channel, recipient_contact_id, subject, body, form, mailbox, kind }, never an address. mailbox (1.9.0): krish, jonny or null; jonny on the visibility and events rows only. kind (1.10.0, optional): show_notes_ask or null, only on an email with mailbox jonny about a stage (subject_ref target:<id>): Jonny's one note to a host after his pitch was booked, asking for the brief link in the show notes, drafted once a stage only after booked_at is recorded (ENGINE-PROTOCOL.md, The show-notes note). An older report naming a kind is refused. 1.12.0: a send off the rows written as a version 2 email action may carry prior_mindmake { state, state_at, last_touch_at, by?, record_url? }, the Mindmake record its words were written from, on an email only (ENGINE-PROTOCOL.md, Legibility drafts in his own box); from 1.12.0 a malformed version 2 action on a send is refused here. asset_ref (no version, Mindmake only, once capabilities say features.asset_links): { url, title, purpose, expires_in_hours } on an email whose body carries url as a link of its own, url on mindmake.co or a Drive or Canva share, expires_in_hours 1 to 2160; Control Center mints one SendLinks link per recipient when it drafts and puts it where url stood, or holds the draft (ENGINE-PROTOCOL.md, An asset in an email). 1.14.0: the engagement task is { version: 2, channel: engage, kind: copy_open, body, taps }, with recipient_contact_id null and no subject, form or mailbox; taps is 1 to 25 of { label, text, url }, the words carrying no address or number and url a public https page with no login, chat, address or number in it."
           },
           "payload_sha256": {
             "type": "string",
@@ -307,9 +320,297 @@
             ],
             "pattern": "^(contact|target|event):[A-Za-z0-9_-]{1,64}$",
             "description": "1.2.0. The person, stage or room the proposal is about, by the id Control Center gave the engine. His list keeps Control Center's own copy of the same subject instead."
+          },
+          "row": {
+            "enum": [
+              "reach_out",
+              "network",
+              "visibility",
+              "events",
+              "partners",
+              null
+            ],
+            "description": "1.6.0: the row on Krish's home screen. A row proposal is a prepared send with stage null, a subject_ref, a rank, a source_revision and a version 2 action in exact_payload. Its title is the line on his phone, shown whole: at most 72 characters."
+          },
+          "rank": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "1.6.0: the engine's order within the row, 1 first."
+          },
+          "reach": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "value",
+              "band",
+              "basis",
+              "source_url",
+              "as_of"
+            ],
+            "properties": {
+              "value": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "description": "A sourced number, or null. A number needs source_url and as_of, and its band must match it."
+              },
+              "band": {
+                "enum": [
+                  "under_1k",
+                  "1k_10k",
+                  "10k_100k",
+                  "100k_1m",
+                  "over_1m",
+                  "unknown"
+                ]
+              },
+              "basis": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "description": "What is counted: portfolio companies, members, learners a year, subscribers."
+              },
+              "source_url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^https://\\S+$",
+                "maxLength": 2000
+              },
+              "as_of": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            }
+          },
+          "amplifier_kind": {
+            "enum": [
+              "investor",
+              "connector",
+              "ai_capital",
+              "ai_trainer",
+              "student_educator",
+              "ceo_educator",
+              "broadcaster",
+              null
+            ]
+          },
+          "features": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sector": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[a-z][a-z0-9_ -]{0,59}$"
+              },
+              "topic": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[a-z][a-z0-9_ -]{0,59}$"
+              },
+              "seniority": {
+                "enum": [
+                  "c_suite",
+                  "senior",
+                  "other",
+                  null
+                ]
+              }
+            },
+            "description": "1.6.0: what his reasons for a No filter on."
+          },
+          "serves": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300,
+            "description": "1.6.0: one of the directive's week_goals, word for word."
+          },
+          "source_revision": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "repo",
+                "path",
+                "sha"
+              ],
+              "properties": {
+                "repo": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "sha": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$",
+                  "description": "The file's git blob SHA on the default branch when the words were written."
+                }
+              }
+            },
+            "description": "1.6.0: every file the words were written from. Control Center refuses the action once one has moved."
+          },
+          "because": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "1.7.0: the line under the title on his card, two lines of it: who they are and why them, in plain words. Required with row at 1.7.0, when the row's title is at most 56 characters."
+          },
+          "brief": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "minItems": 2,
+            "maxItems": 6,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "1.7.0: the case he reads when he taps the card: who they are, how he knows them, why them, what a yes gets him, the reach and its basis. Required with row at 1.7.0."
+          },
+          "card": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "who",
+              "known",
+              "why",
+              "gain",
+              "angles",
+              "sources"
+            ],
+            "properties": {
+              "who": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 320,
+                "description": "Who they are and what their organisation does."
+              },
+              "known": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240,
+                "description": "How he knows them: since when, through what, the emails each way and the last one. Never a claim the counts contradict."
+              },
+              "why": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 3,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                },
+                "description": "Why them, and why now: whole sentences."
+              },
+              "gain": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 3,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                },
+                "description": "What he gets if they say yes, tied to the week goal it serves: whole sentences, numbers only with their source."
+              },
+              "angles": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 3,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "title",
+                    "line"
+                  ],
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 60
+                    },
+                    "line": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  }
+                },
+                "description": "The angles to take, each a short name from the venture's own canon and a line tying it to this person."
+              },
+              "sources": {
+                "type": "array",
+                "maxItems": 6,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "label",
+                    "url"
+                  ],
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "url": {
+                      "type": "string",
+                      "pattern": "^https://\\S+$",
+                      "maxLength": 2000
+                    }
+                  }
+                },
+                "description": "The public pages the facts came from. Never a profile or an address: a LinkedIn profile, mailto:, wa.me or tel: link is refused."
+              }
+            },
+            "description": "1.8.0: the full card a tap opens: who they are, how he knows them, why them now, what he gets and the angles to take, with the pages the facts came from (Krish, 2026-10-27). Required with row at 1.8.0."
           }
         }
-      }
+      },
+      "description": "At most 10 before 1.6.0; 1.6.0 allows 40, a ranked queue for each of the five rows."
     },
     "events": {
       "type": "array",
@@ -365,6 +666,181 @@
             ],
             "maxLength": 1000
           }
+        }
+      }
+    },
+    "origin_candidates": {
+      "type": "array",
+      "maxItems": 40,
+      "description": "1.10.0, Mindmake only (features.meetings), optional: where the engine reads each of his recent meetings came from. The first candidate naming a path for the person he met is recorded at his good tap, once; any other path for them is kept as an assist (ENGINE-PROTOCOL.md, Held meetings and the good tap).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contact_id",
+          "path"
+        ],
+        "properties": {
+          "contact_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "path": {
+            "enum": [
+              "existing-relationship",
+              "multiplier-intro",
+              "partner",
+              "guest-seat",
+              "podcast",
+              "own-show-guest",
+              "public-signal",
+              "inbound",
+              "referral",
+              "unknown"
+            ]
+          },
+          "origin_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000,
+            "description": "A stable id (contact:<id>, a proposal id) or a public https page, never an address."
+          }
+        }
+      }
+    },
+    "withdrawn": {
+      "type": "array",
+      "maxItems": 40,
+      "description": "1.10.0, optional: your own pending proposals you take back, each with why. Each one Krish has not decided becomes expired and leaves his list; a decided one is left as it is. Never both proposed and withdrawn in one report.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "reason"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,119}$"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        }
+      }
+    },
+    "suppression": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Mindmake only, optional, at any version once capabilities say features.suppression: what the engine says to hide on his widget, by its own rule. It replaces every earlier list. Each list at most 500 entries and sorted as the engine sorts it (never and topics by code unit, the others by localeCompare), no entry twice; the whole at most 65536 bytes of JSON. Control Center checks the schema only and decides nothing from it yet (ENGINE-PROTOCOL.md, The suppression list and the taxonomy).",
+      "required": ["version", "as_of", "never", "not_on_row", "paused", "reach_floor", "audiences", "topics"],
+      "$defs": {
+        "subject_ref": { "type": "string", "pattern": "^[a-z_]{2,20}:[A-Za-z0-9._:-]{1,120}$" },
+        "kind": { "enum": ["investor", "connector", "ai_capital", "ai_trainer", "student_educator", "ceo_educator", "broadcaster"] }
+      },
+      "properties": {
+        "version": { "const": 1 },
+        "as_of": { "type": "string", "format": "date-time" },
+        "never": { "type": "array", "maxItems": 500, "uniqueItems": true, "items": { "$ref": "#/properties/suppression/$defs/subject_ref" } },
+        "not_on_row": {
+          "type": "array", "maxItems": 500, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["row", "subject_ref"],
+            "properties": {
+              "row": { "enum": ["reach_out", "network", "visibility", "events", "partners"] },
+              "subject_ref": { "$ref": "#/properties/suppression/$defs/subject_ref" }
+            }
+          }
+        },
+        "paused": {
+          "type": "array", "maxItems": 500,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["subject_ref", "until"],
+            "properties": {
+              "subject_ref": { "$ref": "#/properties/suppression/$defs/subject_ref" },
+              "until": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "reach_floor": {
+          "type": "array", "maxItems": 500,
+          "description": "A candidate of this kind at this band or lower is hidden.",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["kind", "at_or_below"],
+            "properties": {
+              "kind": { "$ref": "#/properties/suppression/$defs/kind" },
+              "at_or_below": { "enum": ["under_1k", "1k_10k", "10k_100k", "100k_1m", "over_1m", "unknown"] }
+            }
+          }
+        },
+        "audiences": {
+          "type": "array", "maxItems": 500, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["kind", "sector"],
+            "properties": {
+              "kind": { "$ref": "#/properties/suppression/$defs/kind" },
+              "sector": { "type": ["string", "null"], "maxLength": 59, "description": "Null is every sector." }
+            }
+          }
+        },
+        "topics": { "type": "array", "maxItems": 500, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 59 } }
+      }
+    },
+    "taxonomy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Mindmake only, optional, at any version once capabilities say features.suppression, sent once a run beside suppression: the engine's rows, kinds, bands, reasons, presses and row doctrine, names and whole numbers only, at most 2048 bytes of JSON. ask_for keys are its kinds and its values keys of row_for; row_for values are its rows. Control Center checks the schema only; its own lists still decide until the retirement step.",
+      "required": ["version", "rows", "kinds", "bands", "reasons", "carried_out", "ask_for", "row_for", "doctrine"],
+      "$defs": {
+        "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_]{0,63}$" },
+        "bound": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "span": {
+          "type": "object", "additionalProperties": false, "required": ["min", "max"],
+          "properties": { "min": { "$ref": "#/properties/taxonomy/$defs/bound" }, "max": { "$ref": "#/properties/taxonomy/$defs/bound" } }
+        }
+      },
+      "properties": {
+        "version": { "const": 1 },
+        "rows": { "type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true, "items": { "$ref": "#/properties/taxonomy/$defs/name" } },
+        "kinds": { "type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true, "items": { "$ref": "#/properties/taxonomy/$defs/name" } },
+        "bands": { "type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": { "$ref": "#/properties/taxonomy/$defs/name" } },
+        "reasons": { "type": "array", "minItems": 8, "maxItems": 8, "uniqueItems": true, "items": { "$ref": "#/properties/taxonomy/$defs/name" } },
+        "carried_out": { "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": { "$ref": "#/properties/taxonomy/$defs/name" } },
+        "ask_for": { "type": "object", "maxProperties": 64, "additionalProperties": { "$ref": "#/properties/taxonomy/$defs/name" } },
+        "row_for": { "type": "object", "maxProperties": 64, "additionalProperties": { "$ref": "#/properties/taxonomy/$defs/name" } },
+        "doctrine": {
+          "type": "object", "additionalProperties": false,
+          "required": ["title_max", "because_max", "title_max_with_because", "brief_lines", "card_lines", "card_sources_max", "angle_title_max"],
+          "properties": {
+            "title_max": { "$ref": "#/properties/taxonomy/$defs/bound" },
+            "because_max": { "$ref": "#/properties/taxonomy/$defs/bound" },
+            "title_max_with_because": { "$ref": "#/properties/taxonomy/$defs/bound" },
+            "brief_lines": { "$ref": "#/properties/taxonomy/$defs/span" },
+            "card_lines": { "$ref": "#/properties/taxonomy/$defs/span" },
+            "card_sources_max": { "$ref": "#/properties/taxonomy/$defs/bound" },
+            "angle_title_max": { "$ref": "#/properties/taxonomy/$defs/bound" }
+          }
+        }
+      }
+    },
+    "credits_spent": {
+      "type": "array",
+      "maxItems": 40,
+      "description": "1.16.0, optional (features.credits): prepaid credits this run spent, each against a pool in the directive's credits; it counts against your share in the next directive.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pool", "amount", "asset"],
+        "properties": {
+          "pool": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$", "description": "A pool key from the directive's credits." },
+          "amount": { "type": "number", "exclusiveMinimum": 0, "maximum": 10000000, "description": "In the pool's unit." },
+          "asset": { "type": "string", "minLength": 1, "maxLength": 200, "description": "What it made, in words; never an address." },
+          "objective_key": { "type": ["string", "null"], "pattern": "^[a-z][a-z0-9_]{0,63}$" }
         }
       }
     },
