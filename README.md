@@ -126,6 +126,18 @@ counted on his numbers or list). Each run, in order:
    a lower_snake code (for example `unauthorized`, `report_conflict`,
    `history_unavailable`, `checks_failed`) or `unknown`.
 
+**Held** (Ruling, Krish, 2026-10-29: Not ready means a held activation state:
+no wake, no asks on his list, no growth council move, and the bearer stays
+valid). The engine is held when Control Center's directive says so (its held
+rule as the next action, or an `activation` state of `held`) or when the
+tracked [`activation.json`](activation.json) says so; a missing or unknown
+state there is held, and only Krish releases it. A held run still journals its
+attempts, syncs and reads decisions, but its report carries no proposals and
+exactly one `NOT_READY` hold naming what would make it ready: the rail at 4 of
+6 AI Pundits, the release decision, D7, attribution, the workspace, and D1,
+which stays pending until its full-time decision-log entry exists
+(engine/activation.py, `reporting.held_build`).
+
 The report maps the engine's own outputs:
 
 | Engine output | Protocol report |

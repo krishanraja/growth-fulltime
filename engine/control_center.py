@@ -23,7 +23,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-from . import policy, reporting
+from . import activation, policy, reporting
 from .records import History, atomic_json
 
 DEFAULT_URL = 'https://controlcenter.krishraja.com'
@@ -311,6 +311,12 @@ def directive_line(directive, dispatched=None):
     return lines
 
 
+def held_line(sources):
+    named = ' and '.join({'control_center': 'Control Center', 'activation.json': 'activation.json'}[x] for x in sources)
+    return (f'Held by Krish ({named} says held): no proposals and no asks on his list; one NOT_READY hold '
+            'names what would make it ready. The bearer stays valid.')
+
+
 def max_actions(directive):
     value = ((directive.get('directive') or {}).get('constraints') or {}).get('max_actions')
     return min(3, value) if type(value) is int and value >= 0 else 3
@@ -356,10 +362,19 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
         activity += directive_line(directive)
         degraded = [] if record.get('rail') is not None else ['The live rail was not read; fulltime.fm did not answer.']
         start = reporting.week_window(today)[0].isoformat()
+        objectives_list = reporting.objectives(today, saved['observations'], saved['runs'])
+        is_held, sources = activation.held(directive)
+        if is_held:
+            activity.append(held_line(sources))
+            report = reporting.held_build(
+                reporting.run_id_for(today, kind), report_mode, reporting.iso(reporting.utc_now()), state,
+                objectives_list, activity, events=reporting.publication_events(saved['creatives'], start),
+                identity_known=identity_known, degraded=degraded)
+            return report, {}
         report = reporting.build(
             reporting.run_id_for(today, kind), report_mode, reporting.iso(reporting.utc_now()), state,
             reporting.ready_creatives(saved['creatives']) + pack['items'], growth.load_rulings(),
-            reporting.objectives(today, saved['observations'], saved['runs']),
+            objectives_list,
             activity, held_items=held, events=reporting.publication_events(saved['creatives'], start),
             identity_known=identity_known,
             kill_list=record['native_weekly_review']['kill_list'] if mode == 'weekly' else (),
@@ -422,6 +437,13 @@ def runner_work(growth, report_mode, dispatched=None):
         activity.append('Private history, held creatives, brand identity proof and approved aggregates stay in '
                         'the persistent workspace; this runner reports only what it can see.')
         activity += directive_line(directive, dispatched)
+        is_held, sources = activation.held(directive)
+        if is_held:
+            activity.append(held_line(sources))
+            report = reporting.held_build(
+                reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
+                reporting.objectives(today, workspace=False), activity, identity_known=None, degraded=degraded)
+            return report, notes
         report = reporting.build(
             reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
             items, growth.load_rulings(), reporting.objectives(today, workspace=False), activity,

@@ -16,12 +16,16 @@ from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import growth
+from engine import activation
 from engine import control_center as cc
 from engine import reporting
 from engine.records import History
 
 TOKEN = 'gen1_' + 'T' * 43
 SCHEMA_PROPS = set(reporting.load_schema()['properties'])
+# Control Center's words to a held engine (control-center src/lib/growthEngines.ts, HELD_RULE).
+HELD_RULE = ('Krish has held this engine until it is ready. Propose nothing and ask him nothing. '
+             'Report one hold that names what stops you being ready and what would clear it.')
 
 
 def independent_digest(report):
@@ -37,6 +41,7 @@ class StandIn:
     def __init__(self):
         self.attempts, self.reports, self.calls = {}, {}, []
         self.decisions = []
+        self.held = False         # the directive a held engine receives
         self.refuse = {}          # (method, route) -> status
         self.force_conflict = False
         outer = self
@@ -97,6 +102,13 @@ class StandIn:
         return h._send(200, {'ok': True, 'attempt': body})
 
     def get_directive(self, h, route, query, body):
+        if self.held:
+            return h._send(200, {'ok': True, 'chosen_by': 'rule', 'directive': {
+                'schema_version': '1.0.0', 'directive_id': 'fulltime:2026-10-29', 'engine_id': 'growth-fulltime',
+                'for_date': '2026-10-29', 'aim': 'fixture', 'objectives': [],
+                'next_action': {'proposal_id': None, 'instruction': HELD_RULE,
+                                'why': 'Krish held it: it is not ready yet.', 'close_condition': None},
+                'decisions_since': [], 'constraints': {'walls': 'fixture', 'spend_cap_usd': 0, 'max_actions': 5}}})
         return h._send(200, {'ok': True, 'chosen_by': 'rule', 'directive': {
             'schema_version': '1.0.0', 'directive_id': 'fulltime:2026-10-19', 'engine_id': 'growth-fulltime',
             'for_date': '2026-10-19', 'aim': 'fixture', 'objectives': [],
@@ -374,8 +386,12 @@ class EntryPointTests(unittest.TestCase):
         self.patch = patch.object(cc, 'Client', lambda base, token: self.real_client(server_url, token,
                                                                                     loopback_for_tests=True))
         self.patch.start()
+        # These tests exercise a released engine; HeldTests below cover the hold.
+        self.released = patch.object(activation, 'local_state', return_value='released')
+        self.released.start()
 
     def tearDown(self):
+        self.released.stop()
         self.patch.stop()
         self.server.close()
 
@@ -462,6 +478,102 @@ class EntryPointTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn('wrong_engine', text)
         self.assertEqual(self.server.calls, [])
+
+
+
+class HeldTests(unittest.TestCase):
+    """Ruling (Krish, 2026-10-29): Not ready means a held activation state: no wake, no asks on
+    his list, no growth council move, and the bearer stays valid."""
+    setUp, tearDown, run_cli = EntryPointTests.setUp, EntryPointTests.tearDown, EntryPointTests.run_cli
+
+    def dispatch(self):
+        done = type('Done', (), {'returncode': 0, 'stdout': 'checks passed: 1\n'})
+        with tempfile.TemporaryDirectory() as root, patch.object(growth, 'LOCAL', root), \
+                patch.object(growth, 'sync', return_value=sample_state()), \
+                patch('engine.control_center.subprocess.run', return_value=done()):
+            code, text = self.run_cli(['cc', 'dispatch', '--synthetic'], {cc.TOKEN_ENV: TOKEN})
+        self.assertEqual(code, 0, text)
+        return next(iter(self.server.reports.values()))
+
+    def assert_held(self, report):
+        self.assertEqual(reporting.schema_errors(report), [])
+        self.assertEqual(report['status'], 'held')
+        self.assertEqual(report['proposals'], [])
+        self.assertEqual(sum(1 for p in report['proposals'] if p['wall'] != 'none'), 0)
+        self.assertEqual([h['reason'] for h in report['holds']], ['NOT_READY'])
+        detail = report['holds'][0]['detail']
+        for words in ('4 of 6', 'release decision', 'D7', 'Attribution', 'Workspace', 'D1 stays pending',
+                      'decision-log entry'):
+            self.assertIn(words, detail)
+        self.assertTrue(any('Held by Krish' in a['line'] for a in report['activity']))
+
+    def test_the_tracked_flag_defaults_to_held(self):
+        self.released.stop()
+        try:
+            with tempfile.TemporaryDirectory() as root:
+                self.assertEqual(activation.local_state(Path(root) / 'absent.json'), 'held')
+                odd = Path(root) / 'odd.json'
+                odd.write_text('{"state": "paused"}')
+                self.assertEqual(activation.local_state(odd), 'held')
+                odd.write_text('not json')
+                self.assertEqual(activation.local_state(odd), 'held')
+                odd.write_text('{"state": "released"}')
+                self.assertEqual(activation.local_state(odd), 'released')
+            self.assertIn(activation.local_state(), activation.STATES)
+        finally:
+            self.released.start()
+
+    def test_directive_says_held_in_every_form_control_center_uses(self):
+        plain = {'directive': {'next_action': {'proposal_id': 'fulltime:ruling:D1', 'instruction': 'Do it.'}}}
+        self.assertFalse(activation.directive_held(plain))
+        self.assertFalse(activation.directive_held(None))
+        for payload in ({'directive': {'next_action': {'proposal_id': None, 'instruction': HELD_RULE}}},
+                        {'activation': {'state': 'held'}, 'directive': {}},
+                        {'directive': {'activation': {'state': 'held'}}},
+                        {'directive': {'constraints': {'activation': 'held'}}},
+                        {'directive': {'held': True}}):
+            self.assertTrue(activation.directive_held(payload), payload)
+
+    def test_held_locally_the_dispatch_has_no_walled_proposals_and_one_hold(self):
+        self.released.stop()
+        with patch.object(activation, 'local_state', return_value='held'):
+            report = self.dispatch()
+        self.released.start()
+        self.assert_held(report)
+        self.assertTrue(any('activation.json' in a['line'] for a in report['activity']))
+
+    def test_held_by_control_center_wins_over_a_released_flag(self):
+        self.server.held = True
+        # His earlier yes on D1 is waiting; a held engine still neither acts nor asks.
+        self.server.decisions = [{'proposal_id': 'fulltime:ruling:D1', 'decision': 'approved',
+                                  'decided_at': '2026-10-23T10:00:00Z', 'payload_sha256': 'f' * 64}]
+        report = self.dispatch()
+        self.assert_held(report)
+        self.assertTrue(any('Control Center says held' in a['line'] for a in report['activity']))
+        self.assertEqual(growth.load_rulings()['D1']['status'], 'pending')
+
+    def test_held_morning_in_the_workspace_reports_no_proposals(self):
+        self.server.held = True
+        with tempfile.TemporaryDirectory() as root, patch.object(growth, 'LOCAL', root), \
+                patch.object(growth, 'load_state', return_value=sample_state()):
+            code, text = self.run_cli(['cc', 'morning', '--offline', '--synthetic'], {cc.TOKEN_ENV: TOKEN})
+        self.assertEqual(code, 0, text)
+        report = next(iter(self.server.reports.values()))
+        self.assertEqual(report['proposals'], [])
+        self.assertEqual([h['reason'] for h in report['holds']], ['NOT_READY'])
+        self.assertIn('no verified Full Time brand identity', report['holds'][0]['detail'])
+
+    def test_a_degraded_held_run_still_holds_once(self):
+        state = sample_state()
+        report = reporting.held_build('fulltime:2026-10-29:dispatch', 'synthetic', '2026-10-29T05:12:00Z', state,
+                                      reporting.objectives(dt.date(2026, 10, 29), workspace=False),
+                                      ['A line.'], degraded=['The live rail was not read.'])
+        self.assertEqual(reporting.schema_errors(report), [])
+        self.assertEqual(report['status'], 'degraded')
+        self.assertEqual(report['proposals'], [])
+        self.assertEqual(len(report['holds']), 1)
+        self.assertIn('The live rail was not read.', report['holds'][0]['detail'])
+        self.assertLessEqual(len(report['holds'][0]['detail']), 1000)
 
 
 if __name__ == '__main__':

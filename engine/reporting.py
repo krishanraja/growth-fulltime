@@ -22,7 +22,7 @@ ENGINE_ID = 'growth-fulltime'
 PRODUCT_SLUG = 'full-time'
 SLUG = 'fulltime'
 REPO_URL = 'https://github.com/krishanraja/growth-fulltime'
-HOLD_ORDER = ['RAIL', 'RELEASE', 'CHANNEL', 'CONSENT', 'DATA', 'ASSETS', 'APPROVAL',
+HOLD_ORDER = ['NOT_READY', 'RAIL', 'RELEASE', 'CHANNEL', 'CONSENT', 'DATA', 'ASSETS', 'APPROVAL',
               'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7']
 POSTABLE = policy.BRAND_CHANNELS | {'whatsapp'}
 
@@ -331,6 +331,56 @@ def merge_holds(entries, held_items):
             parts.append(f'{len(labels)} held: ' + ', '.join(labels[:8]) + (' and more' if len(labels) > 8 else ''))
         out.append({'reason': code[:200], 'detail': ' '.join(parts)[:1000] or None})
     return out[:40]
+
+
+def not_ready_detail(state, objectives_list, identity_known, degraded=()):
+    """What would make a held engine ready: the readiness gates still shut, in order.
+    It reads gates only; it never marks a ruling approved or a gate open."""
+    state = state or {}
+    gate = state.get('push') or {}
+    rulings = state.get('rulings') or {}
+    parts = []
+    if not gate.get('open'):
+        parts.append(f'Rail: {gate.get("why") or "the rail was not read"}; it needs a match with 4 of 6 '
+                     'published AI Pundits.')
+    if not policy.release_open(state):
+        parts.append('Release: no product release decision is recorded in full-time docs/12-roadmap.md.')
+    if not (rulings.get('D7') or {}).get('in_force'):
+        parts.append('D7: the analytics consent ruling is not in force.')
+    attribution = next((o for o in objectives_list if o.get('key') == 'attributed_new_completers'), None)
+    if not attribution or attribution.get('availability') != 'measured':
+        parts.append('Attribution: new listeners who arrived through a shared link are not measured yet.')
+    if identity_known is None:
+        parts.append('Workspace: private history and brand identity proof live only in the persistent '
+                     'workspace, which this run cannot see.')
+    elif not identity_known:
+        parts.append('Workspace: no verified Full Time brand identity for YouTube within thirty days.')
+    if not (rulings.get('D1') or {}).get('in_force'):
+        parts.append('D1 stays pending in rulings.json until its full-time decision-log entry exists; '
+                     'a yes on his list is not that entry.')
+    if degraded:
+        parts.append('Sources: ' + ' '.join(degraded))
+    if not parts:
+        parts.append('Every readiness gate reads clear; only Krish releases the hold.')
+    return ('Held until Krish releases it. What would make it ready: ' + ' '.join(parts))[:1000]
+
+
+def held_build(run_id, mode, observed_at, state, objectives_list, activity, events=(), identity_known=None,
+               degraded=()):
+    """A held engine's report (Ruling, Krish, 2026-10-29): no proposals, so nothing walled or
+    unwalled reaches his list, and exactly one NOT_READY hold that names what would make it ready."""
+    state = state or {}
+    source = {'revision': str(state.get('sha') or 'unknown')[:128],
+              'captured_at': state.get('synced_at') or observed_at}
+    report = {'schema_version': '1.0.0', 'engine_id': ENGINE_ID, 'product_slug': PRODUCT_SLUG,
+              'run_id': run_id, 'mode': mode, 'observed_at': observed_at, 'source': source,
+              'status': 'degraded' if degraded else 'held', 'objectives': objectives_list,
+              'activity': [{'line': a[0][:500], 'evidence_url': a[1]} if isinstance(a, tuple)
+                           else {'line': a[:500], 'evidence_url': None} for a in activity][:40],
+              'proposals': [], 'events': list(events)[:40],
+              'holds': [{'reason': 'NOT_READY',
+                         'detail': not_ready_detail(state, objectives_list, identity_known, degraded)}]}
+    return seal(report)
 
 
 def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list, activity,

@@ -60,6 +60,19 @@ docs/control-center/ENGINE-PROTOCOL.md) with `python3 growth.py cc`. Do not
 edit its repository, create or update its pull requests, migrate its database
 or write its app data by any other route.
 
+## Held (Ruling, Krish, 2026-10-29)
+
+Not ready means a held activation state: no wake, no asks on his list, no
+growth council move, and the bearer stays valid. Full Time is a few weeks from
+being in motion, so this engine is held. It is held when Control Center's
+directive says so or when the tracked `activation.json` says so (missing or
+unknown counts as held). While held, every `growth.py cc` report carries no
+proposals, walled or not, and exactly one `NOT_READY` hold naming what would
+make it ready. Only Krish releases the hold; an interactive session records
+his words and the date in `activation.json` and CHANGES. Holding changes no
+ruling: D1 stays pending in `rulings.json` until its full-time decision-log
+entry exists.
+
 ## Read before a job
 
 1. Run `python3 growth.py sync` first; read this file and the newest
