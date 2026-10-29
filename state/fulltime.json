@@ -44,7 +44,7 @@
       "branch": "harness/canon-sync",
       "number": 104,
       "title": "Sync the canon block",
-      "updated": "2026-10-29T10:25:20Z"
+      "updated": "2026-10-29T17:05:29Z"
     },
     {
       "branch": "harness/repository-administration-e0054ead260d",
@@ -169,5 +169,5 @@
     }
   },
   "sha": "1397f5a81c734acae75701dbec7f52ba114aefbd",
-  "synced_at": "2026-10-29T13:13:39+00:00"
+  "synced_at": "2026-10-29T18:59:20+00:00"
 }
