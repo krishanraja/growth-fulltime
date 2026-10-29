@@ -57,7 +57,7 @@ The full spec is `docs/control-center/ENGINE-PROTOCOL.md`, with the report and d
 | Your contract | In the protocol |
 |---|---|
 | `report_id` (`fulltime:YYYY-MM-DD:kind`) and `revision` | `run_id` is your `report_id`, and `payload_sha256` replaces `revision` as the digest Control Center checks |
-| Items with `holds[]` codes (RAIL, RELEASE, CHANNEL, CONSENT, DATA, ASSETS, APPROVAL, D1 to D7) | Ready items become proposals. Held ones become `holds[]` with the code as `reason` |
+| Items with `holds[]` codes (NOT_READY, RAIL, RELEASE, CHANNEL, CONSENT, DATA, ASSETS, APPROVAL, D1 to D7) | Ready items become proposals. Held ones become `holds[]` with the code as `reason`. While the engine is held (`activation.json` or Control Center), NOT_READY is the only hold and nothing becomes a proposal |
 | Measures (`unique_completers`, `returners_7d`, `marketing_cash_gbp`, `model_spend_usd`, …) | `objectives[]` for the two registered ones. The rest go in `activity[]` until Krish adds them as objectives. `status: missing` or `stale` maps to `availability` with a reason |
 | Weekly review (`findings`, `kill_list`, `double_down`) | A report from your Monday run. `double_down` items become proposals, and the kill list becomes `strategy` proposals for his call |
 | Publication receipts (`--human-confirmed`) | `events[]` `creative_published` with the permalink |

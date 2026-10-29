@@ -493,7 +493,14 @@ class HeldTests(unittest.TestCase):
                 patch('engine.control_center.subprocess.run', return_value=done()):
             code, text = self.run_cli(['cc', 'dispatch', '--synthetic'], {cc.TOKEN_ENV: TOKEN})
         self.assertEqual(code, 0, text)
+        self.summary = json.JSONDecoder().raw_decode(text[text.index('{'):])[0]
         return next(iter(self.server.reports.values()))
+
+    def assert_only_protocol_writes(self):
+        writes = [route.split('/')[0] for method, route, _, _ in self.server.calls if method == 'POST']
+        self.assertEqual(set(writes), {'attempts', 'reports'})
+        self.assertEqual(writes.count('reports'), 1)
+        self.assertEqual(len(self.server.reports), 1)
 
     def assert_held(self, report):
         self.assertEqual(reporting.schema_errors(report), [])
@@ -550,7 +557,13 @@ class HeldTests(unittest.TestCase):
         report = self.dispatch()
         self.assert_held(report)
         self.assertTrue(any('Control Center says held' in a['line'] for a in report['activity']))
-        self.assertEqual(growth.load_rulings()['D1']['status'], 'pending')
+        # His D1 yes is read but matched to nothing in a held report, so nothing acts on it.
+        # The printed summary names counts only; classify the delivered report to see which.
+        self.assertEqual(self.summary['decisions']['not_in_report'], 1)
+        self.assertEqual(self.summary['decisions']['approved_current'], 0)
+        self.assertEqual(cc.classify(self.server.decisions, report['proposals'])['not_in_report'],
+                         ['fulltime:ruling:D1'])
+        self.assert_only_protocol_writes()
 
     def test_held_morning_in_the_workspace_reports_no_proposals(self):
         self.server.held = True
@@ -559,9 +572,12 @@ class HeldTests(unittest.TestCase):
             code, text = self.run_cli(['cc', 'morning', '--offline', '--synthetic'], {cc.TOKEN_ENV: TOKEN})
         self.assertEqual(code, 0, text)
         report = next(iter(self.server.reports.values()))
-        self.assertEqual(report['proposals'], [])
-        self.assertEqual([h['reason'] for h in report['holds']], ['NOT_READY'])
+        self.assert_held(report)
         self.assertIn('no verified Full Time brand identity', report['holds'][0]['detail'])
+        lines = [a['line'] for a in report['activity']]
+        self.assertFalse(any(line.startswith('Prepared ') for line in lines), lines)
+        self.assertTrue(any('no action goes to his list' in line for line in lines), lines)
+        self.assert_only_protocol_writes()
 
     def test_a_degraded_held_run_still_holds_once(self):
         state = sample_state()

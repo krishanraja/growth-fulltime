@@ -349,9 +349,13 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
         identity_known = any(policy.identity_verified(x, 'youtube') for x in identities.values())
         usage = record['usage']
         gate = record['gate']
+        is_held, sources = activation.held(directive)
+        prepared = ('Held, so no action goes to his list; the batch stays in private history, and nothing was '
+                    'sent, posted or spent.' if is_held else
+                    f'Prepared {len(record["actions"])} of at most three actions; nothing was sent, posted or spent.')
         activity = [f'Synced full-time {record["source_sha"][:10]}, read {record["source_observed_at"]}; '
                     f'rail gate {"OPEN" if gate["open"] else "HOLD"}: {gate["why"]}.',
-                    f'Prepared {len(record["actions"])} of at most three actions; nothing was sent, posted or spent.',
+                    prepared,
                     f'Recorded usage: {usage["marketing_cash_gbp"]} GBP marketing cash, {usage["model_calls"]} model calls, '
                     f'{usage["audio_generation_calls"]} audio generation calls.']
         held = reporting.held_creatives(saved['creatives'])
@@ -363,7 +367,6 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
         degraded = [] if record.get('rail') is not None else ['The live rail was not read; fulltime.fm did not answer.']
         start = reporting.week_window(today)[0].isoformat()
         objectives_list = reporting.objectives(today, saved['observations'], saved['runs'])
-        is_held, sources = activation.held(directive)
         if is_held:
             activity.append(held_line(sources))
             report = reporting.held_build(
