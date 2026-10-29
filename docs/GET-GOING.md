@@ -2,7 +2,7 @@
 
 When Krish opens this repository and says "Get going", this is the work. AGENTS.md says how to use it; this file says what to do. Written 2026-10-19 by Control Center, from this engine's first live reports.
 
-**Held (2026-10-29).** The engine is held by `activation.json` (Ruling, Krish, 2026-10-29: Not ready means a held activation state: no wake, no asks on his list, no growth council move, and the bearer stays valid). While it is held, a "Get going" session prepares nothing for his list: every report carries one NOT_READY hold and no proposals, so a spend plan or a ruling ask would be dropped unseen. Step 0.5 (the Higgsfield spend plan) and Step 2 (acting on his rulings) wait for his release, and so does putting anything "on his list in Control Center" in item 2 below. Work that asks nothing of him (Steps 0, 3, 4 and 5) can still go ahead. Only Krish releases the engine, in an interactive session that records his words and the date in `activation.json` and `CHANGES.md`.
+**Held (2026-10-29).** The engine is held by `activation.json` (Ruling, Krish, 2026-10-29: Not ready means a held activation state: no wake, no asks on his list, no growth council move, and the bearer stays valid). While it is held, a "Get going" session prepares nothing for his list: every report carries one NOT_READY hold and no proposals, so a spend plan or a ruling ask would be dropped unseen. Step 2 (acting on his rulings) and Step 6 (spending the credits share) wait for his release, and so does putting anything "on his list in Control Center" in item 2 below. Work that asks nothing of him (Steps 0, 3, 4 and 5) can still go ahead. Only Krish releases the engine, in an interactive session that records his words and the date in `activation.json` and `CHANGES.md`.
 
 ## What "Get going" does
 
@@ -57,12 +57,12 @@ Today's live report (2026-10-19) was `held`:
 ## The build
 
 - [ ] **Step 0.** Correct the status line at the top of docs/CONTROL-CENTER-BRIEF.md: the first live run on 2026-10-19 succeeded, so it is no longer only tested against a local stand-in.
-- [ ] **Step 0.5 (added 2026-10-22; waits while held).** Pick up briefs/2026-10-22-media-credits.md: propose about 10 Higgsfield pundit stills (about 30 credits) as a `stage: "plan"` behind `spend`, and confirm editions are publishing before any video. Generate nothing before his yes.
 - [ ] **Step 1.** The autonomy loop above (plan, go-live, the go-live step, check-ins) on protocol 1.1.0, proved against the stand-in: an approved plan never goes live, an approved go-live goes live once with exactly its payload, an amended one goes live in his words, a declined check-in stops its plan. Then the creative review every go-live passes: the doctrine it was checked against, at least two alternatives made, and why this one wins, in its evidence. Krish has a low tolerance for poor creative output, so a weak go-live is held, not proposed.
 - [ ] **Step 2 (waits while held).** Act on his rulings. When he clears the release decision or D1, D2, D3 or D7 on his list, record it where the engine reads its rulings (`rulings.json`) and release the matching hold on the next run, with the decision as evidence. When he declines one, keep the hold and say so.
 - [ ] **Step 3.** Build `attributed_new_completers`: define the query (a shared take to a first finished show), its window and timezone, and implement it against what full-time exposes. Where the data is not there, name the exact gap.
 - [ ] **Step 4.** Diagnose the thin rail from stored verdicts and propose the fix.
 - [ ] **Step 5.** Update the two hosted tasks so their prompts match `automations.json`, and make the workspace runs stop loudly when the token is missing (`local/control-center/token` or `CONTROL_CENTER_ENGINE_TOKEN`).
+- [ ] **Step 6 (added 2026-10-29; waits while held).** Prepaid credits, protocol 1.16.0 (docs/CONTROL-CENTER-BRIEF.md, "Prepaid credits"). Read the directive's optional `credits` block; once Krish releases the engine, spend up to each pool's `remaining_for_you` on work that moves the objectives with no proposal (stills before video; nothing published, posted or sent without its own approval; never past `remaining_for_you`, never a top-up or new money), and report each spend in `credits_spent[]` at `schema_version: "1.16.0"`, proved against the stand-in. A missing `credits` block means unknown: spend nothing.
 
 ## Checks
 

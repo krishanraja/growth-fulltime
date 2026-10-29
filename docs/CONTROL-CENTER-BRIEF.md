@@ -72,6 +72,30 @@ The full spec is `docs/control-center/ENGINE-PROTOCOL.md`, with the report and d
 - Writing `local/handoff/reporting-bundle.json` as the hand-off. Report through the protocol instead.
 - Asking Control Center for a packs v2 parser or a product adapter for reporting.
 
+## Prepaid credits (protocol 1.16.0)
+
+Ruling (Krish, 2026-10-29): a growth engine may spend up to its placement share of a tool's prepaid credits each cycle with no per-batch approval, and reports what it made. The credits are already paid for and a vendor wipes what is left at each reset, so spending this share is not new money. The full rule is "Prepaid credits: spend your share before it is wiped (1.16.0)" in `docs/control-center/ENGINE-PROTOCOL.md`.
+
+Full Time is placed "some" on three pools. The shares below are approximate; the directive's numbers are the ones to use.
+
+| Tool | Full Time's share | Whole pool | Resets |
+|---|---|---|---|
+| Higgsfield | about 600 credits a month | 3,000 credits | the 24th |
+| Runway | about 450 credits a month | 2,250 credits | the 7th |
+| 21st Dev | about 50 a month | 500 | the 1st |
+
+Measured Higgsfield unit costs: a GPT Image still is 2.75 credits, a Seedance clip is 210.
+
+What to do:
+
+1. Read the directive's optional `credits` block (`{ rule, pools[] }`). Each pool carries `remaining_for_you`, `resets_on`, `days_left` and `unit_costs[]`, soonest wipe first. If `credits` is missing, the read failed: that means unknown, never a share of zero, so spend nothing that run.
+2. Spend up to `remaining_for_you` of each pool on work that moves this engine's objectives, with no proposal. Make stills before video, and render motion only for a concept that earned it. Every asset still meets this repository's creative doctrine and the rules in AGENTS.md (Full Time's own artwork, no football footage, no player likenesses, no living-pundit imitation, AI disclosed).
+3. Report each spend in the report's `credits_spent[]`: `{ pool, amount, asset, objective_key }`, at most 40, at `schema_version: "1.16.0"`. `asset` says what it made in words, never an address. Control Center takes the total off the share in the next directive.
+
+The walls do not move: never past `remaining_for_you`, never a top-up, a plan change or new money, and nothing made is published, posted or sent without its own approval (the go-live step in AGENTS.md).
+
+**Held.** This engine is held by Krish (`activation.json`, `now-notes/2026-10-29-held.md`). A held engine proposes nothing and spends nothing, so this share applies only once he releases it.
+
 ## Acceptance
 
 - A held item shows its code on Growth > Engines.

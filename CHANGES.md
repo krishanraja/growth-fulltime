@@ -5,6 +5,13 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-29: Control Center protocol 1.16.0, prepaid credits.
+  Ruling (Krish, 2026-10-29): a growth engine may spend up to its placement
+  share of a tool's prepaid credits each cycle with no per-batch approval, and
+  reports what it made. The protocol copy in `docs/control-center/` is now
+  Control Center's current one, and docs/CONTROL-CENTER-BRIEF.md names Full
+  Time's shares. While the engine is held it spends nothing. No code, schedule
+  or wall changed.
 - 2026-10-29: the engine is held until Krish releases it.
   Ruling (Krish, 2026-10-29): Not ready means a held activation state: no
   wake, no asks on his list, no growth council move, and the bearer stays
