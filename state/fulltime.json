@@ -16,16 +16,8 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [
-    "AGENTS.md"
-  ],
-  "commits": [
-    {
-      "date": "2026-10-28T18:27:31Z",
-      "sha": "88378a102c",
-      "subject": "docs(canon): sync the canon block to v2026.10.27.2 (#97)"
-    }
-  ],
+  "changed_since_last_sync": [],
+  "commits": [],
   "decisions": [
     "2026-10-26 - Solo analysis first; paid conversation after quality and adoption",
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
@@ -47,8 +39,15 @@
     }
   ],
   "notes": [],
-  "open_pulls": [],
-  "previous_sha": "836957b485066507bdb2e38e001898f69cb4406e",
+  "open_pulls": [
+    {
+      "branch": "harness/repository-administration-e0054ead260d",
+      "number": 103,
+      "title": "Maintain the repository operating guide from the brain",
+      "updated": "2026-10-28T20:02:04Z"
+    }
+  ],
+  "previous_sha": "88378a102cc60134c802c2d2779f5dcafc1abf4a",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -164,5 +163,5 @@
     }
   },
   "sha": "88378a102cc60134c802c2d2779f5dcafc1abf4a",
-  "synced_at": "2026-10-28T19:38:23+00:00"
+  "synced_at": "2026-10-29T00:02:23+00:00"
 }
