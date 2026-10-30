@@ -5,6 +5,11 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-10-30: the seven channel tasks join the plan as GET-GOING Step 7, dormant while the engine is
+  held and until D1 is cleared. Krish asked for each of seven saved Instagram growth prompts to be its
+  own task for every growth engine's specialists, defined once in ai-harness `contract/channel-tasks.md`.
+  No job, automation or code changes.
+
 - 2026-10-29: the credits step is built.
   Krish, 2026-10-29: "Scheduled sessions". `engine/credits.py` reads the
   share and guards any spend; the daily session in docs/CREDITS-SESSION.md
