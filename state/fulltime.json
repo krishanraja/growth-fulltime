@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "764bed3515462892",
-    "NOW.md": "0fad69aec3109965",
+    "NOW.md": "a101f19e40724ca0",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -17,24 +17,18 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "AGENTS.md",
     "NOW.md"
   ],
   "commits": [
     {
-      "date": "2026-11-01T09:43:27Z",
-      "sha": "b976d8ee87",
-      "subject": "Merge pull request #105 from krishanraja/claude/upbeat-bell-haq7ol"
+      "date": "2026-11-01T15:27:39Z",
+      "sha": "d07d963d8b",
+      "subject": "Merge pull request #106 from krishanraja/claude/upbeat-bell-haq7ol"
     },
     {
-      "date": "2026-11-01T09:26:46Z",
-      "sha": "4f991807de",
-      "subject": "Closeout in NOW.md, as this repository's rule asks"
-    },
-    {
-      "date": "2026-11-01T09:24:52Z",
-      "sha": "a9b9d004f9",
-      "subject": "Codex lane: queue asset, motion and animation work for Krish's home computer"
+      "date": "2026-11-01T15:26:45Z",
+      "sha": "8221edfca6",
+      "subject": "Direction first: a storyboard Krish approves before any video is built"
     }
   ],
   "decisions": [
@@ -72,7 +66,7 @@
       "updated": "2026-10-28T20:02:04Z"
     }
   ],
-  "previous_sha": "1397f5a81c734acae75701dbec7f52ba114aefbd",
+  "previous_sha": "b976d8ee8714e944da21facacd3a1b0aac0e15a8",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -187,6 +181,6 @@
       "status": "pending"
     }
   },
-  "sha": "b976d8ee8714e944da21facacd3a1b0aac0e15a8",
-  "synced_at": "2026-11-01T13:35:48+00:00"
+  "sha": "d07d963d8bdaa35443b634863830f72a9066cf4f",
+  "synced_at": "2026-11-01T18:58:33+00:00"
 }

@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `b976d8ee87` and from fulltime.fm on 2026-11-01T13:35:48+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `d07d963d8b` and from fulltime.fm on 2026-11-01T18:58:33+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -20,7 +20,6 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 Read these again before drafting anything:
 
-- changed: `AGENTS.md`
 - changed: `NOW.md`
 
 ## Rulings the playbook needs
@@ -66,9 +65,8 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `b976d8ee87` 2026-11-01 Merge pull request #105 from krishanraja/claude/upbeat-bell-haq7ol
-- `4f991807de` 2026-11-01 Closeout in NOW.md, as this repository's rule asks
-- `a9b9d004f9` 2026-11-01 Codex lane: queue asset, motion and animation work for Krish's home computer
+- `d07d963d8b` 2026-11-01 Merge pull request #106 from krishanraja/claude/upbeat-bell-haq7ol
+- `8221edfca6` 2026-11-01 Direction first: a storyboard Krish approves before any video is built
 
 ## Work in flight (open pull requests)
 
