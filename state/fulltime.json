@@ -1,7 +1,7 @@
 {
   "canon": {
-    "AGENTS.md": "6a0b49439d2964a2",
-    "NOW.md": "c78989fd66e7a5b9",
+    "AGENTS.md": "764bed3515462892",
+    "NOW.md": "0fad69aec3109965",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -16,8 +16,27 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [],
-  "commits": [],
+  "changed_since_last_sync": [
+    "AGENTS.md",
+    "NOW.md"
+  ],
+  "commits": [
+    {
+      "date": "2026-11-01T09:43:27Z",
+      "sha": "b976d8ee87",
+      "subject": "Merge pull request #105 from krishanraja/claude/upbeat-bell-haq7ol"
+    },
+    {
+      "date": "2026-11-01T09:26:46Z",
+      "sha": "4f991807de",
+      "subject": "Closeout in NOW.md, as this repository's rule asks"
+    },
+    {
+      "date": "2026-11-01T09:24:52Z",
+      "sha": "a9b9d004f9",
+      "subject": "Codex lane: queue asset, motion and animation work for Krish's home computer"
+    }
+  ],
   "decisions": [
     "2026-10-26 - Solo analysis first; paid conversation after quality and adoption",
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
@@ -44,7 +63,7 @@
       "branch": "harness/canon-sync",
       "number": 104,
       "title": "Sync the canon block",
-      "updated": "2026-11-01T02:34:51Z"
+      "updated": "2026-11-01T09:43:58Z"
     },
     {
       "branch": "harness/repository-administration-e0054ead260d",
@@ -168,6 +187,6 @@
       "status": "pending"
     }
   },
-  "sha": "1397f5a81c734acae75701dbec7f52ba114aefbd",
-  "synced_at": "2026-11-01T06:18:48+00:00"
+  "sha": "b976d8ee8714e944da21facacd3a1b0aac0e15a8",
+  "synced_at": "2026-11-01T13:35:48+00:00"
 }
