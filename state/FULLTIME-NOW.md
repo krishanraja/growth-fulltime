@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `0e44f991d2` and from fulltime.fm on 2026-11-02T02:34:58+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `02a4af5cc3` and from fulltime.fm on 2026-11-02T11:22:06+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -65,7 +65,7 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `0e44f991d2` 2026-11-01 docs(steward): 2026-11-01 bring NOW.md within audit limits
+- `02a4af5cc3` 2026-11-02 chore(north-star): 0 against 24 this week, U5
 
 ## Work in flight (open pull requests)
 
