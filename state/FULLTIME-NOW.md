@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `d07d963d8b` and from fulltime.fm on 2026-11-01T18:58:33+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `0e44f991d2` and from fulltime.fm on 2026-11-02T02:34:58+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -65,10 +65,9 @@ Read these again before drafting anything:
 
 ## Recent commits on main
 
-- `d07d963d8b` 2026-11-01 Merge pull request #106 from krishanraja/claude/upbeat-bell-haq7ol
-- `8221edfca6` 2026-11-01 Direction first: a storyboard Krish approves before any video is built
+- `0e44f991d2` 2026-11-01 docs(steward): 2026-11-01 bring NOW.md within audit limits
 
 ## Work in flight (open pull requests)
 
-- #104 Sync the canon block (`harness/canon-sync`, updated 2026-11-01)
+- #104 Sync the canon block (`harness/canon-sync`, updated 2026-11-02)
 - #103 Maintain the repository operating guide from the brain (`harness/repository-administration-e0054ead260d`, updated 2026-10-28)
