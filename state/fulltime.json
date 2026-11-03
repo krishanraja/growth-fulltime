@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "764bed3515462892",
-    "NOW.md": "fe6aac72087326ae",
+    "NOW.md": "92b31a7038dededc",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -21,9 +21,9 @@
   ],
   "commits": [
     {
-      "date": "2026-11-02T05:10:48Z",
-      "sha": "02a4af5cc3",
-      "subject": "chore(north-star): 0 against 24 this week, U5"
+      "date": "2026-11-03T02:26:53Z",
+      "sha": "5141529a02",
+      "subject": "docs(steward): 2026-11-03 re-stamp NOW.md head"
     }
   ],
   "decisions": [
@@ -52,7 +52,7 @@
       "branch": "harness/canon-sync",
       "number": 104,
       "title": "Sync the canon block",
-      "updated": "2026-11-02T01:02:41Z"
+      "updated": "2026-11-03T02:38:16Z"
     },
     {
       "branch": "harness/repository-administration-e0054ead260d",
@@ -61,7 +61,7 @@
       "updated": "2026-10-28T20:02:04Z"
     }
   ],
-  "previous_sha": "0e44f991d2b8915cf970cc77c7909c0f1de21784",
+  "previous_sha": "02a4af5cc3686378b027d7bf52a92da91489b3b9",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -176,6 +176,6 @@
       "status": "pending"
     }
   },
-  "sha": "02a4af5cc3686378b027d7bf52a92da91489b3b9",
-  "synced_at": "2026-11-02T11:22:06+00:00"
+  "sha": "5141529a025b0d84fe109cc20a5ed1c99759e198",
+  "synced_at": "2026-11-03T02:56:39+00:00"
 }
