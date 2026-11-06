@@ -1,6 +1,6 @@
 # Full Time now
 
-Read from `krishanraja/full-time` at commit `5141529a02` and from fulltime.fm on 2026-11-05T02:33:08+00:00 UTC by `python3 growth.py sync`.
+Read from `krishanraja/full-time` at commit `5141529a02` and from fulltime.fm on 2026-11-06T07:02:05+00:00 UTC by `python3 growth.py sync`.
 Rewritten when a sync finds full-time, its open pull requests, the rail or the feed changed. The full-time repository and the live site are the source of truth; this is a reading of them.
 
 ## Push gate: HOLD
@@ -63,5 +63,5 @@ No match has 4 of 6 AI Pundits (newest: 1 of 6). A push sends fans to a match on
 
 ## Work in flight (open pull requests)
 
-- #104 Sync the canon block (`harness/canon-sync`, updated 2026-11-05)
+- #104 Sync the canon block (`harness/canon-sync`, updated 2026-11-06)
 - #103 Maintain the repository operating guide from the brain (`harness/repository-administration-e0054ead260d`, updated 2026-10-28)
