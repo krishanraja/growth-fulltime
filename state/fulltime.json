@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "764bed3515462892",
-    "NOW.md": "30e4623e2f8cdaea",
+    "NOW.md": "1fb4f7fbbe881115",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -16,8 +16,16 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [],
-  "commits": [],
+  "changed_since_last_sync": [
+    "NOW.md"
+  ],
+  "commits": [
+    {
+      "date": "2026-11-08T23:49:20Z",
+      "sha": "a63e7b17f3",
+      "subject": "docs(steward): 2026-11-08 re-stamp NOW.md as_of"
+    }
+  ],
   "decisions": [
     "2026-10-26 - Solo analysis first; paid conversation after quality and adoption",
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
@@ -168,6 +176,6 @@
       "status": "pending"
     }
   },
-  "sha": "f51c416bc78e0f88841c6e58be3a93b5b3df8b0e",
-  "synced_at": "2026-11-08T17:06:35+00:00"
+  "sha": "a63e7b17f36233cecfe2fba336f90f741db14404",
+  "synced_at": "2026-11-09T00:58:10+00:00"
 }
