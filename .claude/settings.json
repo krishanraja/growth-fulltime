@@ -9,5 +9,20 @@
   },
   "enabledPlugins": {
     "codex@openai-codex": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/codex-login.sh\"",
+            "timeout": 180,
+            "statusMessage": "Checking Codex sign-in"
+          }
+        ]
+      }
+    ]
   }
 }
