@@ -2,7 +2,10 @@
 #
 # Control Center wakes this repository every morning around 06:10 London with
 # a repository_dispatch of type cc-growth-directive, whose payload carries only
-# { directive_id, engine_id }. The loop journals a started attempt, pulls the
+# ids: { directive_id, engine_id } and, when Krish has given this engine an
+# instruction, its instruction_id (protocol 1.20.0; never his words, which this
+# public log never shows). The run id adds this run's id and attempt, since an
+# instruction can wake it twice in a day. The loop journals a started attempt, pulls the
 # directive, runs the self-test and repository verification, reads the public
 # sources the hourly sync reads, reports with a digest readback, reads Krish's
 # decisions and journals the end. It never sends, posts, spends or publishes,

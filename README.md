@@ -138,11 +138,42 @@ exactly one `NOT_READY` hold naming what would make it ready: the rail at 4 of
 which stays pending until its full-time decision-log entry exists
 (engine/activation.py, `reporting.held_build`).
 
+**Krish's instruction and the engine's state** (protocol 1.20.0; Ruling,
+Krish, 2026-11-11: every growth engine's priorities, obsessions, next steps
+and outstanding items feed live across Control Centre, and Krish instructs
+each engine with his next best action, which starts it). The directive may
+carry `krish_instruction`, his own next best action for this engine. It is
+never an approval, and his words never leave the private workspace: this
+repository and its Actions logs are public, so only the id and a SHA-256
+digest are printed or reported.
+
+```bash
+python3 growth.py cc instruction                     # read it; words go only to ignored local/control-center/instruction.json
+python3 growth.py cc ack --state started --line "What I am doing, in my own words."
+python3 growth.py cc ack --state done --line "What I did, in my own words."   # or blocked, with what would unblock it
+```
+
+`cc ack` refuses a line that repeats five of his words in a row, carries an
+address or a phone number, or moves backwards, and refuses everything while
+the engine is held. The next `cc morning` sends the acks. On the clean runner
+a dispatch acks the instruction `received` (the morning job acts on it), or
+`received` then `blocked` ("Engine held") while held, and puts one activity
+line first naming its id. A dispatch's `run_id` adds the GitHub run id and
+attempt (`:gh<run>.<attempt>`), because an instruction can wake the repository
+twice in one day.
+
+When the directive says `features.engine_state`, the report goes out at
+`schema_version: "1.20.0"` with `priorities` (the North Star number this week
+against its target, then the open gates or constraints), `obsessions`
+(Krish's own quoted aims from docs/NORTH_STAR.md and AGENTS.md), `next_steps`
+(the first open step of docs/GET-GOING.md, then NOW.md's "What is next") and
+`instruction_acks` (engine/engine_state.py). Before that, nothing new is sent.
+
 The report maps the engine's own outputs:
 
 | Engine output | Protocol report |
 |---|---|
-| `fulltime:YYYY-MM-DD:<kind>` (daily, report, dispatch) | `run_id` |
+| `fulltime:YYYY-MM-DD:<kind>` (daily, report, dispatch; a dispatch adds `:gh<run>.<attempt>`) | `run_id` |
 | Ready actions, at most three | `proposals[]`, wall `none`; a creative that passed every gate is wall `post` with `exact_payload` and `channel` |
 | Held drafts and closed gates | `holds[]`, one per code (NOT_READY, RAIL, RELEASE, CHANNEL, CONSENT, DATA, D1 to D7). While `activation.json` or Control Center holds the engine, NOT_READY is the only hold and there are no proposals |
 | The release decision and pending rulings D1, D2, D3 and D7 | wall `strategy` proposals. D4, D5 and D6 unlock only channels the owner excluded, so they are holds, not asks |

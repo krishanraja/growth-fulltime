@@ -5,6 +5,16 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-11-11: Control Center protocol 1.20.0, Krish's instruction and the engine's state.
+  Krish, 2026-11-11: "Ensure the priorities, obsessions, and next steps for all the growth engines are
+  feeding live to this dashboard, and not just in the growth tab. They are responsible for driving the
+  overall success of each venture, so make sure I can instruct each one with my next best action and have
+  it get going (as well as always understand the current state of play and what's outstanding). ... Get
+  building". The morning job now pulls his instruction first (`growth.py cc instruction`) and records what
+  it did (`growth.py cc ack`); the morning automation's prompt says so. Reports carry the acks and the
+  engine's priorities, obsessions and next steps when the directive asks. His words stay in ignored
+  `local/`. No wall moved and the engine stays held.
+
 - 2026-10-30: the seven channel tasks join the plan as GET-GOING Step 7, dormant while the engine is
   held and until D1 is cleared. Krish asked for each of seven saved Instagram growth prompts to be its
   own task for every growth engine's specialists, defined once in ai-harness `contract/channel-tasks.md`.

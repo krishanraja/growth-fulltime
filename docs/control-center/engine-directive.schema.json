@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://controlcenter.krishraja.com/schemas/engine-directive-1.0.0.json",
-  "title": "Growth engine directive, protocol 1.0.0 to 1.14.0 (ADR-038)",
+  "title": "Growth engine directive, protocol 1.0.0 to 1.20.0 (ADR-038)",
   "type": "object",
   "required": [
     "schema_version",
@@ -15,6 +15,34 @@
     "constraints"
   ],
   "properties": {
+    "krish_instruction": {
+      "description": "1.20.0, optional: Krish's own next best action for this engine, given through Control Center's one door, or null when none is open (a held engine is told only its hold, so null). Carried every day until the engine reports it done, he withdraws or replaces it, or it is a week old. Never next_action.instruction, which is Control Center's own words. Act on it first, inside the walls: it is never an approval, so walled work still comes back as a proposal. Ack it by id in instruction_acks, and never print, log or commit its words.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "words", "given_at", "given_by", "supersedes"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^ki_[0-9a-f]{24}$" },
+            "words": { "type": "string", "minLength": 1, "maxLength": 2000 },
+            "given_at": { "type": "string", "format": "date-time" },
+            "given_by": { "const": "krish" },
+            "supersedes": { "type": ["string", "null"], "pattern": "^ki_[0-9a-f]{24}$", "description": "The instruction this one replaced, or null." }
+          }
+        }
+      ]
+    },
+    "features": {
+      "type": "object",
+      "description": "1.20.0: what this directive's protocol serves. Report priorities, obsessions, next_steps and instruction_acks only when engine_state is true.",
+      "additionalProperties": false,
+      "required": ["engine_state", "krish_instruction"],
+      "properties": {
+        "engine_state": { "type": "boolean" },
+        "krish_instruction": { "type": "boolean" }
+      }
+    },
     "schema_version": {
       "type": "string",
       "pattern": "^1\\.[0-9]+\\.[0-9]+$",
@@ -1157,7 +1185,8 @@
                     "study_style",
                     "make_piece",
                     "visibility",
-                    "taste_only"
+                    "taste_only",
+                    "offday_post"
                   ]
                 }
               },
@@ -1253,6 +1282,7 @@
                 "type": "string",
                 "description": "service_registry key, the pool credits_spent names"
               },
+              "mode": {"enum": ["use_it", "ceiling"], "description": "use_it: prepaid and wiped at the reset, spend it. ceiling: pay as you go (Apify), the share is the most you may spend, never a target. Absent reads as use_it."},
               "tool": {
                 "type": "string"
               },

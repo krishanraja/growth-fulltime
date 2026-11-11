@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://controlcenter.krishraja.com/schemas/engine-report-1.0.0.json",
-  "title": "Growth engine report, protocol 1.0.0 to 1.13.0 (ADR-038)",
+  "title": "Growth engine report, protocol 1.0.0 to 1.20.0 (ADR-038)",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -34,9 +34,13 @@
         "1.13.0",
         "1.14.0",
         "1.15.0",
-        "1.16.0"
+        "1.16.0",
+        "1.17.0",
+        "1.18.0",
+        "1.19.0",
+        "1.20.0"
       ],
-      "description": "1.1.0 adds a proposal's stage and parent_proposal_id, 1.2.0 its subject_ref; an older report carrying a newer field is refused. 1.3.0 adds scoped context/outcome reads and exact action execution without changing report fields. 1.4.0 and 1.5.0 change only the directive. 1.6.0 adds a proposal's row, rank, reach, amplifier_kind, features, serves and source_revision, and allows 40 proposals (ENGINE-PROTOCOL.md, The five rows). 1.7.0 adds a row proposal's because and brief, which a row then needs. 1.8.0 adds a row proposal's card, the full card a tap opens, which a row then needs. 1.9.0 lets a visibility or events row's email action (exact_payload) name Jonny's box (mailbox), and changes no report field. 1.10.0 adds web_analytics to the directive of an engine whose product has a Google Analytics site with the per-post breakdown, origin_candidates to the report of the engine whose meetings Control Center reads (Mindmake, features.meetings), and a row action's kind show_notes_ask (exact_payload), Jonny's show-notes note after a booking. 1.11.0 adds the prior-outreach read and changes no report field. 1.12.0 lets a version 2 email action (exact_payload) carry prior_mindmake, the Mindmake record its words were written from, and reads a send's version 2 action whole (ENGINE-PROTOCOL.md, Legibility drafts in his own box). 1.13.0 changes only the directive, the capabilities and the research desk. 1.14.0 adds a proposal's kind copy_open, the engagement task: a version 2 action (exact_payload) on channel engage with taps, each the exact words Krish copies and the public page he opens and posts on himself, behind the post wall, to no person, with no stage; it is refused on any older version. 1.15.0 changes only the directive (inspiration). 1.16.0 adds credits_spent, the prepaid credits a run spent against the directive's credits."
+      "description": "1.1.0 adds a proposal's stage and parent_proposal_id, 1.2.0 its subject_ref; an older report carrying a newer field is refused. 1.3.0 adds scoped context/outcome reads and exact action execution without changing report fields. 1.4.0 and 1.5.0 change only the directive. 1.6.0 adds a proposal's row, rank, reach, amplifier_kind, features, serves and source_revision, and allows 40 proposals (ENGINE-PROTOCOL.md, The five rows). 1.7.0 adds a row proposal's because and brief, which a row then needs. 1.8.0 adds a row proposal's card, the full card a tap opens, which a row then needs. 1.9.0 lets a visibility or events row's email action (exact_payload) name Jonny's box (mailbox), and changes no report field. 1.10.0 adds web_analytics to the directive of an engine whose product has a Google Analytics site with the per-post breakdown, origin_candidates to the report of the engine whose meetings Control Center reads (Mindmake, features.meetings), and a row action's kind show_notes_ask (exact_payload), Jonny's show-notes note after a booking. 1.11.0 adds the prior-outreach read and changes no report field. 1.12.0 lets a version 2 email action (exact_payload) carry prior_mindmake, the Mindmake record its words were written from, and reads a send's version 2 action whole (ENGINE-PROTOCOL.md, Legibility drafts in his own box). 1.13.0 changes only the directive, the capabilities and the research desk. 1.14.0 adds a proposal's kind copy_open, the engagement task: a version 2 action (exact_payload) on channel engage with taps, each the exact words Krish copies and the public page he opens and posts on himself, behind the post wall, to no person, with no stage; it is refused on any older version. 1.15.0 changes only the directive (inspiration). 1.16.0 adds credits_spent, the prepaid credits a run spent against the directive's credits. 1.17.0 adds buffer_channels (the Buffer channel ids the engine posts on, and the ones it never touches), which a go-live of posts is approved against, and post_metrics, each post's numbers as Buffer shows them; an engagement tap on X, TikTok, Instagram or LinkedIn opens the exact post or profile. 1.18.0 adds found_routes, the booking addresses and form pages read out of answered research lookups, which Control Center records only when its own checks pass (Mindmake, features.found_routes). 1.19.0 adds circle, up to 50 public people for Krish's circle lane that Control Center matches to his network or files as cold contacts with no address, and mirror, the AI mirror's questions (Mindmake, features.circle, features.mirror). 1.20.0 adds priorities, obsessions, next_steps and instruction_acks, the engine's state on every place in Control Center and what it did with Krish's instruction, each refused before 1.20.0; send them only when the directive says features.engine_state."
     },
     "engine_id": {
       "type": "string",
@@ -843,6 +847,184 @@
           "amount": { "type": "number", "exclusiveMinimum": 0, "maximum": 10000000, "description": "In the pool's unit." },
           "asset": { "type": "string", "minLength": 1, "maxLength": 200, "description": "What it made, in words; never an address." },
           "objective_key": { "type": ["string", "null"], "pattern": "^[a-z][a-z0-9_]{0,63}$" }
+        }
+      }
+    },
+    "buffer_channels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed"],
+      "description": "1.17.0, optional: the Buffer channels this engine posts on, channel name to its one Buffer id, and the ids it never touches. A go-live of posts (growth-golive-manifest/1) is approved only when each post names exactly the id listed for its channel, never a denied id or one another engine lists.",
+      "properties": {
+        "allowed": {
+          "type": "object",
+          "maxProperties": 20,
+          "propertyNames": { "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+          "additionalProperties": { "type": "string", "pattern": "^[A-Za-z0-9]{8,64}$" }
+        },
+        "denied": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9]{8,64}$" }
+        }
+      }
+    },
+    "post_metrics": {
+      "type": "array",
+      "maxItems": 60,
+      "description": "1.17.0, optional: each post's numbers as Buffer shows them. A number the channel does not show is null, never zero. Shown on Growth, Engines, where sends and saves per reach are marked as hypotheses.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slot_id", "channel", "measured_at"],
+        "properties": {
+          "proposal_id": { "type": ["string", "null"], "description": "The go-live it went out under, or null." },
+          "slot_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$" },
+          "channel": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+          "posted_at": { "type": ["string", "null"], "format": "date-time" },
+          "url": { "type": ["string", "null"], "pattern": "^https://", "description": "The public post, or null." },
+          "measured_at": { "type": "string", "format": "date-time" },
+          "reach": { "type": ["integer", "null"], "minimum": 0 },
+          "sends": { "type": ["integer", "null"], "minimum": 0 },
+          "saves": { "type": ["integer", "null"], "minimum": 0 },
+          "likes": { "type": ["integer", "null"], "minimum": 0 },
+          "comments": { "type": ["integer", "null"], "minimum": 0 }
+        }
+      }
+    },
+    "offdays": {
+      "type": "object",
+      "required": ["schema", "week_of", "days"],
+      "description": "1.17.0, optional, growth-makeyourmindup (W2.9): the week's off-day options as growth.py mix offdays writes them (growth-offdays/1). His list counts the ready ones from today on as Off-day posts: N ready.",
+      "properties": {
+        "schema": { "const": "growth-offdays/1" },
+        "week_of": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "days": {
+          "type": "object",
+          "maxProperties": 7,
+          "additionalProperties": {
+            "type": "array",
+            "maxItems": 6,
+            "items": { "type": "object", "required": ["concept_id", "lane", "ready"], "properties": { "concept_id": { "type": "string" }, "lane": { "type": "string" }, "ready": { "type": "boolean" } } }
+          }
+        }
+      }
+    },
+    "found_routes": {
+      "type": "array",
+      "maxItems": 40,
+      "description": "1.18.0, optional, Mindmake only (features.found_routes): a booking address or form page read out of one of your own answered research lookups. Control Center records it on the stage (booking_contact_id with booking_source research, or an empty cfp_url) or on the guest only when its own checks pass, never over what is on record, and answers each route's outcome in the acceptance's found_routes.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject_ref", "kind", "source_url", "request_id"],
+        "properties": {
+          "subject_ref": { "type": "string", "pattern": "^(target|contact|guest):[A-Za-z0-9_-]{1,64}$", "description": "target:<visibility_target id>, contact:<a guest's contact id> or guest:<guest record id>." },
+          "kind": { "enum": ["email", "form"] },
+          "address": { "type": "string", "maxLength": 254, "description": "For kind email: the address exactly as the result shows it." },
+          "url": { "type": "string", "pattern": "^https://\\S+$", "maxLength": 2000, "description": "For kind form: the form page, on the same site as source_url." },
+          "source_url": { "type": "string", "pattern": "^https://\\S+$", "maxLength": 2000, "description": "The result in the lookup's evidence the route was read from." },
+          "request_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,119}$", "description": "The lookup it was read from: your own, answered, about this subject." }
+        },
+        "oneOf": [
+          { "properties": { "kind": { "const": "email" } }, "required": ["address"], "not": { "required": ["url"] } },
+          { "properties": { "kind": { "const": "form" } }, "required": ["url"], "not": { "required": ["address"] } }
+        ]
+      }
+    },
+    "circle": {
+      "type": "array",
+      "maxItems": 50,
+      "description": "1.19.0, optional, Mindmake only (features.circle): public people for Krish's circle lane. Who, never how: any @ or a run of nine digits refuses the report. Control Center links the same full name at the same company, writes nothing on a name alone, files anyone else as a cold contact with no address, and answers each person's outcome and in_network in the acceptance's circle.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind", "why"],
+        "oneOf": [
+          { "required": ["source_urls"], "not": { "required": ["contact_id"] } },
+          { "required": ["contact_id"], "properties": { "source_urls": { "maxItems": 0 } } }
+        ],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "company": { "type": ["string", "null"], "maxLength": 160 },
+          "role": { "type": ["string", "null"], "maxLength": 160 },
+          "kind": { "enum": ["exited_founder", "investor_partner", "public_figure", "family_office"] },
+          "why": { "type": "string", "minLength": 1, "maxLength": 400 },
+          "source_urls": { "type": "array", "maxItems": 3, "items": { "type": "string", "pattern": "^https://\\S+$", "maxLength": 2000 } },
+          "reach": { "oneOf": [{ "type": "null" }, { "type": "object", "additionalProperties": false, "required": ["value", "basis"], "properties": { "value": { "type": "number", "minimum": 0 }, "basis": { "type": "string", "minLength": 1, "maxLength": 200 } } }] },
+          "contact_id": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", "description": "Someone in his own network, a contact your context served, in place of source_urls." },
+          "show": { "enum": ["makeyourmindup", "signal_noise", null], "description": "The show you invite them onto, or null: Control Center files a guest record for it, which your invites then read." }
+        }
+      }
+    },
+    "mirror": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "questions"],
+      "description": "1.19.0, optional, Mindmake only (features.mirror): the questions an AI mirror asks Perplexity, ChatGPT, Claude and Gemini about one person, run on Krish's press. Each names the person as {name}; {company} is the only other fill.",
+      "properties": {
+        "version": { "const": 1 },
+        "questions": { "type": "array", "minItems": 3, "maxItems": 8, "items": { "type": "string", "maxLength": 300, "pattern": "\\{name\\}" } }
+      }
+    },
+    "priorities": {
+      "type": "array",
+      "maxItems": 5,
+      "description": "1.20.0, optional (directive features.engine_state): what the engine is chasing, most important first. One plain line each, with no address or phone number. Shown on every place in Control Center as reported, never inferred.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "line"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "line": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+          "objective_key": { "type": ["string", "null"], "pattern": "^[a-z][a-z0-9_]{0,63}$", "description": "The objective it serves, or null." }
+        }
+      }
+    },
+    "obsessions": {
+      "type": "array",
+      "maxItems": 3,
+      "description": "1.20.0, optional: Krish's own aims the engine will not let go of, quoted from its own docs as lines, never invented.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["line"],
+        "properties": {
+          "line": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+          "since": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+        }
+      }
+    },
+    "next_steps": {
+      "type": "array",
+      "maxItems": 5,
+      "description": "1.20.0, optional: what the engine does next, and who each step waits on.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["line", "waits_on"],
+        "properties": {
+          "line": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+          "waits_on": { "enum": ["engine", "krish", "other"] },
+          "when": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+        }
+      }
+    },
+    "instruction_acks": {
+      "type": "array",
+      "maxItems": 5,
+      "description": "1.20.0, optional, applied from live reports only: what the engine did with each instruction of Krish's it read (the directive's krish_instruction), by id only. A line says what it did, or why it is blocked and what would unblock it, and never quotes his words: engine repositories and their Actions logs are public. Forward only: received, then started or blocked, then done; nothing after done.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["instruction_id", "state", "line", "at"],
+        "properties": {
+          "instruction_id": { "type": "string", "pattern": "^ki_[0-9a-f]{24}$" },
+          "state": { "enum": ["received", "started", "done", "blocked"] },
+          "line": { "type": "string", "minLength": 1, "maxLength": 280, "pattern": "^[^\\u0000-\\u001f\\u007f]+$" },
+          "at": { "type": "string", "format": "date-time" },
+          "evidence_url": { "type": ["string", "null"], "pattern": "^https://\\S+$" }
         }
       }
     },

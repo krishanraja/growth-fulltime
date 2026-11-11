@@ -19,6 +19,7 @@ import growth
 from engine import activation
 from engine import credits
 from engine import control_center as cc
+from engine import engine_state
 from engine import reporting
 from engine.records import History
 
@@ -28,6 +29,44 @@ SCHEMA_VERSIONS = set(reporting.load_schema()['properties']['schema_version']['e
 # Control Center's words to a held engine (control-center src/lib/growthEngines.ts, HELD_RULE).
 HELD_RULE = ('Krish has held this engine until it is ready. Propose nothing and ask him nothing. '
              'Report one hold that names what stops you being ready and what would clear it.')
+
+
+# Protocol 1.20.0, written here separately from engine/engine_state.py: Control Center's own line guard
+# (src/lib/growthEngines.ts, lineCarriesContact and stateLine) and its forward-only ack rule (ackStep).
+STATE_FIELDS = ('priorities', 'obsessions', 'next_steps', 'instruction_acks')
+CC_EMAIL = __import__('re').compile(r'[^\s@]+@[^\s@]+\.[a-z]{2,}', __import__('re').I)
+CC_PHONE_RUN = __import__('re').compile(r'\+?\d[\d\s().-]{8,}\d')
+INSTRUCTION_ID = 'ki_' + '0f' * 12
+WORDS = 'Fixture only: draft three match-morning hooks from published AI Pundit lines and hold them for review.'
+
+
+def cc_line_ok(line, limit):
+    import re
+    if not isinstance(line, str) or not line.strip() or len(line) > limit or re.search(r'[\x00-\x1f\x7f]', line):
+        return False
+    phone = any(len(re.sub(r'\D', '', run)) >= 10 for run in CC_PHONE_RUN.findall(line))
+    return not CC_EMAIL.search(line) and not phone
+
+
+def cc_ack_step(previous, state):
+    if previous == 'done':
+        return False
+    if previous is None:
+        return True
+    if state == 'received':
+        return False
+    if state == 'done' or previous == 'received':
+        return True
+    return previous != state
+
+
+def state_errors(body):
+    errors = []
+    for key, limit in (('priorities', 200), ('obsessions', 200), ('next_steps', 200), ('instruction_acks', 280)):
+        for entry in body.get(key, []):
+            if not cc_line_ok(entry.get('line'), limit):
+                errors.append(f'{key}: line')
+    return errors
 
 
 def independent_digest(report):
@@ -45,6 +84,10 @@ class StandIn:
         self.decisions = []
         self.held = False         # the directive a held engine receives
         self.credits = None       # the 1.16.0 credits block, when the directive carries one
+        self.features = False     # 1.20.0: the directive's features.engine_state
+        self.instruction = None   # 1.20.0: the directive's krish_instruction
+        self.acks = []            # 1.20.0: the acks applied to self.instruction from live reports
+        self.ack_counts = {'applied': 0, 'unknown': 0, 'stale': 0}
         self.refuse = {}          # (method, route) -> status
         self.force_conflict = False
         outer = self
@@ -109,6 +152,11 @@ class StandIn:
         if self.credits is not None:
             payload['directive']['schema_version'] = '1.16.0'
             payload['directive']['credits'] = self.credits
+        if self.features:
+            payload['directive']['schema_version'] = '1.20.0'
+            payload['directive']['features'] = {'engine_state': True, 'krish_instruction': True}
+            # A held engine's directive carries no instruction (Control Center tells it only its hold).
+            payload['directive']['krish_instruction'] = None if self.held else self.instruction
         return h._send(200, payload)
 
     def _directive(self):
@@ -134,6 +182,12 @@ class StandIn:
         # A field newer than the version sent is refused, as Control Center refuses it.
         if 'credits_spent' in body and tuple(map(int, body['schema_version'].split('.'))) < (1, 16, 0):
             return h._send(400, {'error': 'credits_spent_needs_1.16.0'})
+        if set(STATE_FIELDS) & set(body) and tuple(map(int, body['schema_version'].split('.'))) < (1, 20, 0):
+            return h._send(400, {'error': 'engine_state_needs_1.20.0'})
+        if set(STATE_FIELDS) & set(body) and not self.features:
+            return h._send(400, {'error': 'engine_state_not_served'})
+        if state_errors(body):
+            return h._send(400, {'error': 'engine_state_line'})
         if h.headers.get('Idempotency-Key') != body['run_id']:
             return h._send(400, {'error': 'idempotency_key'})
         if independent_digest(body) != body['payload_sha256']:
@@ -142,6 +196,17 @@ class StandIn:
         if self.force_conflict or (stored and stored['payload_sha256'] != body['payload_sha256']):
             return h._send(409, {'error': 'conflict'})
         self.reports[body['run_id']] = body
+        if body['mode'] == 'live' and not stored:
+            for ack in sorted(body.get('instruction_acks', []), key=lambda a: a['at']):
+                if not self.instruction or ack['instruction_id'] != self.instruction['id']:
+                    self.ack_counts['unknown'] += 1
+                elif any((a['state'], a['at'], a['line']) == (ack['state'], ack['at'], ack['line']) for a in self.acks):
+                    continue
+                elif not cc_ack_step(self.acks[-1]['state'] if self.acks else None, ack['state']):
+                    self.ack_counts['stale'] += 1
+                else:
+                    self.acks.append(ack)
+                    self.ack_counts['applied'] += 1
         return h._send(200, {'accepted': True, 'run_id': body['run_id'],
                              'payload_sha256': body['payload_sha256'], 'replayed': stored is not None})
 
@@ -414,7 +479,11 @@ class EntryPointTests(unittest.TestCase):
         from engine.cli import main
         out, err = io.StringIO(), io.StringIO()
         code = 0
-        with patch.dict(os.environ, env, clear=False), contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        # A GitHub runner's own run id would make the dispatch run id unique per wake; a test names one only
+        # when it means to.
+        base = {k: v for k, v in os.environ.items() if k not in ('GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT')}
+        with patch.dict(os.environ, {**base, **env}, clear=True), contextlib.redirect_stdout(out), \
+                contextlib.redirect_stderr(err):
             try:
                 main(argv, growth)
             except SystemExit as stop:
@@ -680,6 +749,256 @@ class CreditsTests(unittest.TestCase):
         older = reporting.seal({**report, 'schema_version': '1.0.0'})
         with self.assertRaises(cc.ControlCenterError):
             client.deliver({**older, 'run_id': 'fulltime:2026-10-29:old'})
+
+
+
+def instruction(**extra):
+    return {'id': INSTRUCTION_ID, 'words': WORDS, 'given_at': '2026-11-11T09:00:00Z', 'given_by': 'krish',
+            'supersedes': None, **extra}
+
+
+class InstructionTests(unittest.TestCase):
+    """Protocol 1.20.0. Ruling (Krish, 2026-11-11): every growth engine's priorities, obsessions, next steps and
+    outstanding items feed live across Control Centre, and Krish instructs each engine with his next best action,
+    which starts it. His words never leave the private workspace: the repository and its Actions logs are public."""
+    setUp, tearDown, run_cli = EntryPointTests.setUp, EntryPointTests.tearDown, EntryPointTests.run_cli
+
+    def dispatch(self, env=None, synthetic=True):
+        done = type('Done', (), {'returncode': 0, 'stdout': 'checks passed: 1\n'})
+        with tempfile.TemporaryDirectory() as root, patch.object(growth, 'LOCAL', root), \
+                patch.object(growth, 'sync', return_value=sample_state()), \
+                patch('engine.control_center.subprocess.run', return_value=done()):
+            code, text = self.run_cli(['cc', 'dispatch'] + (['--synthetic'] if synthetic else []),
+                                      {cc.TOKEN_ENV: TOKEN, **(env or {})})
+        self.assertEqual(code, 0, text)
+        self.assertNotIn(WORDS, text)
+        self.text = text
+        self.summary = json.JSONDecoder().raw_decode(text[text.index('{'):])[0]
+        return list(self.server.reports.values())[-1]
+
+    def assert_state(self, report):
+        self.assertEqual(report['schema_version'], '1.20.0')
+        self.assertEqual(reporting.schema_errors(report), [])
+        self.assertEqual(state_errors(report), [])
+        self.assertNotIn(WORDS, json.dumps(report))
+        self.assertNotIn('words', json.dumps(report.get('instruction_acks', [])))
+        top = report['priorities'][0]
+        self.assertEqual((top['rank'], top['objective_key']), (1, 'attributed_new_completers'))
+        self.assertIn('1,250 by 25 January 2027', top['line'])
+        self.assertIn('not measured yet', top['line'])
+        self.assertEqual([p['rank'] for p in report['priorities']], list(range(1, len(report['priorities']) + 1)))
+        self.assertLessEqual(len(report['priorities']), 5)
+        # Obsessions are Krish's own words from this repository's docs, never invented.
+        docs = Path(growth.HERE, 'docs/NORTH_STAR.md').read_text() + Path(growth.HERE, 'AGENTS.md').read_text()
+        flat = ' '.join(docs.split())
+        for entry in report['obsessions']:
+            words = entry['line'].removeprefix('Krish: ').strip('"')
+            self.assertIn(words, flat)
+        self.assertLessEqual(len(report['obsessions']), 3)
+        self.assertTrue(report['next_steps'])
+        self.assertTrue(all(s['waits_on'] in ('engine', 'krish', 'other') for s in report['next_steps']))
+        self.assertTrue(any(s['line'].startswith('Step ') and 'docs/GET-GOING.md' in s['line']
+                            for s in report['next_steps']))
+
+    def test_present_on_a_clean_runner_comes_first_and_is_acked_received_by_id(self):
+        self.server.features, self.server.instruction = True, instruction()
+        report = self.dispatch({'GITHUB_RUN_ID': '4242', 'GITHUB_REPOSITORY': 'krishanraja/growth-fulltime'})
+        self.assert_state(report)
+        first = report['activity'][0]['line']
+        self.assertTrue(first.startswith(f"Received Krish's instruction {INSTRUCTION_ID}."), first)
+        self.assertIn('approves no send, post or spend', first)
+        acks = report['instruction_acks']
+        self.assertEqual([(a['instruction_id'], a['state']) for a in acks], [(INSTRUCTION_ID, 'received')])
+        self.assertEqual(acks[0]['line'], engine_state.RECEIVED_RUNNER)
+        self.assertTrue(acks[0]['evidence_url'].endswith('/actions/runs/4242'))
+        self.assertNotIn('holds', json.dumps([a['line'] for a in acks]))
+        # Still released, still inside the walls: rulings stay behind strategy, nothing goes out.
+        self.assertTrue(all(p['wall'] in ('none', 'strategy') for p in report['proposals']))
+        # The printed summary (a public Actions log) names the id and digest only.
+        self.assertEqual(self.summary['instruction'],
+                         {'id': INSTRUCTION_ID, 'words_sha256': hashlib.sha256(WORDS.encode()).hexdigest()})
+
+    def test_absent_still_reports_the_state_with_no_acks(self):
+        self.server.features = True
+        report = self.dispatch()
+        self.assert_state(report)
+        self.assertNotIn('instruction_acks', report)
+        self.assertFalse(report['activity'][0]['line'].startswith("Received Krish's instruction"))
+        self.assertNotIn('instruction', self.summary)
+
+    def test_before_control_center_serves_1_20_0_nothing_new_is_sent(self):
+        report = self.dispatch()
+        self.assertEqual(report['schema_version'], '1.0.0')
+        for key in STATE_FIELDS:
+            self.assertNotIn(key, report)
+        # An instruction without features.engine_state is shown by id but never acked.
+        self.server.instruction = instruction()
+        self.server.get_directive = lambda h, *a: h._send(200, {**self.server._directive(), 'directive': {
+            **self.server._directive()['directive'], 'krish_instruction': instruction()}})
+        report = self.dispatch()
+        self.assertEqual(report['schema_version'], '1.0.0')
+        self.assertNotIn('instruction_acks', report)
+        self.assertTrue(report['activity'][0]['line'].startswith("Received Krish's instruction"))
+
+    def test_held_acks_received_then_blocked_engine_held(self):
+        self.server.features, self.server.instruction = True, instruction()
+        self.released.stop()
+        try:
+            with patch.object(activation, 'local_state', return_value='held'):
+                report = self.dispatch(synthetic=False)
+        finally:
+            self.released.start()
+        self.assert_state(report)
+        self.assertEqual(report['proposals'], [])
+        self.assertEqual([h['reason'] for h in report['holds']], ['NOT_READY'])
+        self.assertTrue(report['activity'][0]['line'].endswith('until Krish releases the hold.'))
+        acks = report['instruction_acks']
+        self.assertEqual([a['state'] for a in acks], ['received', 'blocked'])
+        self.assertTrue(acks[1]['line'].startswith('Engine held'))
+        self.assertIn('activation.json', acks[1]['line'])
+        self.assertLess(acks[0]['at'], acks[1]['at'])
+        self.assertEqual([a['state'] for a in self.server.acks], ['received', 'blocked'])
+        # The priorities after the number are the readiness gates, in the hold's own order.
+        self.assertTrue(report['priorities'][1]['line'].startswith('Rail:'))
+
+    def test_held_by_control_center_gets_no_instruction_and_sends_no_acks(self):
+        self.server.features, self.server.instruction, self.server.held = True, instruction(), True
+        report = self.dispatch()
+        self.assert_state(report)
+        self.assertNotIn('instruction_acks', report)
+        self.assertEqual(report['proposals'], [])
+
+    def test_a_second_wake_the_same_day_gets_its_own_run_id(self):
+        self.server.features, self.server.instruction = True, instruction()
+        first = self.dispatch({'GITHUB_RUN_ID': '1001', 'GITHUB_RUN_ATTEMPT': '1'})
+        second = self.dispatch({'GITHUB_RUN_ID': '1002', 'GITHUB_RUN_ATTEMPT': '1'})
+        rerun = self.dispatch({'GITHUB_RUN_ID': '1002', 'GITHUB_RUN_ATTEMPT': '2'})
+        self.assertRegex(first['run_id'], r'^fulltime:\d{4}-\d{2}-\d{2}:dispatch:gh1001\.1$')
+        self.assertRegex(second['run_id'], r':dispatch:gh1002\.1$')
+        self.assertRegex(rerun['run_id'], r':dispatch:gh1002\.2$')
+        self.assertEqual(len(self.server.reports), 3)
+        self.assertEqual([c[3] for c in self.server.calls if c[0] == 'POST' and c[1] == 'reports'],
+                         [first['run_id'], second['run_id'], rerun['run_id']])
+        attempts = [a for a in self.server.attempts.values() if a['status'] != 'started']
+        self.assertEqual(sorted(a['run_id'] for a in attempts), sorted(r['run_id'] for r in (first, second, rerun)))
+        self.assertEqual(cc.wake_suffix({}), '')
+        self.assertEqual(cc.wake_suffix({'GITHUB_RUN_ID': 'not-a-number'}), '')
+        self.assertEqual(cc.wake_suffix({'GITHUB_RUN_ID': '77'}), ':gh77.1')
+
+    def workspace(self, root):
+        History(Path(root) / 'engine').checkpoint({'pack_date': '2026-10-17', 'kind': 'daily', 'venture': 'fulltime',
+                                                   'fulltime_sha': 'a' * 40, 'headline': 'An earlier checkpoint',
+                                                   'items': [{'platform': 'other', 'text': 'A note.'}]})
+
+    def cli(self, argv):
+        code, text = self.run_cli(argv, {cc.TOKEN_ENV: TOKEN})
+        self.assertNotIn(WORDS, text)
+        return code, json.JSONDecoder().raw_decode(text[text.index('{'):])[0]
+
+    def test_the_morning_job_pulls_it_acts_first_and_acks_by_hand(self):
+        self.server.features, self.server.instruction = True, instruction()
+        with tempfile.TemporaryDirectory() as root, patch.object(growth, 'LOCAL', root), \
+                patch.object(growth, 'load_state', return_value=sample_state()):
+            self.workspace(root)
+            code, pulled = self.cli(['cc', 'instruction'])
+            self.assertEqual(code, 0)
+            self.assertEqual((pulled['instruction']['id'], pulled['act'], pulled['held']), (INSTRUCTION_ID, True, False))
+            kept = json.loads((Path(root) / 'control-center' / 'instruction.json').read_text())
+            self.assertEqual(kept['words'], WORDS)   # under ignored local/ only, for the morning job to read
+            code, started = self.cli(['cc', 'ack', '--state', 'started', '--line',
+                                      'Drafting the hooks from published Pundit lines in private history.'])
+            self.assertEqual((code, started['status'], started['sent']), (0, 'recorded', False))
+            for line, error in ((WORDS[14:80], 'ack_quotes_words'), ('Ring 07700 900123 when done.', 'bad_ack_line'),
+                                ('Sent to someone@example.org.', 'bad_ack_line')):
+                code, refused = self.cli(['cc', 'ack', '--state', 'done', '--line', line])
+                self.assertEqual((code, refused['error_code']), (1, error))
+            code, done = self.cli(['cc', 'ack', '--state', 'done', '--line',
+                                   'Three hooks drafted and held for review; nothing posted.'])
+            self.assertEqual(code, 0)
+            code, backwards = self.cli(['cc', 'ack', '--state', 'started', '--line', 'Started again.'])
+            self.assertEqual((code, backwards['error_code']), (1, 'ack_backwards'))
+            self.assertEqual(self.server.reports, {})   # an ack by hand makes no request
+            code, summary = self.cli(['cc', 'morning', '--offline', '--require-existing-history'])
+            self.assertEqual((code, summary['status']), (0, 'succeeded'))
+        report = next(iter(self.server.reports.values()))
+        self.assert_state(report)
+        self.assertEqual(report['mode'], 'live')
+        self.assertTrue(report['activity'][0]['line'].startswith(f"Received Krish's instruction {INSTRUCTION_ID}."))
+        acks = report['instruction_acks']
+        self.assertEqual([a['state'] for a in acks], ['received', 'started', 'done'])
+        self.assertEqual(sorted(a['at'] for a in acks), [a['at'] for a in acks])
+        self.assertEqual(len({a['at'] for a in acks}), 3)
+        self.assertEqual([a['state'] for a in self.server.acks], ['received', 'started', 'done'])
+        self.assertEqual(self.server.ack_counts['stale'], 0)
+
+    def test_held_in_the_workspace_refuses_acks_by_hand_and_reports_blocked(self):
+        self.server.features, self.server.instruction = True, instruction()
+        self.released.stop()
+        try:
+            with tempfile.TemporaryDirectory() as root, patch.object(growth, 'LOCAL', root), \
+                    patch.object(growth, 'load_state', return_value=sample_state()), \
+                    patch.object(activation, 'local_state', return_value='held'):
+                self.workspace(root)
+                code, pulled = self.cli(['cc', 'instruction'])
+                self.assertEqual((code, pulled['act'], pulled['held']), (0, False, True))
+                code, refused = self.cli(['cc', 'ack', '--state', 'started', '--line', 'Starting the drafts.'])
+                self.assertEqual((code, refused['error_code']), (1, 'engine_held'))
+                start = reporting.utc_now()
+                for later in (0, 90):   # two runs apart: the same acks, kept once
+                    with patch.object(reporting, 'utc_now', return_value=start + dt.timedelta(seconds=later)):
+                        code, summary = self.cli(['cc', 'morning', '--offline'])
+                    self.assertEqual(code, 0, summary)
+        finally:
+            self.released.start()
+        first, second = self.server.reports.values()
+        self.assertEqual(first['proposals'], [])
+        self.assertEqual([a['state'] for a in first['instruction_acks']], ['received', 'blocked'])
+        self.assertEqual(first['instruction_acks'], second['instruction_acks'])
+        self.assertEqual([a['state'] for a in self.server.acks], ['received', 'blocked'])
+        self.assertEqual(self.server.ack_counts['stale'], 0)
+
+    def test_a_closed_instruction_leaves_the_workspace(self):
+        self.server.features, self.server.instruction = True, instruction()
+        with tempfile.TemporaryDirectory() as root, patch.object(growth, 'LOCAL', root):
+            self.cli(['cc', 'instruction'])
+            self.assertTrue((Path(root) / 'control-center' / 'instruction.json').exists())
+            self.server.instruction = None
+            code, pulled = self.cli(['cc', 'instruction'])
+            self.assertEqual((code, pulled['instruction'], pulled['act']), (0, None, False))
+            self.assertFalse((Path(root) / 'control-center' / 'instruction.json').exists())
+            code, refused = self.cli(['cc', 'ack', '--state', 'done', '--line', 'Done.'])
+            self.assertEqual((code, refused['error_code']), (1, 'no_instruction'))
+
+    def test_a_malformed_instruction_is_ignored(self):
+        for bad in ({**instruction(), 'id': 'ki_short'}, {**instruction(), 'words': ''},
+                    {**instruction(), 'words': 'x' * 2001}, 'words', None):
+            self.assertIsNone(engine_state.instruction({'directive': {'krish_instruction': bad}}))
+
+    def test_lines_never_carry_an_address_a_number_or_his_words(self):
+        self.assertFalse(engine_state.line_ok('Call 020 7946 0958 today.', 200))
+        self.assertFalse(engine_state.line_ok('Write to fan@example.org.', 200))
+        self.assertFalse(engine_state.line_ok('Two\nlines.', 200))
+        self.assertTrue(engine_state.line_ok('Rail: 1 of 6 on 2026-10-11; 1,250 by 25 January 2027.', 200))
+        self.assertTrue(engine_state.quotes('I will draft three match-morning hooks from published lines.', WORDS))
+        self.assertFalse(engine_state.quotes('Three hooks drafted and held for review.', WORDS))
+        self.assertEqual(engine_state.clause('One. Two.', 4), 'One.')
+        self.assertEqual(engine_state.clause('Head part: a long tail ' + 'x' * 200, 40), 'Head part.')
+        self.assertIsNone(engine_state.clause('y' * 300, 200))
+        for line in [engine_state.RECEIVED_RUNNER, engine_state.RECEIVED_WORKSPACE, engine_state.RECEIVED_HELD,
+                     *engine_state.HELD_LINES.values()]:
+            self.assertTrue(cc_line_ok(line, 280), line)
+
+    def test_every_state_line_from_this_repository_passes_control_centers_guard(self):
+        today = dt.date(2026, 11, 11)
+        gates = reporting.not_ready_parts(sample_state(), reporting.objectives(today, workspace=False), None)
+        directive = {'directive': {'features': {'engine_state': True, 'krish_instruction': True}}}
+        for held in (True, False):
+            fields = engine_state.report_fields(directive, today, reporting.objectives(today, workspace=False),
+                                                gates, held, [])
+            self.assertEqual(state_errors(fields), [])
+            self.assertEqual(set(fields), {'priorities', 'obsessions', 'next_steps'})
+        self.assertIn('30 this week', fields['priorities'][0]['line'])   # the ladder's rung for 9 November
+        self.assertIsNone(engine_state.report_fields({'directive': {}}, today, [], gates, True, []))
 
 
 if __name__ == '__main__':
