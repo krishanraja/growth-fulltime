@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "764bed3515462892",
-    "NOW.md": "cc75e1bb9aabf2b3",
+    "NOW.md": "9c0bc1293c3a4e98",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -16,8 +16,16 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [],
-  "commits": [],
+  "changed_since_last_sync": [
+    "NOW.md"
+  ],
+  "commits": [
+    {
+      "date": "2026-11-11T00:43:11Z",
+      "sha": "89cd745677",
+      "subject": "docs(steward): 2026-11-11 re-stamp NOW.md as_of"
+    }
+  ],
   "decisions": [
     "2026-10-26 - Solo analysis first; paid conversation after quality and adoption",
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
@@ -44,7 +52,7 @@
       "branch": "harness/canon-sync",
       "number": 104,
       "title": "Sync the canon block",
-      "updated": "2026-11-10T21:01:35Z"
+      "updated": "2026-11-11T00:53:09Z"
     },
     {
       "branch": "harness/repository-administration-e0054ead260d",
@@ -168,6 +176,6 @@
       "status": "pending"
     }
   },
-  "sha": "5ef9f96e7c9211567d901e3ee6d6a5a15f752593",
-  "synced_at": "2026-11-10T23:28:26+00:00"
+  "sha": "89cd745677af7b786eb0f14ffab86068ce46a48c",
+  "synced_at": "2026-11-11T06:38:44+00:00"
 }
