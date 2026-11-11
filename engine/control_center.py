@@ -10,6 +10,12 @@ records that Krish said yes to exactly that payload.
 
 The bearer comes from CONTROL_CENTER_ENGINE_TOKEN or the ignored file
 local/control-center/token. It is never printed, logged or written.
+
+Protocol 1.20.0 (engine/engine_state.py): a directive may carry Krish's own
+instruction. It comes first in the run's work, inside the walls, and the
+report acks it by id. His words are never printed, logged or reported: they
+are kept only in the ignored local/control-center/instruction.json for the
+morning job, which records what it did with `growth.py cc ack`.
 """
 import datetime as dt
 import json
@@ -23,7 +29,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-from . import activation, credits, policy, reporting
+from . import activation, credits, engine_state, policy, reporting
 from .records import History, atomic_json
 
 DEFAULT_URL = 'https://controlcenter.krishraja.com'
@@ -37,6 +43,18 @@ MESSAGES = {
     'token_malformed': 'The Control Center bearer is not a single printable token. Nothing was run.',
     'bad_base_url': 'CONTROL_CENTER_URL must be an https origin with no path, query or credentials. Nothing was run.',
     'wrong_engine': 'This dispatch names another engine. Nothing was run.',
+    'no_instruction': "No instruction of Krish's is kept here: run python3 growth.py cc instruction first. "
+                      'Nothing was recorded.',
+    'engine_held': 'The engine is held, so nothing is done or acked by hand; each report acks his instruction '
+                   'received and blocked. Nothing was recorded.',
+    'bad_ack_state': 'An ack by hand is started, done or blocked; received is recorded by itself. Nothing was recorded.',
+    'bad_ack_line': 'An ack line is one plain line of at most 280 characters with no address or phone number, '
+                    'saying what was done or what would unblock it. Nothing was recorded.',
+    'ack_quotes_words': "An ack line never repeats Krish's words (the repository is public): say what was done in "
+                        'your own words. Nothing was recorded.',
+    'ack_backwards': 'Acks move forward only: received, then started or blocked, then done, and nothing after done. '
+                     'Nothing was recorded.',
+    'bad_evidence_url': 'Evidence is an https URL. Nothing was recorded.',
 }
 
 
@@ -276,6 +294,8 @@ def execute(client, command, run_id, work, since):
         return finish('failed', 'plan', error.code)
     except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError):
         return finish('failed', 'plan', 'run_failed')
+    if notes.get('instruction'):
+        summary['instruction'] = notes['instruction']
     if reporting.schema_errors(report):
         return finish('failed', 'report', 'report_invalid')
     try:
@@ -299,13 +319,16 @@ def execute(client, command, run_id, work, since):
 # ---------------------------------------------------------------------------
 # The engine's own work for each entry point.
 # ---------------------------------------------------------------------------
-def directive_line(directive, dispatched=None):
+def directive_line(directive, dispatched=None, held=False):
+    """The directive in the report's words. Krish's instruction, when there is one, comes first (by id,
+    never his words); Control Center's push follows."""
     body = directive.get('directive') or {}
     action = body.get('next_action') or {}
     line = (f'Control Center push for {body.get("for_date", "today")}: '
             f'{action.get("proposal_id") or "no proposal"} (chosen by {directive.get("chosen_by", "rule")}); '
             'used as data, never as permission to send or post.')
-    lines = [line]
+    instr = engine_state.instruction(directive)
+    lines = ([engine_state.activity_line(instr, held)] if instr else []) + [line]
     if dispatched and body.get('directive_id') and dispatched != body['directive_id']:
         lines.append('The dispatch named a different directive from the one pulled; the pulled one was used.')
     return lines
@@ -350,23 +373,32 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
         usage = record['usage']
         gate = record['gate']
         is_held, sources = activation.held(directive)
+        instr = engine_state.instruction(directive)
+        acks = engine_state.workspace_acks(growth.LOCAL, instr, sources if is_held else [], reporting.utc_now())
+        head = directive_line(directive, held=is_held)
+        first, head = (head[:1], head[1:]) if instr else ([], head)
         prepared = ('Held, so no action goes to his list; the batch stays in private history, and nothing was '
                     'sent, posted or spent.' if is_held else
                     f'Prepared {len(record["actions"])} of at most three actions; nothing was sent, posted or spent.')
-        activity = [f'Synced full-time {record["source_sha"][:10]}, read {record["source_observed_at"]}; '
-                    f'rail gate {"OPEN" if gate["open"] else "HOLD"}: {gate["why"]}.',
-                    prepared,
-                    f'Recorded usage: {usage["marketing_cash_gbp"]} GBP marketing cash, {usage["model_calls"]} model calls, '
-                    f'{usage["audio_generation_calls"]} audio generation calls.']
+        activity = first + [f'Synced full-time {record["source_sha"][:10]}, read {record["source_observed_at"]}; '
+                            f'rail gate {"OPEN" if gate["open"] else "HOLD"}: {gate["why"]}.',
+                            prepared,
+                            f'Recorded usage: {usage["marketing_cash_gbp"]} GBP marketing cash, '
+                            f'{usage["model_calls"]} model calls, {usage["audio_generation_calls"]} audio generation '
+                            'calls.']
         held = reporting.held_creatives(saved['creatives'])
         activity.append(f'{len(held)} creatives are held in private history with their codes.')
         if mode == 'weekly':
             activity.append('Weekly review over the seven complete London days ending yesterday: '
                             + record['native_weekly_review']['findings']['measurement'])
-        activity += directive_line(directive)
+        activity += head
         degraded = [] if record.get('rail') is not None else ['The live rail was not read; fulltime.fm did not answer.']
         start = reporting.week_window(today)[0].isoformat()
         objectives_list = reporting.objectives(today, saved['observations'], saved['runs'])
+        gates = (reporting.not_ready_parts(state, objectives_list, identity_known) if is_held
+                 else [a['text'] for a in record['actions']])
+        fields = engine_state.report_fields(directive, today, objectives_list, gates, is_held, acks)
+        notes = {'instruction': engine_state.shown(instr)} if instr else {}
         pools = credits.read(directive)
         activity += credits.lines(pools, is_held)
         guard = credits.Guard(pools, is_held)
@@ -375,8 +407,8 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             report = reporting.held_build(
                 reporting.run_id_for(today, kind), report_mode, reporting.iso(reporting.utc_now()), state,
                 objectives_list, activity, events=reporting.publication_events(saved['creatives'], start),
-                identity_known=identity_known, degraded=degraded)
-            return report, {}
+                identity_known=identity_known, degraded=degraded, engine_state=fields)
+            return report, notes
         report = reporting.build(
             reporting.run_id_for(today, kind), report_mode, reporting.iso(reporting.utc_now()), state,
             reporting.ready_creatives(saved['creatives']) + pack['items'], growth.load_rulings(),
@@ -384,14 +416,17 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
             activity, held_items=held, events=reporting.publication_events(saved['creatives'], start),
             identity_known=identity_known,
             kill_list=record['native_weekly_review']['kill_list'] if mode == 'weekly' else (),
-            degraded=degraded, max_actions=max_actions(directive), credits_spent=guard.credits_spent())
-        return report, {}
+            degraded=degraded, max_actions=max_actions(directive), credits_spent=guard.credits_spent(),
+            engine_state=fields)
+        return report, notes
     return work
 
 
-def runner_work(growth, report_mode, dispatched=None):
+def runner_work(growth, report_mode, dispatched=None, run_id=None):
     """What a clean runner can see: the checks, the committed rulings and contracts,
-    and the public sources the hourly sync reads. No private history."""
+    and the public sources the hourly sync reads. No private history. It has no model
+    and no workspace, so Krish's instruction is acked received here and acted on by the
+    morning job (or received and blocked while the engine is held)."""
     def work(directive):
         from .measurements import scorecard
         from .runner import constraints
@@ -400,7 +435,11 @@ def runner_work(growth, report_mode, dispatched=None):
         if os.environ.get('GITHUB_RUN_ID', '').isdigit() and re.fullmatch(
                 r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', os.environ.get('GITHUB_REPOSITORY', '')):
             run_url = f'https://github.com/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{os.environ["GITHUB_RUN_ID"]}'
-        activity, degraded, notes = [], [], {}
+        is_held, sources = activation.held(directive)
+        instr = engine_state.instruction(directive)
+        head = directive_line(directive, dispatched, held=is_held)
+        first, head = (head[:1], head[1:]) if instr else ([], head)
+        activity, degraded, notes = list(first), [], {}
         for name, script in (('Self-test', ['growth.py', '--self-test']),
                              ('Repository verification', ['scripts/verify_repository.py'])):
             quiet_env = {k: v for k, v in os.environ.items() if k != TOKEN_ENV}
@@ -442,24 +481,77 @@ def runner_work(growth, report_mode, dispatched=None):
         activity.append(f'Rail gate {"OPEN" if gate.get("open") else "HOLD"}: {gate.get("why")}.')
         activity.append('Private history, held creatives, brand identity proof and approved aggregates stay in '
                         'the persistent workspace; this runner reports only what it can see.')
-        activity += directive_line(directive, dispatched)
-        is_held, sources = activation.held(directive)
+        activity += head
+        today_id = run_id or reporting.run_id_for(today, 'dispatch')
+        objectives_list = reporting.objectives(today, workspace=False)
+        acks = (engine_state.runner_acks(instr, sources if is_held else [], reporting.utc_now(), run_url)
+                if engine_state.features_on(directive) else [])
+        gates = (reporting.not_ready_parts(state, objectives_list, None) if is_held
+                 else [item['text'] for item in items])
+        fields = engine_state.report_fields(directive, today, objectives_list, gates, is_held, acks)
+        if instr:
+            notes['instruction'] = engine_state.shown(instr)
         pools = credits.read(directive)
         activity += credits.lines(pools, is_held)
         guard = credits.Guard(pools, is_held)
         if is_held:
             activity.append(held_line(sources))
             report = reporting.held_build(
-                reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
-                reporting.objectives(today, workspace=False), activity, identity_known=None, degraded=degraded)
+                today_id, report_mode, reporting.iso(reporting.utc_now()), state,
+                objectives_list, activity, identity_known=None, degraded=degraded, engine_state=fields)
             return report, notes
         report = reporting.build(
-            reporting.run_id_for(today, 'dispatch'), report_mode, reporting.iso(reporting.utc_now()), state,
-            items, growth.load_rulings(), reporting.objectives(today, workspace=False), activity,
+            today_id, report_mode, reporting.iso(reporting.utc_now()), state,
+            items, growth.load_rulings(), objectives_list, activity,
             identity_known=None, degraded=degraded, max_actions=max_actions(directive),
-            credits_spent=guard.credits_spent())
+            credits_spent=guard.credits_spent(), engine_state=fields)
         return report, notes
     return work
+
+
+def wake_suffix(env=None):
+    """A run id unique per wake (1.20.0): Krish's instruction can wake the repository a second time in a
+    day, so a GitHub run adds its run id and attempt. Elsewhere the revision suffix (:r2 to :r9) still
+    keeps a same-day rerun apart."""
+    env = os.environ if env is None else env
+    run, attempt = env.get('GITHUB_RUN_ID', '').strip(), env.get('GITHUB_RUN_ATTEMPT', '').strip() or '1'
+    if run.isdigit() and attempt.isdigit() and len(run) <= 20 and len(attempt) <= 4:
+        return f':gh{run}.{attempt}'
+    return ''
+
+
+def record_ack(args, growth):
+    """`growth.py cc ack`: what the morning job did with Krish's instruction, kept under ignored local/
+    for the next report. It makes no request."""
+    kept = engine_state.read_current(growth.LOCAL) or {}
+    held = activation.local_state() == 'held' or kept.get('held') is True
+    try:
+        entry = engine_state.record(growth.LOCAL, args.state, args.line, args.evidence_url,
+                                    reporting.utc_now(), held)
+    except engine_state.AckRefused as error:
+        return {'status': 'refused', 'error_code': error.code, 'message': MESSAGES[error.code]}, 1
+    return {'status': 'recorded', 'instruction_id': entry['instruction_id'], 'state': entry['state'],
+            'at': entry['at'], 'sent': False,
+            'message': 'Kept for the next report: python3 growth.py cc morning sends it.'}, 0
+
+
+def pull_instruction(client, growth):
+    """`growth.py cc instruction`: read today's directive and keep Krish's instruction, if any, under
+    ignored local/ for the morning job to act on first. Prints the id and digest only, never his words."""
+    try:
+        directive = client.directive()
+    except ControlCenterError as error:
+        return {'status': 'failed', 'error_code': error.code}, 1
+    is_held, sources = activation.held(directive)
+    instr = engine_state.instruction(directive)
+    engine_state.keep(growth.LOCAL, instr, sources if is_held else [], reporting.utc_now())
+    act = bool(instr) and not is_held
+    return {'status': 'read', 'instruction': engine_state.shown(instr), 'held': is_held, 'act': act,
+            'engine_state': engine_state.features_on(directive),
+            'file': 'local/control-center/instruction.json' if instr else None,
+            'message': ('Act on it first, inside the walls, then record what you did with growth.py cc ack.'
+                        if act else 'Held: do nothing on it; the report acks it received and blocked.'
+                        if instr else 'No instruction from Krish today.')}, 0
 
 
 def main(args, growth):
@@ -467,6 +559,8 @@ def main(args, growth):
     dispatched_engine = os.environ.get('CC_DISPATCH_ENGINE_ID', '').strip()
     if dispatched_engine and dispatched_engine != reporting.ENGINE_ID:
         return {'status': 'not_started', 'error_code': 'wrong_engine', 'message': MESSAGES['wrong_engine']}, 2
+    if args.target == 'ack':
+        return record_ack(args, growth)
     try:
         token = load_token(growth.LOCAL)
         base = base_url()
@@ -474,6 +568,8 @@ def main(args, growth):
         return {'status': 'not_started', 'error_code': error.code, 'message': MESSAGES[error.code]}, 2
     client = Client(base, token)
     del token
+    if args.target == 'instruction':
+        return pull_instruction(client, growth)
     report_mode = 'synthetic' if args.synthetic else 'live'
     ledger = Path(growth.LOCAL) / 'control-center' / 'last.json'
     previous = None
@@ -485,8 +581,8 @@ def main(args, growth):
     today = reporting.london_today()
     if args.target == 'dispatch':
         dispatched = os.environ.get('CC_DIRECTIVE_ID', '').strip()[:120] or None
-        summary = execute(client, 'dispatch', reporting.run_id_for(today, 'dispatch'),
-                          runner_work(growth, report_mode, dispatched), since)
+        run_id = reporting.run_id_for(today, 'dispatch') + wake_suffix()
+        summary = execute(client, 'dispatch', run_id, runner_work(growth, report_mode, dispatched, run_id), since)
     else:
         kind = 'report' if args.target == 'weekly' else 'daily'
         summary = execute(client, args.target, reporting.run_id_for(today, kind),

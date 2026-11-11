@@ -73,6 +73,34 @@ his words and the date in `activation.json` and CHANGES. Holding changes no
 ruling: D1 stays pending in `rulings.json` until its full-time decision-log
 entry exists.
 
+## Krish's instruction (protocol 1.20.0)
+
+Ruling (Krish, 2026-11-11): every growth engine's priorities, obsessions, next
+steps and outstanding items feed live across Control Centre, and Krish
+instructs each engine with his next best action, which starts it. His words:
+"make sure I can instruct each one with my next best action and have it get
+going".
+
+- Control Center's directive may carry `krish_instruction`. It comes first in
+  the run's work, inside the walls. It is never an approval: anything at a wall
+  still goes to him as a proposal, and nothing in "Autonomy" or the rules below
+  widens.
+- This repository is public. His words are never printed, logged, committed,
+  put in a pull request or reported; only the instruction's id and a SHA-256
+  digest appear. They live only in the ignored
+  `local/control-center/instruction.json`.
+- The morning job pulls it with `python3 growth.py cc instruction`, acts on it
+  first, and records what it did with
+  `python3 growth.py cc ack --state started|done|blocked --line "..."` in its
+  own words. Each report acks it by id: received, then started or blocked, then
+  done.
+- While held, nothing runs on it: the report acks it received, then blocked
+  ("Engine held"), until Krish releases `activation.json`.
+- When the directive says `features.engine_state`, each report also carries
+  the engine's priorities, obsessions and next steps (`engine/engine_state.py`),
+  read from docs/NORTH_STAR.md, this file, docs/GET-GOING.md and NOW.md. They
+  are never invented; a field with no source is left out.
+
 ## Read before a job
 
 1. Run `python3 growth.py sync` first; read this file and the newest
@@ -160,7 +188,9 @@ storage. `post` is a compatibility name for saving locally; it makes no remote
 request. New operations are documented in README: `run`, `history`, `creative`,
 `experiment`, `metrics`, `assets`, `export`, and `cc`, the Control Center loop
 (engine/control_center.py, the one transport; engine/reporting.py builds and
-checks the report).
+checks the report; engine/engine_state.py reads Krish's instruction and fills
+the 1.20.0 state). `cc instruction` only reads the directive, and `cc ack`
+only writes the ignored ledger; neither sends a report.
 
 A draft uses an exact creative ID, account scope, source commit and all held
 reasons in `holds`. Brand work without identity proof has CHANNEL; acquisition

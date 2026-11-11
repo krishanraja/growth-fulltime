@@ -25,6 +25,7 @@ REPO_URL = 'https://github.com/krishanraja/growth-fulltime'
 HOLD_ORDER = ['NOT_READY', 'RAIL', 'RELEASE', 'CHANNEL', 'CONSENT', 'DATA', 'ASSETS', 'APPROVAL',
               'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7']
 POSTABLE = policy.BRAND_CHANNELS | {'whatsapp'}
+ENGINE_STATE_VERSION = '1.20.0'
 
 
 def envelope(pack, receipt):
@@ -339,9 +340,9 @@ def merge_holds(entries, held_items):
     return out[:40]
 
 
-def not_ready_detail(state, objectives_list, identity_known, degraded=()):
-    """What would make a held engine ready: the readiness gates still shut, in order.
-    It reads gates only; it never marks a ruling approved or a gate open."""
+def not_ready_parts(state, objectives_list, identity_known):
+    """The readiness gates still shut, in order, one sentence each. It reads gates only; it never
+    marks a ruling approved or a gate open. A held report's priorities (1.20.0) are these too."""
     state = state or {}
     gate = state.get('push') or {}
     rulings = state.get('rulings') or {}
@@ -364,6 +365,12 @@ def not_ready_detail(state, objectives_list, identity_known, degraded=()):
     if not (rulings.get('D1') or {}).get('in_force'):
         parts.append('D1 stays pending in rulings.json until its full-time decision-log entry exists; '
                      'a yes on his list is not that entry.')
+    return parts
+
+
+def not_ready_detail(state, objectives_list, identity_known, degraded=()):
+    """What would make a held engine ready: the readiness gates still shut, in order."""
+    parts = not_ready_parts(state, objectives_list, identity_known)
     if degraded:
         parts.append('Sources: ' + ' '.join(degraded))
     if not parts:
@@ -371,10 +378,24 @@ def not_ready_detail(state, objectives_list, identity_known, degraded=()):
     return ('Held until Krish releases it. What would make it ready: ' + ' '.join(parts))[:1000]
 
 
+def with_engine_state(report, engine_state):
+    """Protocol 1.20.0: priorities, obsessions, next_steps and instruction_acks, sent only when the
+    directive said features.engine_state (engine/engine_state.py report_fields). Any of them raises the
+    report to 1.20.0, which still carries every older field."""
+    if not engine_state:
+        return report
+    allowed = ('priorities', 'obsessions', 'next_steps', 'instruction_acks')
+    fields = {k: [dict(x) for x in v] for k, v in engine_state.items() if k in allowed and v}
+    if not fields:
+        return report
+    return {**report, 'schema_version': ENGINE_STATE_VERSION, **fields}
+
+
 def held_build(run_id, mode, observed_at, state, objectives_list, activity, events=(), identity_known=None,
-               degraded=()):
+               degraded=(), engine_state=None):
     """A held engine's report (Ruling, Krish, 2026-10-29): no proposals, so nothing walled or
-    unwalled reaches his list, and exactly one NOT_READY hold that names what would make it ready."""
+    unwalled reaches his list, and exactly one NOT_READY hold that names what would make it ready.
+    At 1.20.0 it still says where the engine stands, and acks his instruction received and blocked."""
     state = state or {}
     source = {'revision': str(state.get('sha') or 'unknown')[:128],
               'captured_at': state.get('synced_at') or observed_at}
@@ -386,14 +407,15 @@ def held_build(run_id, mode, observed_at, state, objectives_list, activity, even
               'proposals': [], 'events': list(events)[:40],
               'holds': [{'reason': 'NOT_READY',
                          'detail': not_ready_detail(state, objectives_list, identity_known, degraded)}]}
-    return seal(report)
+    return seal(with_engine_state(report, engine_state))
 
 
 def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list, activity,
           held_items=(), events=(), identity_known=None, kill_list=(), degraded=(), max_actions=3,
-          credits_spent=()):
+          credits_spent=(), engine_state=None):
     """The whole protocol report, sealed. `degraded` names sources that were missing. `credits_spent`
-    (engine/credits.py Guard) raises the report to 1.16.0 only when this run spent something."""
+    (engine/credits.py Guard) raises the report to 1.16.0 only when this run spent something;
+    `engine_state` (1.20.0, engine/engine_state.py) raises it to 1.20.0 only when the directive asked."""
     state = state or {}
     proposals, release_done = [], False
     for item in [x for x in items if not holds(x)][:max(0, min(3, max_actions))]:
@@ -423,7 +445,7 @@ def build(run_id, mode, observed_at, state, items, rulings_file, objectives_list
     if credits_spent:
         report['schema_version'] = '1.16.0'
         report['credits_spent'] = [dict(c) for c in credits_spent][:40]
-    return seal(report)
+    return seal(with_engine_state(report, engine_state))
 
 
 def publication_events(creatives, since_date):

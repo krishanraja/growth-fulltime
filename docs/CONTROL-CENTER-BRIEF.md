@@ -98,6 +98,21 @@ The walls do not move: never past `remaining_for_you`, never a top-up, a plan ch
 
 **Held.** This engine is held by Krish (`activation.json`, `now-notes/2026-10-29-held.md`). A held engine proposes nothing and spends nothing, so this share applies only once he releases it.
 
+## Krish's instruction and the engine's state (protocol 1.20.0)
+
+Ruling (Krish, 2026-11-11): every growth engine's priorities, obsessions, next steps and outstanding items feed live across Control Centre, and Krish instructs each engine with his next best action, which starts it. The full rule is "Krish's instruction and the engine's state (1.20.0)" in `docs/control-center/ENGINE-PROTOCOL.md`.
+
+| Protocol | In this engine |
+|---|---|
+| `directive.krish_instruction` (`null` or `{ id, words, given_at, given_by, supersedes }`) | Read by `engine/engine_state.py`. The first activity line names its id. The morning job pulls it with `growth.py cc instruction` (words only in ignored `local/control-center/instruction.json`), acts on it first and records `growth.py cc ack`. |
+| `instruction_acks[]` | Clean runner: `received` (the morning job acts on it). Held: `received`, then `blocked` "Engine held". Workspace: `received`, then what the morning job recorded, `started`, `done` or `blocked`. Never his words, never in `holds`. |
+| `priorities[]` | The North Star number this week against its target, then the open readiness gates (held) or the run's constraints. |
+| `obsessions[]` | Krish's quoted aims: the North Star line, the autonomy quote and the owner instruction of 17 October in AGENTS.md. |
+| `next_steps[]` | The first open step of docs/GET-GOING.md (one that waits while held is skipped while held), then NOW.md's "What is next". A step naming Krish waits on him. |
+| A second wake in a day | A dispatch's `run_id` adds `:gh<run>.<attempt>`. |
+
+All of it goes out only when the directive says `features.engine_state`, at `schema_version: "1.20.0"`. The walls do not move: an instruction never approves a send, post, spend or account change. This engine is held, so Control Center does not wake it for an instruction; if it is released in Control Center while `activation.json` still says held, it acks `received` and then `blocked`.
+
 ## Acceptance
 
 - A held item shows its code on Growth > Engines.

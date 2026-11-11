@@ -29,12 +29,17 @@ def main(argv, growth):
     assets.add_argument('operation', choices=['fetch', 'render'])
     assets.add_argument('file', nargs='?'); assets.add_argument('--drop'); assets.add_argument('--pundit')
     cc = commands.add_parser('cc', help='run the Control Center protocol loop')
-    cc.add_argument('target', choices=['morning', 'weekly', 'dispatch'])
+    cc.add_argument('target', choices=['morning', 'weekly', 'dispatch', 'instruction', 'ack'])
     cc.add_argument('--offline', action='store_true')
     cc.add_argument('--require-existing-history', action='store_true')
     cc.add_argument('--observations')
     cc.add_argument('--synthetic', action='store_true')
+    cc.add_argument('--state', choices=['started', 'done', 'blocked'], help='cc ack: what was done with the instruction')
+    cc.add_argument('--line', help='cc ack: one plain line in your own words, never his')
+    cc.add_argument('--evidence-url', help='cc ack: an https URL, optional')
     args = parser.parse_args(argv)
+    if args.command == 'cc' and args.target == 'ack' and not (args.state and args.line):
+        parser.error('cc ack needs --state and --line')
     journal = History(Path(growth.LOCAL) / 'engine')
     try:
         if args.command == 'cc':

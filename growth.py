@@ -1127,6 +1127,10 @@ def self_test():
         t(f'automation "{au["name"]}" never asks to post', not re.search(r'\b(post|publish|send|upload|boost)\b', au['prompt'], re.I))
     t('every job file has an automation', {a['job'] for a in autos} == {f'jobs/{f}' for f in os.listdir(os.path.join(HERE, 'jobs'))})
     t('every automation ends with the Control Center loop', all('python3 growth.py cc ' in au['prompt'] for au in autos))
+    morning = Path(HERE, 'jobs', 'morning.md').read_text()
+    t("the morning job pulls Krish's instruction first and acks it by hand (protocol 1.20.0)",
+      'growth.py cc ack' in morning and re.search(r'^2\. Pull Krish.s instruction[^\n]*growth\.py cc instruction', morning, re.M)
+      is not None and morning.find('growth.py cc instruction') < morning.find('End with `python3 growth.py cc morning'))
     from engine import reporting as protocol
     example = json.loads(Path(HERE, 'docs', 'control-center', 'engine-report.example.json').read_text())
     t('the protocol digest reproduces the worked example', protocol.seal(example)['payload_sha256'] == example['payload_sha256'])

@@ -56,7 +56,7 @@ Today's live report (2026-10-19) was `held`:
 
 ## The build
 
-- [ ] **Step 0.** Correct the status line at the top of docs/CONTROL-CENTER-BRIEF.md: the first live run on 2026-10-19 succeeded, so it is no longer only tested against a local stand-in.
+- [x] **Step 0.** Correct the status line at the top of docs/CONTROL-CENTER-BRIEF.md: the first live run on 2026-10-19 succeeded, so it is no longer only tested against a local stand-in. *Found done 2026-11-11:* the status line already reads "adopted"; ticked so the next step the report names is a real one.
 - [ ] **Step 1.** The autonomy loop above (plan, go-live, the go-live step, check-ins) on protocol 1.1.0, proved against the stand-in: an approved plan never goes live, an approved go-live goes live once with exactly its payload, an amended one goes live in his words, a declined check-in stops its plan. Then the creative review every go-live passes: the doctrine it was checked against, at least two alternatives made, and why this one wins, in its evidence. Krish has a low tolerance for poor creative output, so a weak go-live is held, not proposed.
 - [ ] **Step 2 (waits while held).** Act on his rulings. When he clears the release decision or D1, D2, D3 or D7 on his list, record it where the engine reads its rulings (`rulings.json`) and release the matching hold on the next run, with the decision as evidence. When he declines one, keep the hold and say so.
 - [ ] **Step 3.** Build `attributed_new_completers`: define the query (a shared take to a first finished show), its window and timezone, and implement it against what full-time exposes. Where the data is not there, name the exact gap.
@@ -72,6 +72,8 @@ Today's live report (2026-10-19) was `held`:
   - channel-plan: the fixture calendar worked back from the ladder (5 for the week of 26 October, 16 for 2 November, 30 for 9 November, 49 for 16 November).
 
   The weekly loop opens with `X of Y, U-n, short by Z`, splits the gap across the unlocked channels, and reviews each take at 24 hours, 72 hours and 7 days. Nothing runs, drafts or proposes while held.
+- [x] **Step 8 (added 2026-11-11).** Krish's instruction and the engine's state, protocol 1.20.0 (docs/CONTROL-CENTER-BRIEF.md, "Krish's instruction and the engine's state"). Krish, 2026-11-11: "Ensure the priorities, obsessions, and next steps for all the growth engines are feeding live to this dashboard ... Get building". *Built 2026-11-11:* `engine/engine_state.py` reads `krish_instruction`, puts its id first in the report's activity, acks it (received on the clean runner; received then blocked while held; received, started, done or blocked in the workspace from `growth.py cc ack`), and fills `priorities`, `obsessions` and `next_steps` from this repository's files, only when the directive says `features.engine_state`. The morning job pulls it first (`growth.py cc instruction`). A dispatch's `run_id` is unique per GitHub wake. Proved against the stand-in (`tests/test_control_center.py`, `InstructionTests`).
+
 ## Checks
 
 `python3 growth.py --self-test`, the unit tests, `verify_repository`, the JSON checks.
