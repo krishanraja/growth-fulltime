@@ -2,7 +2,7 @@
 repo: krishanraja/growth-fulltime
 product: Full Time growth engine
 as_of: 2026-11-12
-head: 0021e99
+head: c28b672
 lifecycle: building
 production_url: none
 state_doc: README.md
@@ -28,6 +28,7 @@ Football fans who become Full Time's returning listeners. It proves Mindmake can
 
 Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling, Krish, 2026-10-29: Not ready means a held activation state): Control Center's registry says held and so does the tracked `activation.json`. Control Center has not woken it since. Its last report there is the 29 October dispatch, sent before the hold landed, and no workspace run has ever reached Control Center: all 12 reports it holds are dispatches, from 19 to 29 October. So Control Center shows this file's "Where it is right now" and "What is next" as the engine's state of play.
 
+- The protocol copy in docs/control-center/ is Control Center's at 212379e1 (1.21.0, the schemas unchanged): its voice_check row lists the 16 channels Control Center accepts, and it says a number objective's target comes from the repository's north-star block; Control Center reads no number objective for this engine (only Legibility, Mindmake, Heartside and Make Your Mind Up have one), so its registered objectives keep their registry targets. The code still speaks 1.20.0 and the engine is still held. (2026-11-12)
 - The docs match the code and the live state, the engine's obsessions quote only Krish's own words, a repeated ack with a new line now updates Control Center (protocol 1.21.0), and closeout notes fold into NOW.md on every merge to main (engine/closeout.py). (2026-11-12)
 - The code speaks Control Center protocol 1.20.0: a run reads Krish's instruction, acks it by id and reports its priorities, obsessions and next steps (`engine/engine_state.py`). None of it has reached Control Center, since no run has happened after it merged, and Krish has given this engine no instruction. The protocol copy in `docs/control-center/` is 1.21.0. (2026-11-12)
 - The promotion rail is on HOLD: the four matches on fulltime.fm each have one AI Pundit of six, the newest from 19 October (`state/FULLTIME-NOW.md`, read hourly). A push needs a match with four. (2026-11-12)
@@ -37,6 +38,7 @@ Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling,
 
 ## What changed recently
 
+- 2026-11-12 Krish, 2026-11-12: "make sure everything's a cohesive system and that the project documentation is 100% up to date with absolutely nothing old or misleading left in there".
 - 2026-11-12 Krish asked whether the documentation was up to date, every word. It was not: NOW.md had stopped at 27 October with six notes waiting and no fold to write them in, the brief still said the engine was switched on with dispatch on, the third obsession was a summary of his words rather than his words, and the hourly sync's commits would have marked NOW.md unreconciled two days after every update. Each is fixed, and the sync now commits as chore(heartbeat).
 - 2026-11-11 Protocol 1.20.0 (PR 19). Ruling (Krish, 2026-11-11): every growth engine's priorities, obsessions, next steps and outstanding items feed live across Control Centre, and he instructs each engine with his next best action. The morning job now pulls his instruction first (`growth.py cc instruction`) and records what it did (`growth.py cc ack`); his words stay in ignored `local/`, and a dispatch's run id is unique per wake.
 - 2026-11-10 Claude sessions here show Krish a ChatGPT sign-in link and code whenever Codex is signed out (`.claude/hooks/codex-login.sh`, commit 05d8b8b), so Codex runs on his subscription, never an API key.
