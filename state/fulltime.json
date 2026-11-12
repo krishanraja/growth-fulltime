@@ -16,16 +16,8 @@
   "canon_added": [],
   "canon_from_index": true,
   "canon_removed": [],
-  "changed_since_last_sync": [
-    "NOW.md"
-  ],
-  "commits": [
-    {
-      "date": "2026-11-12T01:56:35Z",
-      "sha": "4371da1e91",
-      "subject": "docs(steward): 2026-11-12 re-stamp NOW.md as_of"
-    }
-  ],
+  "changed_since_last_sync": [],
+  "commits": [],
   "decisions": [
     "2026-10-26 - Solo analysis first; paid conversation after quality and adoption",
     "2026-10-16 - A pilot beta for fans, a December target, one feedback inbox",
@@ -52,7 +44,7 @@
       "branch": "harness/canon-sync",
       "number": 104,
       "title": "Sync the canon block",
-      "updated": "2026-11-11T08:24:14Z"
+      "updated": "2026-11-12T04:15:43Z"
     },
     {
       "branch": "harness/repository-administration-e0054ead260d",
@@ -61,7 +53,7 @@
       "updated": "2026-10-28T20:02:04Z"
     }
   ],
-  "previous_sha": "89cd745677af7b786eb0f14ffab86068ce46a48c",
+  "previous_sha": "4371da1e911eba3f56fd08cc2c73afa29a148827",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -177,5 +169,5 @@
     }
   },
   "sha": "4371da1e911eba3f56fd08cc2c73afa29a148827",
-  "synced_at": "2026-11-12T03:07:18+00:00"
+  "synced_at": "2026-11-12T11:26:39+00:00"
 }
