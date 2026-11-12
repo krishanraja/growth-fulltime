@@ -168,6 +168,13 @@ def ack_step(previous, state):
     return previous != state
 
 
+def ack_repeat(previous, state):
+    """Control Center's own rule (ackRepeat, protocol 1.21.0): the step an instruction already holds, sent
+    again (started again, blocked again) while the work goes on. With a new line and a later time it updates
+    the line Krish sees; with the same line it changes nothing. Nothing repeats after done."""
+    return previous is not None and previous != 'done' and previous == state
+
+
 def _iso(moment):
     return moment.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
 
@@ -288,7 +295,11 @@ def record(local, state, line, evidence_url, now, held):
         raise AckRefused('bad_evidence_url')
     ledger = read_ledger(local)
     entries = ledger.setdefault(instr['id'], [_ack(instr['id'], 'received', RECEIVED_WORKSPACE, now)])
-    if not ack_step(entries[-1]['state'], state):
+    last = entries[-1]
+    if ack_repeat(last['state'], state):
+        if line == last['line']:
+            raise AckRefused('ack_unchanged')
+    elif not ack_step(last['state'], state):
         raise AckRefused('ack_backwards')
     entry = _ack(instr['id'], state, line, _after(entries, now), evidence_url)
     entries.append(entry)
@@ -394,11 +405,14 @@ def obsessions(root=ROOT):
         line = f'Krish: "{plain(autonomy.group(2))}"'
         if line_ok(line, STATE_LINE_MAX):
             out.append({'line': line, 'since': autonomy.group(1)})
-    owner = re.search(r'^## Owner instructions\s*\n+Krish, (\d{1,2} [A-Z][a-z]+ \d{4}): (.+?\.)(?:\s|$)', agents,
-                      re.M | re.S)
+    # Only his words inside quotation marks, never a summary of them (protocol 1.20.0: "only Krish's own
+    # quoted aims"). An unquoted owner instruction is left out, not paraphrased.
+    owner = re.search(r'^## Owner instructions\s*\n+Krish, (\d{1,2} [A-Z][a-z]+ \d{4}): "([^"]+)"', agents, re.M)
     if owner:
-        line = f'Krish: {plain(owner.group(2))}'
-        if line_ok(line, STATE_LINE_MAX):
+        words = plain(owner.group(2))
+        line = next((f'Krish: "{text}"' for text in [words] + sentences(words)
+                     if line_ok(f'Krish: "{text}"', STATE_LINE_MAX)), None)
+        if line:
             out.append({'line': line, 'since': dt.datetime.strptime(owner.group(1), '%d %B %Y').date().isoformat()})
     return out[:OBSESSIONS_MAX]
 
@@ -436,6 +450,8 @@ def next_steps(held, root=ROOT):
         text = ' '.join(item)
         if text.startswith('North Star check'):
             continue
+        # The closeout fold writes "- Next (YYYY-MM-DD): <the action>"; the label is not the step.
+        text = re.sub(r'^Next(?: \(\d{4}-\d{2}-\d{2}\))?:\s*', '', text)
         for sentence in sentences(text):
             line = clause(sentence)
             if line and len(out) < NEXT_STEPS_MAX and line not in {s['line'] for s in out}:

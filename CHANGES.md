@@ -5,6 +5,19 @@ Newest first. Record his words with the date, then change the job file and
 words, and in `rulings.json` with the full-time decision-log heading that
 records it.
 
+- 2026-11-12: the docs match the engine, and closeout notes fold into NOW.md.
+  Krish, 2026-11-12: "Is everything done? Are the project documentations up to date, 100%, every single
+  word, with what this engine now is and how it works? Are there any other small bugs that you discovered
+  that you just randomly left open?" NOW.md, README, AGENTS.md, the brief, GET-GOING, the credits session,
+  the execution plan and the morning job now say what the code and Control Center do: the engine is held,
+  Control Center has not woken it since 29 October, and no workspace run has reached it. The third
+  obsession now quotes his own words of 17 October instead of summarising them. `growth.py closeout`
+  checks and folds the closeout notes (engine/closeout.py, the fold job in check.yml); the six notes that
+  had waited since 29 October are in docs/history/LOG.md. A repeated ack with a new line is now recorded,
+  as Control Center accepts since protocol 1.21.0, the copy in docs/control-center/ is 1.21.0, and the
+  hourly sync commits as `chore(heartbeat)` so the harness never marks NOW.md unreconciled for it. No
+  job, schedule, ruling or wall changed, and the engine stays held.
+
 - 2026-11-11: Control Center protocol 1.20.0, Krish's instruction and the engine's state.
   Krish, 2026-11-11: "Ensure the priorities, obsessions, and next steps for all the growth engines are
   feeding live to this dashboard, and not just in the growth tab. They are responsible for driving the

@@ -54,6 +54,8 @@ MESSAGES = {
                         'your own words. Nothing was recorded.',
     'ack_backwards': 'Acks move forward only: received, then started or blocked, then done, and nothing after done. '
                      'Nothing was recorded.',
+    'ack_unchanged': 'That is the step it already holds, with the same line, so it would change nothing. To update '
+                     'what Krish sees, say what is new in a new line. Nothing was recorded.',
     'bad_evidence_url': 'Evidence is an https URL. Nothing was recorded.',
 }
 

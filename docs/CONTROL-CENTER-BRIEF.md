@@ -1,4 +1,4 @@
-> **Status, 2026-10-19: adopted.** `python3 growth.py cc` runs the protocol loop at the end of both workspace tasks and on every `cc-growth-directive` dispatch (`.github/workflows/control-center.yml`); see README, "The Control Center loop".
+> **Status, 2026-11-12: adopted, and held since 2026-10-29.** `python3 growth.py cc` runs the protocol loop at the end of both workspace tasks and on every `cc-growth-directive` dispatch (`.github/workflows/control-center.yml`); see README, "The Control Center loop". The dispatch ran live from 19 to 29 October; Control Center has not woken the engine since Krish held it, and no workspace run has reached Control Center.
 
 # Control Center brief: growth-fulltime
 
@@ -7,7 +7,7 @@ Written 2026-10-18 by Control Center. This brief **supersedes `briefs/CONTROL-CE
 ## What Control Center now does for you
 
 - **Pushes you one next action every day, chosen by rule.** That is at most one; you keep your own cap of three actions per run.
-- **Puts every post, release ruling and channel ruling (D1 to D7) on Krish's one list on Home**, and returns his decision bound to the exact payload.
+- **Puts every post, release ruling and channel ruling (D1 to D7) on Krish's one list on Home**, and returns his decision bound to the exact payload. While the engine is held, nothing of yours goes on his list.
 - **Shows your health, objectives, today's push and what you did** on Growth > Engines.
 
 ## Your registry row
@@ -20,7 +20,7 @@ Written 2026-10-18 by Control Center. This brief **supersedes `briefs/CONTROL-CE
 | Aim | Most new Full Time listeners arrive because a fan shared an AI Pundit's take, not because anyone was invited. By 2027-01-31 |
 | Objectives | `attributed_new_completers`: no target set yet, per week (Europe/London); `marketing_cash_gbp`: target 0 |
 | Cadence | daily |
-| State | Switched on 2026-10-18, with dispatch on. Your bearer arrives in this repository's secrets as `CONTROL_CENTER_ENGINE_TOKEN`, with `CONTROL_CENTER_URL` as a variable. Until then, build against `mode: synthetic` |
+| State | Switched on 2026-10-18 with dispatch on; held since 2026-10-29 (Control Center's `activation_state` is `held`, and so is `activation.json`). Held means no wake, nothing of yours on his list and no growth council move; the bearer stays valid. The bearer is this repository's secret `CONTROL_CENTER_ENGINE_TOKEN`, with `CONTROL_CENTER_URL` as a variable. Autonomy in the registry: `autonomous` |
 
 ## The protocol, in short
 
@@ -36,7 +36,7 @@ The full spec is `docs/control-center/ENGINE-PROTOCOL.md`, with the report and d
 2. `GET {base}/api/growth/engines/fulltime/directive` returns today's `next_action`, your objectives with their targets and latest values, his decisions of the last seven days, and the walls.
 3. Do the work, inside the walls. The rule, word for word: "Nothing sends, posts, spends, deletes or changes a permission without a decision from Krish whose payload_sha256 matches what you are about to do."
 4. `POST {base}/api/growth/engines/fulltime/reports` with header `Idempotency-Key: {run_id}`. The body is the report envelope:
-   - `schema_version: "1.0.0"`, `engine_id`, `product_slug`, `run_id`, `mode`, `observed_at`, `source`, `status`
+   - `schema_version` (`"1.0.0"` from this engine, `"1.16.0"` when a run spent credits, `"1.20.0"` when the directive asks for the engine's state), `engine_id`, `product_slug`, `run_id`, `mode`, `observed_at`, `source`, `status`
    - `objectives[]`, `activity[]`, `proposals[]`, `events[]`, `holds[]`
    - `payload_sha256`: the SHA-256 of the canonical JSON without that field, with keys sorted at every depth and no whitespace
 
@@ -48,9 +48,9 @@ The full spec is `docs/control-center/ENGINE-PROTOCOL.md`, with the report and d
 - A proposal behind a wall (`spend` with its `amount_usd`, `send` or `post` with its `exact_payload`, or `strategy`) goes on Krish's one list on Home, where Clear approves it, Purge declines it and Bump defers it a day.
 - A proposal inside the walls is yours to do. Control Center may pick it as your next push.
 - Unknown is `value: null` with a `reason`, never zero. A measured zero is `0`.
-- `mode: synthetic` is stored and read back but never touches his numbers or his list. Use it to prove your client before Krish switches you on. A live report is refused (409 `engine_inactive`) until he does.
+- `mode: synthetic` is stored and read back but never touches his numbers or his list. Use it to prove your client before Krish switches you on. A live report is refused (409 `engine_inactive`) until he does; a held engine's live report is taken.
 
-**The wake-up.** Control Center wakes you once a day around 06:10 London with `repository_dispatch` of type `cc-growth-directive`, whose `client_payload` is `{ directive_id, engine_id }` and nothing else. Add that trigger to your workflow. If you do not run on GitHub Actions, pull the directive at the start of your own run instead; it is the same directive.
+**The wake-up.** Control Center wakes you once a day around 06:10 London with `repository_dispatch` of type `cc-growth-directive`, whose `client_payload` is `{ directive_id, engine_id }`, plus `instruction_id` when Krish has given you an instruction (1.20.0; ids only, never his words). It does not wake a held engine. The workspace tasks do not run on GitHub Actions, so they pull the directive at the start of their own run instead; it is the same directive.
 
 ## How your old handoff maps
 
@@ -62,14 +62,14 @@ The full spec is `docs/control-center/ENGINE-PROTOCOL.md`, with the report and d
 | Weekly review (`findings`, `kill_list`, `double_down`) | A report from your Monday run. `double_down` items become proposals, and the kill list becomes `strategy` proposals for his call |
 | Publication receipts (`--human-confirmed`) | `events[]` `creative_published` with the permalink |
 
-## What you build now
+## What was built
 
-1. A client for the six calls, used from your 06:15 and Monday 08:00 London automations. Pull the directive at the start of each, since you do not run on GitHub Actions.
-2. A synthetic report, read back by digest.
+1. A client for the six calls (`engine/control_center.py`), used from the 06:15 and Monday 08:00 London automations, which pull the directive at the start of each, and from the dispatch workflow on GitHub Actions.
+2. A synthetic report, read back by digest, proved against the stand-in in `tests/test_control_center.py`; the first live report followed on 2026-10-19.
 
 ## What you stop
 
-- Writing `local/handoff/reporting-bundle.json` as the hand-off. Report through the protocol instead.
+- Writing `local/handoff/reporting-bundle.json` as the hand-off. Report through the protocol instead. (`growth.py export` still writes it, as a private local backup only.)
 - Asking Control Center for a packs v2 parser or a product adapter for reporting.
 
 ## Prepaid credits (protocol 1.16.0)
@@ -96,7 +96,7 @@ The walls do not move: never past `remaining_for_you`, never a top-up, a plan ch
 
 **Who spends it.** The GitHub runner holds no generator keys and spends nothing: it reads the block into its activity (`engine/credits.py`). The share is spent by one scheduled Claude session a day with the Control Center, Higgsfield, Runway and 21st Dev connectors attached (Krish, 2026-10-29: "Scheduled sessions"), by [CREDITS-SESSION.md](CREDITS-SESSION.md). It reads the share with `get_engine_credits`, calls `reserve_credit_spend` before every generation and `settle_credit_spend` after it, and Control Center takes those spends off the share. So the runner's report never repeats them in `credits_spent`, which stays for a spend a run itself makes.
 
-**Held.** This engine is held by Krish (`activation.json`, `now-notes/2026-10-29-held.md`). A held engine proposes nothing and spends nothing, so this share applies only once he releases it.
+**Held.** This engine is held by Krish, in Control Center and in `activation.json` (CHANGES.md, 2026-10-29). A held engine proposes nothing and spends nothing, so this share applies only once he releases it, and the daily session is not set up until then.
 
 ## Krish's instruction and the engine's state (protocol 1.20.0)
 
@@ -105,13 +105,13 @@ Ruling (Krish, 2026-11-11): every growth engine's priorities, obsessions, next s
 | Protocol | In this engine |
 |---|---|
 | `directive.krish_instruction` (`null` or `{ id, words, given_at, given_by, supersedes }`) | Read by `engine/engine_state.py`. The first activity line names its id. The morning job pulls it with `growth.py cc instruction` (words only in ignored `local/control-center/instruction.json`), acts on it first and records `growth.py cc ack`. |
-| `instruction_acks[]` | Clean runner: `received` (the morning job acts on it). Held: `received`, then `blocked` "Engine held". Workspace: `received`, then what the morning job recorded, `started`, `done` or `blocked`. Never his words, never in `holds`. |
+| `instruction_acks[]` | Clean runner: `received` (the morning job acts on it). Held by `activation.json`: `received`, then `blocked` "Engine held". Workspace: `received`, then what the morning job recorded, `started`, `done` or `blocked`; since 1.21.0 the same step again with a new line updates what he sees. Never his words, never in `holds`. |
 | `priorities[]` | The North Star number this week against its target, then the open readiness gates (held) or the run's constraints. |
-| `obsessions[]` | Krish's quoted aims: the North Star line, the autonomy quote and the owner instruction of 17 October in AGENTS.md. |
-| `next_steps[]` | The first open step of docs/GET-GOING.md (one that waits while held is skipped while held), then NOW.md's "What is next". A step naming Krish waits on him. |
+| `obsessions[]` | Krish's quoted aims: the North Star line, the autonomy quote and his quoted owner instruction of 17 October in AGENTS.md. Only words inside quotation marks; an unquoted summary is left out. |
+| `next_steps[]` | The first open step of docs/GET-GOING.md (one that waits while held is skipped while held), then NOW.md's "What is next", read without the fold's `Next (YYYY-MM-DD):` label. A step naming Krish waits on him. |
 | A second wake in a day | A dispatch's `run_id` adds `:gh<run>.<attempt>`. |
 
-All of it goes out only when the directive says `features.engine_state`, at `schema_version: "1.20.0"`. The walls do not move: an instruction never approves a send, post, spend or account change. This engine is held, so Control Center does not wake it for an instruction; if it is released in Control Center while `activation.json` still says held, it acks `received` and then `blocked`.
+All of it goes out only when the directive says `features.engine_state`, at `schema_version: "1.20.0"`. The walls do not move: an instruction never approves a send, post, spend or account change. This engine is held, so Control Center does not wake it for an instruction, and a held engine's directive carries `krish_instruction: null`: his instruction waits in Control Center (`queued_held`) and is carried and woken once when he releases it there. If it is released in Control Center while `activation.json` still says held, it acks `received` and then `blocked`. No run has happened since this was built, so none of it has reached Control Center yet; until it does, Control Center shows NOW.md's "Where it is right now" and "What is next" instead.
 
 ## Acceptance
 

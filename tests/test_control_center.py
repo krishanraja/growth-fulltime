@@ -32,7 +32,8 @@ HELD_RULE = ('Krish has held this engine until it is ready. Propose nothing and 
 
 
 # Protocol 1.20.0, written here separately from engine/engine_state.py: Control Center's own line guard
-# (src/lib/growthEngines.ts, lineCarriesContact and stateLine) and its forward-only ack rule (ackStep).
+# (src/lib/growthEngines.ts, lineCarriesContact and stateLine), its forward-only ack rule (ackStep) and, since
+# 1.21.0, its repeat rule (ackRepeat).
 STATE_FIELDS = ('priorities', 'obsessions', 'next_steps', 'instruction_acks')
 CC_EMAIL = __import__('re').compile(r'[^\s@]+@[^\s@]+\.[a-z]{2,}', __import__('re').I)
 CC_PHONE_RUN = __import__('re').compile(r'\+?\d[\d\s().-]{8,}\d')
@@ -58,6 +59,10 @@ def cc_ack_step(previous, state):
     if state == 'done' or previous == 'received':
         return True
     return previous != state
+
+
+def cc_ack_repeat(previous, state):
+    return previous is not None and previous != 'done' and previous == state
 
 
 def state_errors(body):
@@ -202,6 +207,15 @@ class StandIn:
                     self.ack_counts['unknown'] += 1
                 elif any((a['state'], a['at'], a['line']) == (ack['state'], ack['at'], ack['line']) for a in self.acks):
                     continue
+                elif cc_ack_repeat(self.acks[-1]['state'] if self.acks else None, ack['state']):
+                    # Since 1.21.0 the same step again is an update when it says something new, later.
+                    if ack['line'] == self.acks[-1]['line']:
+                        continue
+                    if not ack['at'] > self.acks[-1]['at']:
+                        self.ack_counts['stale'] += 1
+                        continue
+                    self.acks.append(ack)
+                    self.ack_counts['applied'] += 1
                 elif not cc_ack_step(self.acks[-1]['state'] if self.acks else None, ack['state']):
                     self.ack_counts['stale'] += 1
                 else:
@@ -908,6 +922,13 @@ class InstructionTests(unittest.TestCase):
             code, started = self.cli(['cc', 'ack', '--state', 'started', '--line',
                                       'Drafting the hooks from published Pundit lines in private history.'])
             self.assertEqual((code, started['status'], started['sent']), (0, 'recorded', False))
+            # Since 1.21.0 the same step again updates the line he sees; the same line changes nothing.
+            code, same = self.cli(['cc', 'ack', '--state', 'started', '--line',
+                                   'Drafting the hooks from published Pundit lines in private history.'])
+            self.assertEqual((code, same['error_code']), (1, 'ack_unchanged'))
+            code, update = self.cli(['cc', 'ack', '--state', 'started', '--line',
+                                     'Two of three hooks drafted from published Pundit lines.'])
+            self.assertEqual((code, update['status']), (0, 'recorded'))
             for line, error in ((WORDS[14:80], 'ack_quotes_words'), ('Ring 07700 900123 when done.', 'bad_ack_line'),
                                 ('Sent to someone@example.org.', 'bad_ack_line')):
                 code, refused = self.cli(['cc', 'ack', '--state', 'done', '--line', line])
@@ -925,10 +946,10 @@ class InstructionTests(unittest.TestCase):
         self.assertEqual(report['mode'], 'live')
         self.assertTrue(report['activity'][0]['line'].startswith(f"Received Krish's instruction {INSTRUCTION_ID}."))
         acks = report['instruction_acks']
-        self.assertEqual([a['state'] for a in acks], ['received', 'started', 'done'])
+        self.assertEqual([a['state'] for a in acks], ['received', 'started', 'started', 'done'])
         self.assertEqual(sorted(a['at'] for a in acks), [a['at'] for a in acks])
-        self.assertEqual(len({a['at'] for a in acks}), 3)
-        self.assertEqual([a['state'] for a in self.server.acks], ['received', 'started', 'done'])
+        self.assertEqual(len({a['at'] for a in acks}), 4)
+        self.assertEqual([a['state'] for a in self.server.acks], ['received', 'started', 'started', 'done'])
         self.assertEqual(self.server.ack_counts['stale'], 0)
 
     def test_held_in_the_workspace_refuses_acks_by_hand_and_reports_blocked(self):
@@ -956,6 +977,38 @@ class InstructionTests(unittest.TestCase):
         self.assertEqual(first['instruction_acks'], second['instruction_acks'])
         self.assertEqual([a['state'] for a in self.server.acks], ['received', 'blocked'])
         self.assertEqual(self.server.ack_counts['stale'], 0)
+
+    def test_obsessions_are_only_his_quoted_words(self):
+        # Protocol 1.20.0: only Krish's own quoted aims, never a summary of them.
+        for line in (o['line'] for o in engine_state.obsessions()):
+            self.assertRegex(line, r'^(Krish: ".+"|[^"]+)$')
+        lines = [o['line'] for o in engine_state.obsessions()]
+        self.assertEqual(len(lines), 3, lines)
+        self.assertTrue(lines[2].startswith('Krish: "this cannot use my personal social media accounts'), lines[2])
+        star = Path(growth.HERE, 'docs/NORTH_STAR.md').read_text()
+        agents = Path(growth.HERE, 'AGENTS.md').read_text()
+        for owner, count in (('Krish, 17 October 2026: no personal social media accounts, and cost close to free.', 2),
+                             ('Krish, 17 October 2026: "No cold outbound email." These apply to held drafts too.', 3)):
+            with tempfile.TemporaryDirectory() as root:
+                (Path(root) / 'docs').mkdir()
+                (Path(root) / 'docs/NORTH_STAR.md').write_text(star)
+                (Path(root) / 'AGENTS.md').write_text(agents.replace(
+                    agents[agents.index('## Owner instructions'):agents.index('These apply to held drafts too.')
+                           + len('These apply to held drafts too.')],
+                    '## Owner instructions\n\n' + owner))
+                found = engine_state.obsessions(root)
+            self.assertEqual(len(found), count, found)
+            if count == 3:
+                self.assertEqual(found[2], {'line': 'Krish: "No cold outbound email."', 'since': '2026-10-17'})
+
+    def test_a_folded_next_line_is_read_without_its_label(self):
+        # The closeout fold writes "- Next (YYYY-MM-DD): <action>"; the step is the action, never the label.
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / 'NOW.md').write_text('## What is next and what is waiting on Krish\n\n'
+                                               '- Next (2026-11-12): Release the hold when Full Time is ready.\n'
+                                               '- North Star check (2026-11-12): holds.\n')
+            steps = engine_state.next_steps(True, root)
+        self.assertEqual([s['line'] for s in steps], ['Release the hold when Full Time is ready.'])
 
     def test_a_closed_instruction_leaves_the_workspace(self):
         self.server.features, self.server.instruction = True, instruction()

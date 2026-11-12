@@ -1,3 +1,5 @@
+> **Superseded on 2026-10-29** by the prepaid credits ruling (Ruling, Krish, 2026-10-29: a growth engine may spend up to its share of credits already paid for, with no per-batch approval): see [docs/CONTROL-CENTER-BRIEF.md](../docs/CONTROL-CENTER-BRIEF.md), "Prepaid credits", and [docs/CREDITS-SESSION.md](../docs/CREDITS-SESSION.md). The share is spent by the daily credits session, never as a plan on his list, and only once Krish releases the engine, which he held on 2026-10-29. Kept for its measurements and its creative order (stills first).
+
 # Brief: Higgsfield and Runway credits for Full Time, week of 22 October 2026
 
 Handed over from a planning session on 2026-10-22 at Krish's request ("give this over to the growth repos for each product to pick up"). It is a proposal for this engine to put on Krish's list as a plan. It authorises no generation, post or spend on its own.

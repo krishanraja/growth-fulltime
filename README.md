@@ -89,9 +89,12 @@ needs review. Existing renders are reused. Nothing is uploaded.
 
 `automations.json` owns these two tasks. Reuse this persistent project and its
 private history. Scheduled commands use --require-existing-history. Never silently reset the ledger if a scheduled execution
-cannot access it. Each task ends with the Control Center loop below. The
-separate hourly GitHub sync only keeps public source state current. Schedule
-status and task IDs are recorded in the final handover.
+cannot access it. Each task ends with the Control Center loop below. No
+workspace run has reached Control Center yet: every report it holds for this
+engine is a GitHub dispatch (checked 12 November 2026). The separate hourly
+GitHub sync only keeps public source state current; its commits are named
+`chore(heartbeat): sync full-time <sha>` so the harness reads them as
+automation. Schedule status and task IDs are recorded in the final handover.
 
 ## The Control Center loop
 
@@ -136,7 +139,10 @@ attempts, syncs and reads decisions, but its report carries no proposals and
 exactly one `NOT_READY` hold naming what would make it ready: the rail at 4 of
 6 AI Pundits, the release decision, D7, attribution, the workspace, and D1,
 which stays pending until its full-time decision-log entry exists
-(engine/activation.py, `reporting.held_build`).
+(engine/activation.py, `reporting.held_build`). Both say held today: Krish held
+it on 29 October 2026 in Control Center and in `activation.json`. Control
+Center does not wake a held engine, so the last dispatch here was on 29
+October, before the hold landed.
 
 **Krish's instruction and the engine's state** (protocol 1.20.0; Ruling,
 Krish, 2026-11-11: every growth engine's priorities, obsessions, next steps
@@ -155,12 +161,17 @@ python3 growth.py cc ack --state done --line "What I did, in my own words."   # 
 
 `cc ack` refuses a line that repeats five of his words in a row, carries an
 address or a phone number, or moves backwards, and refuses everything while
-the engine is held. The next `cc morning` sends the acks. On the clean runner
-a dispatch acks the instruction `received` (the morning job acts on it), or
-`received` then `blocked` ("Engine held") while held, and puts one activity
-line first naming its id. A dispatch's `run_id` adds the GitHub run id and
-attempt (`:gh<run>.<attempt>`), because an instruction can wake the repository
-twice in one day.
+the engine is held. Sending the step it already holds again (`started` again,
+`blocked` again) with a new line updates what Krish sees (protocol 1.21.0); the
+same line again is refused as `ack_unchanged`. The next `cc morning` sends the
+acks. On the clean runner a dispatch acks the instruction `received` (the
+morning job acts on it), or `received` then `blocked` ("Engine held") while
+`activation.json` holds it, and puts one activity line first naming its id.
+While Control Center holds the engine its directive carries no instruction
+(`krish_instruction: null`) and nothing wakes it; his instruction waits there
+and is carried and woken once when he releases it. A dispatch's `run_id` adds
+the GitHub run id and attempt (`:gh<run>.<attempt>`), because an instruction
+can wake the repository twice in one day.
 
 When the directive says `features.engine_state`, the report goes out at
 `schema_version: "1.20.0"` with `priorities` (the North Star number this week
@@ -168,6 +179,18 @@ against its target, then the open gates or constraints), `obsessions`
 (Krish's own quoted aims from docs/NORTH_STAR.md and AGENTS.md), `next_steps`
 (the first open step of docs/GET-GOING.md, then NOW.md's "What is next") and
 `instruction_acks` (engine/engine_state.py). Before that, nothing new is sent.
+None of it has reached Control Center yet: no run has happened since it merged
+on 11 November, because the engine is held.
+
+**Prepaid credits** (protocol 1.16.0; Ruling, Krish, 2026-10-29). The directive
+may carry a `credits` block, Full Time's share of each prepaid pool.
+engine/credits.py writes it into the report's activity (a missing block is
+unknown: nothing is spent), and its guard refuses any spend past
+`remaining_for_you` or while held. A report carries `credits_spent` at
+`schema_version: "1.16.0"` only when a run itself spent. The runner holds no
+generator keys and spends nothing; the share is spent by the daily session in
+[docs/CREDITS-SESSION.md](docs/CREDITS-SESSION.md), which is not set up while
+the engine is held.
 
 The report maps the engine's own outputs:
 
@@ -197,6 +220,17 @@ and times out after 20 seconds. The last summary is in
 `local/control-center/last.json`. The Actions workflow
 (.github/workflows/control-center.yml) has read-only contents permission,
 one concurrency group, a ten-minute timeout and no artifacts.
+
+## Closeout
+
+A session that changes this repository leaves one note,
+`now-notes/YYYY-MM-DD-<slug>.md` (`Status:`, optionally `Changed:`, `Next:` and
+one `North Star check (YYYY-MM-DD): holds.` line). When it reaches main, the
+`fold` job in `.github/workflows/check.yml` runs `python3 growth.py closeout
+fold`: the note goes into NOW.md and is deleted, and NOW.md's oldest lines move
+verbatim to [docs/history/LOG.md](docs/history/LOG.md) to stay inside the
+harness audit's limits (engine/closeout.py). `python3 growth.py closeout
+check` refuses a note the fold cannot place, in the self-test and in CI.
 
 ## Reporting history
 
@@ -232,6 +266,7 @@ included in this public repository; restore its authorised bundle when absent.
 python3 growth.py --self-test
 python3 -m unittest discover -s tests -v
 python3 scripts/verify_repository.py
+python3 growth.py closeout check
 ```
 
 Tests include actual local FFmpeg rendering, policy and release gates,

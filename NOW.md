@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/growth-fulltime
 product: Full Time growth engine
-as_of: 2026-10-27
-head: a9f8492
+as_of: 2026-11-12
+head: 6c76cb5
 lifecycle: building
 production_url: none
 state_doc: README.md
@@ -22,64 +22,58 @@ Full Time's growth engine: it drafts the moves that bring football fans to Full 
 
 Football fans who become Full Time's returning listeners. It proves Mindmake can grow a product with drafted, approved moves and no paid acquisition.
 
-## Where it is right now (as of 2026-10-27)
+## Where it is right now (as of 2026-11-12)
 
-<!-- north-star-state {"week_of": "2026-10-26", "week_target": 5, "current": null, "current_as_of": "2026-10-27", "current_source": "No fresh cohort measurement available; prior 2026-10-23 value is historical", "urgency": 4, "urgency_reason": "current number unmeasured"} --> **North Star number: U4, unmeasured.** New listeners this week who arrived through a fan's shared link or clip: unknown, against 5 this week, on the way to 1,250 by 25 January 2027. The previous 0 was a 23 October observation, not a measurement of this week's attribution.
+<!-- north-star-state {"week_of": "2026-11-09", "week_target": 30, "current": null, "current_as_of": "2026-11-12", "current_source": "Not measured: Full Time share links are not yet joined to new listens", "urgency": 4, "urgency_reason": "current number unmeasured"} --> **North Star number: U4, unmeasured.** New listeners this week who arrived through a fan's shared link or clip: unknown, against 30 this week, on the way to 1,250 by 25 January 2027. Nothing measures it yet: Full Time's share links are not joined to new listens (MEASUREMENT.md, and Step 3 of docs/GET-GOING.md).
 
-Lifecycle: building. The detail is in `README.md`.
+Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling, Krish, 2026-10-29: Not ready means a held activation state): Control Center's registry says held and so does the tracked `activation.json`. Control Center has not woken it since. Its last report there is the 29 October dispatch, sent before the hold landed, and no workspace run has ever reached Control Center: all 12 reports it holds are dispatches, from 19 to 29 October. So Control Center shows this file's "Where it is right now" and "What is next" as the engine's state of play.
 
-The offline [creative system](creative-system/README.md) now pins independent
-character and shared-style modules, exact input hashes and owner review evidence.
-It preserves private creative history under ignored `local/creative-system/` and
-starts with `python3 growth.py standards startup`. Creative acceptance and
-technical success are separate; no new generation, publication or product
-change is authorised by loading a baseline. A fresh product sync still reports
-the minimum-four-pundit rail HOLD.
-
-The product now owns the reusable six-pundit core in `krishanraja/full-time`;
-growth imports and pins a committed export rather than owning duplicate identities.
-Ad performance, sofa cast, visual direction and exact audio locks stay here.
-The baseline and bridge are merged in PRs #10 and #11. Product PR #99 is merged;
-the active private release pins its exact core from product commit `43c4ae2`.
-The original audio locks and four owner video rejections survive this ownership
-migration; it claims no new creative approval. The complete private continuation
-package now lives in the [canonical Growth Build Drive folder](https://drive.google.com/drive/folders/1Pn_ibUcfpcyWzi4w1ryDMZMF-8m1gT_M).
-Read [the 27 October creative handover](HANDOVER-2026-10-27-CREATIVES.md) first.
-It contains the exact package hashes, restore route, owner corrections and next
-review target. Liverpool v8 is a listening candidate; neither ad is ready to post.
-
-Local proof: 131 self-checks, 129 unit/integration tests including 46 creative
-tests, and repository verification passed. Actual session assets remain private.
-The local operational run refused to proceed because existing growth history
-was absent; no live report was sent or fresh operational ledger created.
+- The code speaks Control Center protocol 1.20.0: a run reads Krish's instruction, acks it by id and reports its priorities, obsessions and next steps (`engine/engine_state.py`). None of it has reached Control Center, since no run has happened after it merged, and Krish has given this engine no instruction. The protocol copy in `docs/control-center/` is 1.21.0. (2026-11-12)
+- The promotion rail is on HOLD: the four matches on fulltime.fm each have one AI Pundit of six, the newest from 19 October (`state/FULLTIME-NOW.md`, read hourly). A push needs a match with four. (2026-11-12)
+- Rulings D1 to D7 are all pending, and full-time's `docs/12-roadmap.md` records no release decision (`rulings.json`, `state/FULLTIME-NOW.md`). (2026-11-12)
+- The credits share is read and guarded (`engine/credits.py`) but nothing spends it: the engine is held, and the daily credits session in docs/CREDITS-SESSION.md is not set up on claude.ai. (2026-11-12)
+- Creative: Liverpool v8 is a listening candidate Krish has not judged, and the Arsenal video is still rejected; neither ad is ready to post. The private package is in the Growth Build Drive folder named in HANDOVER-2026-10-27-CREATIVES.md. (2026-10-27)
 
 ## What changed recently
 
+- 2026-11-11 Protocol 1.20.0 (PR 19). Ruling (Krish, 2026-11-11): every growth engine's priorities, obsessions, next steps and outstanding items feed live across Control Centre, and he instructs each engine with his next best action. The morning job now pulls his instruction first (`growth.py cc instruction`) and records what it did (`growth.py cc ack`); his words stay in ignored `local/`, and a dispatch's run id is unique per wake.
+- 2026-11-10 Claude sessions here show Krish a ChatGPT sign-in link and code whenever Codex is signed out (`.claude/hooks/codex-login.sh`, commit 05d8b8b), so Codex runs on his subscription, never an API key.
+- 2026-10-30 The seven channel tasks joined the plan as Step 7 of docs/GET-GOING.md (PR 18), dormant while the engine is held and until D1 clears. Krish asked for each saved Instagram growth prompt to be its own task, defined once in ai-harness `contract/channel-tasks.md`.
+- 2026-10-29 The credits step was built (PR 16). Krish chose "Scheduled sessions" to spend the share: the runner only reads it and refuses any spend past `remaining_for_you` or while held, and a report carries `credits_spent` at 1.16.0 only when a run spent.
+- 2026-10-29 Protocol 1.16.0, prepaid credits (PR 15). Ruling (Krish, 2026-10-29): a growth engine may spend up to its share of credits already paid for, with no per-batch approval. Full Time's shares are about 600 Higgsfield, 450 Runway and 50 21st Dev credits a month (docs/CONTROL-CENTER-BRIEF.md).
+- 2026-10-29 Held until Krish releases it (PR 14). Full Time is a few weeks from being in motion, so each report carries no proposals and one NOT_READY hold naming the readiness gates. It stopped five daily asks reaching his list for an engine that is not ready.
 - 2026-10-27: archived the full private two-ad session and creative baseline to
   Drive, verified local rebuild and Drive file identity/size readback, and set a
   portable start-here path. The Liverpool ending, accents and TV music remain
   subject to owner listening. See [current handover](HANDOVER-2026-10-27-CREATIVES.md).
-
 - 2026-10-26: implemented versioned creative standards, isolated composition,
   scope checks, improvement/regression gates, exact owner promotion and verified
   private bundle recovery. See [handover](HANDOVER-2026-10-26.md).
-
 - 2026-10-23 **The North Star now has a number, a weekly ladder and an urgency rating.** Ruling (Krish, 2026-10-23): every repository chases one aggressive number on a weekly ladder, and urgency U1 to U5 sets how hard it pushes. The number is in `docs/NORTH_STAR.md`; contract: ai-harness `contract/north-star-metric.md`.
 
 ## What is next and what is waiting on Krish
 
-- Review the full Liverpool v8 mix with Krish, correct only what the listening
-  warrants, then get both existing concepts through audio and phone-size visual
-  acceptance. Extract and test a fast, low-cost match-ad recipe after that.
-- North Star check (2026-10-27): holds; U4 attribution is unmeasured.
+- Next (2026-11-12): Krish decides whether Full Time is ready and releases the hold, on Growth > Engines in Control Center and in `activation.json` through an interactive session that records his words and the date; until then Control Center does not wake it.
+- Waiting on Krish (2026-11-12): the release decision and D1, each recorded in full-time's decision log, and a full listen to Liverpool v8 (HANDOVER-2026-10-27-CREATIVES.md).
+- North Star check (2026-11-12): holds.
 
 ## Read next
 
 - `docs/NORTH_STAR.md`: the North Star, its number and its weekly ladder.
 - `README.md`: what this repository is and how it runs.
+- `docs/GET-GOING.md`: the build, step by step, and which steps wait while held.
+- `docs/CONTROL-CENTER-BRIEF.md`: how this engine reports to Control Center.
+- `docs/history/LOG.md`: what this file used to say, verbatim.
 
 ## Do not trust
 
 Do not treat a successful render, technical media pass or historical review-ready
 receipt as current creative approval. Do not read the prior listener count as a
 fresh attribution measurement, or an empty local reporting export as delivery.
+Do not read the 7 proposals in Control Center's last report (29 October) as live
+asks: they predate the hold, and a held engine's asks never reach his list.
+`briefs/CONTROL-CENTRE-HANDOFF.md` was superseded on 18 October by
+`docs/CONTROL-CENTER-BRIEF.md`, and `briefs/2026-10-22-media-credits.md` on 29
+October by the prepaid credits ruling and `docs/CREDITS-SESSION.md`. The
+creative next action in `HANDOVER-2026-10-26.md` was superseded on 27 October by
+`HANDOVER-2026-10-27-CREATIVES.md`.

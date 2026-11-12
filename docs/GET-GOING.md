@@ -2,7 +2,7 @@
 
 When Krish opens this repository and says "Get going", this is the work. AGENTS.md says how to use it; this file says what to do. Written 2026-10-19 by Control Center, from this engine's first live reports.
 
-**Held (2026-10-29).** The engine is held by `activation.json` (Ruling, Krish, 2026-10-29: Not ready means a held activation state: no wake, no asks on his list, no growth council move, and the bearer stays valid). While it is held, a "Get going" session prepares nothing for his list: every report carries one NOT_READY hold and no proposals, so a spend plan or a ruling ask would be dropped unseen. Step 2 (acting on his rulings) and Step 6 (spending the credits share) wait for his release, and so does putting anything "on his list in Control Center" in item 2 below. Work that asks nothing of him (Steps 0, 3, 4 and 5) can still go ahead. Only Krish releases the engine, in an interactive session that records his words and the date in `activation.json` and `CHANGES.md`.
+**Held (2026-10-29).** The engine is held by Control Center and by `activation.json` (Ruling, Krish, 2026-10-29: Not ready means a held activation state: no wake, no asks on his list, no growth council move, and the bearer stays valid). Control Center has not woken it since 29 October. While it is held, a "Get going" session prepares nothing for his list: every report carries one NOT_READY hold and no proposals, so a spend plan or a ruling ask would be dropped unseen. Step 2 (acting on his rulings), the spending in Step 6 and Step 7 wait for his release, and so does putting anything "on his list in Control Center" in item 2 below. Work that asks nothing of him (Steps 1, 3, 4 and 5) can still go ahead, proved against the stand-in. Only Krish releases the engine: on Growth > Engines in Control Center, and in `activation.json` through an interactive session that records his words and the date there and in `CHANGES.md`.
 
 ## What "Get going" does
 
@@ -19,9 +19,9 @@ Never ask Krish to paste a prompt or repeat a brief: everything needed is in thi
 
 ## The brief
 
-Read AGENTS.md first and follow it (it records Krish's rulings of 2026-10-19), then docs/NORTH_STAR.md, docs/CONTROL-CENTER-BRIEF.md and docs/control-center/ENGINE-PROTOCOL.md (protocol 1.1.0). Before you start, say which part of the North Star this work moves.
+Read AGENTS.md first and follow it (it records Krish's rulings), then docs/NORTH_STAR.md, docs/CONTROL-CENTER-BRIEF.md and docs/control-center/ENGINE-PROTOCOL.md (Control Center's protocol, copied here at 1.21.0). Before you start, say which part of the North Star this work moves.
 
-Where things stand (2026-10-19): this engine runs the Control Center loop live. Every day at 05:10 UTC Control Center writes this engine a directive and wakes `.github/workflows/control-center.yml` (`python3 growth.py cc dispatch`) with a `cc-growth-directive` repository_dispatch. The first live run on 2026-10-19 succeeded: it journaled its attempt, read the directive, sent a report, read it back by digest and read Krish's decisions. Control Center now speaks protocol 1.1.0: send `schema_version: "1.1.0"`, and read `stage`, `amended`, `exact_payload`, `amount_usd` and `amended_sha256` from decisions.
+Where things stand (2026-11-12): the Control Center loop is built and ran live from 19 to 29 October. On each of those days Control Center wrote this engine a directive at 05:10 UTC and woke `.github/workflows/control-center.yml` (`python3 growth.py cc dispatch`) with a `cc-growth-directive` repository_dispatch; each run journaled its attempt, read the directive, sent a report, read it back by digest and read Krish's decisions. Since Krish held the engine on 29 October, Control Center does not wake it. The engine sends `schema_version: "1.0.0"`, raised to `1.16.0` when a run spent credits and to `1.20.0` when the directive asks for the engine's state. For the loop below, send `schema_version: "1.1.0"` or later with a proposal's `stage`, and read `stage`, `amended`, `exact_payload`, `amount_usd` and `amended_sha256` from decisions.
 
 The job now is to make the daily report worth Krish's morning. Every run should leave Control Center with:
 
@@ -48,16 +48,18 @@ Finish with the checks below passing and one pull request whose description says
 
 ### This engine
 
-Today's live report (2026-10-19) was `held`:
-- Five `wall: strategy` asks wait on Krish's list: the release decision, and rulings D1, D2, D3 and D7.
+The last live report, the dispatch of 2026-10-29 (sent before the hold landed), had status `held` (the rail gate) at `schema_version: "1.0.0"`:
+- Five `wall: strategy` proposals: the release decision, and rulings D1, D2, D3 and D7. They never reach his list now: a held engine's asks are left off it.
 - Two unwalled proposals: "Diagnose the thin rail from stored verdicts" and "Build the completion and return queries".
 - Holds: RAIL (no match has 4 of 6 AI Pundits; the newest has 1 of 6), RELEASE (no release decision recorded in full-time docs/12-roadmap.md), CHANNEL (brand proof is private), CONSENT (D7 not in force), and D4 to D6 (they open only channels he excluded on 2026-10-17).
 - Both objectives are missing: `attributed_new_completers` and `marketing_cash_gbp` (target 0).
 
+The next report, on the first run after he releases it, is the first at 1.20.0, with this engine's priorities, obsessions and next steps.
+
 ## The build
 
 - [x] **Step 0.** Correct the status line at the top of docs/CONTROL-CENTER-BRIEF.md: the first live run on 2026-10-19 succeeded, so it is no longer only tested against a local stand-in. *Found done 2026-11-11:* the status line already reads "adopted"; ticked so the next step the report names is a real one.
-- [ ] **Step 1.** The autonomy loop above (plan, go-live, the go-live step, check-ins) on protocol 1.1.0, proved against the stand-in: an approved plan never goes live, an approved go-live goes live once with exactly its payload, an amended one goes live in his words, a declined check-in stops its plan. Then the creative review every go-live passes: the doctrine it was checked against, at least two alternatives made, and why this one wins, in its evidence. Krish has a low tolerance for poor creative output, so a weak go-live is held, not proposed.
+- [ ] **Step 1.** The autonomy loop above (plan, go-live, the go-live step, check-ins), proved against the stand-in: an approved plan never goes live, an approved go-live goes live once with exactly its payload, an amended one goes live in his words, a declined check-in stops its plan. Its proposals carry `stage` and `parent_proposal_id`, so those reports go out at protocol 1.1.0 or later. Then the creative review every go-live passes: the doctrine it was checked against, at least two alternatives made, and why this one wins, in its evidence. Krish has a low tolerance for poor creative output, so a weak go-live is held, not proposed.
 - [ ] **Step 2 (waits while held).** Act on his rulings. When he clears the release decision or D1, D2, D3 or D7 on his list, record it where the engine reads its rulings (`rulings.json`) and release the matching hold on the next run, with the decision as evidence. When he declines one, keep the hold and say so.
 - [ ] **Step 3.** Build `attributed_new_completers`: define the query (a shared take to a first finished show), its window and timezone, and implement it against what full-time exposes. Where the data is not there, name the exact gap.
 - [ ] **Step 4.** Diagnose the thin rail from stored verdicts and propose the fix.
