@@ -184,7 +184,7 @@ The context, outcomes, prepare-action and execute routes are above, under 1.3.0.
 | `places` | no version (2026-10-28) | Mindmake, where the context is served |
 | `suppression` | no version (2026-10-28) | Mindmake. Its list hides the widget's rows and its taxonomy checks rows, Nos and presses (below) |
 | `asset_links` | no version (2026-10-28) | Mindmake, where the context is served and SendLinks is connected |
-| `voice_check` | no version (2026-11-07) | every engine. `POST voice-check` with `{ text, channel, subject?, mode? }` (channel `email`, `email_jonny`, `linkedin`, `x`, `threads`, `substack_note` or `instagram`) answers `{ ok, check }`: krish-voice's hard fails, warnings, scored checks, fingerprint and distance. Check words in Krish's name before you hand them over; Control Center holds a draft with a hard fail and never rewrites an engine's words. A verdict only, never approval (docs/app/everywhere/voice-check.md) |
+| `voice_check` | no version (2026-11-07) | every engine. `POST voice-check` with `{ text, channel, subject?, mode? }` (channel: Krish's own `email`, `linkedin`, `x`, `threads`, `substack_note`, `instagram`, `message`, `comment`, `form` or `clip`; Jonny's `email_jonny`; or the publication's `script`, `article`, `caption`, `carousel` or `substack`, which add Make Your Mind Up's canon; exactly `VOICE_CHANNELS` in `src/lib/voiceRules.ts`, and any other is refused with 400) answers `{ ok, check }`: krish-voice's hard fails, warnings, scored checks, fingerprint and distance. Check words in Krish's name before you hand them over; Control Center holds a draft with a hard fail and never rewrites an engine's words. A verdict only, never approval (docs/app/everywhere/voice-check.md) |
 
 **Errors.**
 - **400:** the report or attempt is malformed. The body names the field.
@@ -392,6 +392,8 @@ Each morning Control Center reads your repository's North Star number from your 
 | growth-mindmake | `good_meetings` | one week, in your zone, that started in the last 14 days |
 | growth-heartside | `organic_net_sales_usd` (registered by `20261112200000_heartside_organic_objective.sql`; Shopify net sales attributed to your organic posts, trailing 4 weeks, beside the store's `net_sales_usd`) | the last 28 days, ending in the last two days |
 | growth-makeyourmindup | `new_subscribers` | one New York week that started in the last 14 days |
+
+The target your directive gives that objective is your own repository's: the `target` of the `north-star-metric` block in your `docs/NORTH_STAR.md`, read by the same morning refresh, never the registry's copy (`withOwnTarget` in `api/_growthEngines.ts`, `ENGINE_NUMBER_OBJECTIVES` in `api/_northStarRefresh.ts`). When Krish raises it in your repository, the next directive carries it with no migration here. Until the block has been read, the registry's target stands.
 
 A completed week's count (a window that started before this week's rung) is measured against that week's rung and dated its last day, and your line says "in the week of" that Monday, never "this week" (`countedWeekOf`). Unknown, never zero, when the report is synthetic, more than 36 hours old, null, not a number (a whole count for people or meetings), or another window: the line then stays as your own session last wrote it.
 
