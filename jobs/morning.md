@@ -16,8 +16,10 @@ Read AGENTS.md, the current handover, live source state and EXECUTION-PLAN.md.
    or `--state blocked`, each line in your own words: what you did, or why it is
    blocked and what would unblock it. Never copy his words into a tracked file,
    a commit, a pull request, a log, a report or an ack line. When it says held,
-   do nothing on it: the report acks it received and blocked. Without a bearer
-   it exits with `missing_token`; go on with the job.
+   do nothing on it: the report acks it received and blocked. (While Control
+   Center holds the engine, the directive carries no instruction at all.) To
+   update what Krish sees while you work, ack the same step again with a new
+   line. Without a bearer it exits with `missing_token`; go on with the job.
 3. Run `python3 growth.py run morning --require-existing-history`. Import an approved aggregate export
    with --observations only when its product, consent, provenance and window
    are verified. Missing collectors stay missing. Never inspect personal accounts.

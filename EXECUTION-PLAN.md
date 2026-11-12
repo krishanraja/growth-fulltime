@@ -1,7 +1,10 @@
 # Full Time growth execution and handoff
 
-The growth-side implementation is complete. Product implementation and Control
-Centre implementation belong to separate sessions using the briefs below.
+The growth-side implementation of 17 October is complete, and the Control
+Center loop and its later protocol steps are built on top of it; what is still
+open is in docs/GET-GOING.md. Product implementation and Control Centre
+implementation belong to separate sessions using the briefs below. Krish has
+held the engine since 29 October (AGENTS.md, "Held").
 The engine never turns incomplete access or product gates into a success claim.
 
 ## Accepted boundaries
@@ -43,8 +46,9 @@ newest HANDOVER file for exact completion evidence and schedule status.
 | P1 | full-time | Exact-edition sharing/metadata, readable share-image fonts, recipient behaviour and optional permitted way back |
 | P1 | Product owner | Verify an eligible opt-in/inbound tester pool, product inbox coverage and an actual brand identity; record product decisions in their source of truth |
 
-The 17 October live rail still has three matches with one AI Pundit each.
-Promotion stays HOLD until a destination meets the four-of-six rail gate and
+The live rail is in state/FULLTIME-NOW.md, read hourly. On 12 November it had
+four matches with one AI Pundit each, the newest from 19 October. Promotion
+stays HOLD until a destination meets the four-of-six rail gate and
 all other product, release, identity and consent gates pass. A ready pipeline
 preflight is not the complete December release bar.
 
@@ -67,6 +71,7 @@ actual publication evidence. Read completed listens and mature return alongside
 attention, costs and human minutes before adding formats or channels.
 
 Each task ends with `growth.py cc`, and Control Center's daily wake-up runs
-the same loop on a clean runner. Delivery means an accepted report whose
+the same loop on a clean runner; it does not wake the engine while Krish holds
+it. Delivery means an accepted report whose
 read-back digest matches. The private bundle from `growth.py export` is a
 local backup, not the hand-off and not proof of delivery.

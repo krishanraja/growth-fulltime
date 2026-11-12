@@ -8,6 +8,10 @@
 #
 # If Full Time's rules changed, the run still commits the STOP notice, then
 # fails, so GitHub's failed-run email reaches the repository owner.
+#
+# Its commits are named chore(heartbeat): they touch only state/, and the
+# harness's NOW.md audit and closeout rule count that subject as automation.
+# Named anything else, every hourly reading would mark NOW.md unreconciled.
 name: sync with full-time
 on:
   schedule:
@@ -45,7 +49,7 @@ jobs:
             git config user.name "growth-fulltime sync"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add state/
-            git commit -m "sync: full-time $(python3 -c "import json; print(json.load(open('state/fulltime.json'))['sha'][:10])")"
+            git commit -m "chore(heartbeat): sync full-time $(python3 -c "import json; print(json.load(open('state/fulltime.json'))['sha'][:10])")"
             git push
           else
             echo "no change"

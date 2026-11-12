@@ -55,7 +55,9 @@ Creative IDs follow:
 Use a new version for a changed public creative; keep the concept number for
 related hooks. Every destination is built by `growth.py link` and names the
 actual drop and published AI Pundit. Initial assets support YouTube and private
-site previews. No new image, voice or video generation is needed.
+site previews. No new image, voice or video generation is needed; the only
+generation this engine may do is spending its prepaid credit share, stills
+first, once Krish releases it (docs/CREDITS-SESSION.md).
 
 COPY.md applies the copywriting corpus to this work. Before drafting, set the
 surface's awareness level and lead type and pass the take test. Before
@@ -91,8 +93,9 @@ kill_list and double_down without touching human decision fields.
 
 Control Center receives each run's protocol report (`growth.py cc`) and
 nothing else from this engine: Growth > Engines shows it, and walled asks
-reach Krish's one list on Home. Packs and outbox files stay private local
-checkpoints; packs are never written to Control Center.
+reach Krish's one list on Home, except while he holds the engine, when nothing
+of it reaches his list and Control Center does not wake it. Packs and outbox
+files stay private local checkpoints; packs are never written to Control Center.
 
 Target zero incremental marketing cash. Record observed model/audio calls,
 external spend and human minutes separately; missing usage is not zero.

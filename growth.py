@@ -66,6 +66,8 @@ waits for a full rail. A held item is still checked for every copy rule.
 
 Kinds: daily, radar, numbers, conversion, report.
 Operations: run, history, creative, experiment, metrics, assets, export, cc.
+Also: standards (the creative system, engine/creative_system.py) and closeout
+(check or fold the session closeout notes in now-notes/, engine/closeout.py).
 Environment: GITHUB_TOKEN optionally raises GitHub's read limit;
 CONTROL_CENTER_ENGINE_TOKEN (or local/control-center/token) and
 CONTROL_CENTER_URL are read only by growth.py cc. Packs stay local.
@@ -1141,6 +1143,12 @@ def self_test():
               'knowledge/full-time-1000-users-playbook.md', 'knowledge/sources.json',
               'knowledge/copywriting-offers-demand-corpus.md', 'knowledge/copywriting-offers-demand-corpus-summary.md'):
         t(f'{f} exists', os.path.exists(os.path.join(HERE, f)))
+    from engine import closeout
+    t('every closeout note in now-notes/ is one the fold can place (engine/closeout.py)',
+      not [problem for note in closeout.read_notes(Path(HERE)) for problem in note['problems']])
+    sync_flow = Path(HERE, '.github', 'workflows', 'sync.yml').read_text()
+    t('the hourly sync commits as automation, so NOW.md is never marked unreconciled by it',
+      'git commit -m "chore(heartbeat): sync full-time' in sync_flow)
     ignored = Path(HERE, '.gitignore').read_text()
     t('local/ is never committed (the repository is public)', re.search(r'^/?local/?$', ignored, re.M) is not None)
     print(f'growth-fulltime self-test passed: {n} checks')
@@ -1150,6 +1158,9 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == 'standards':
         from engine.creative_system import main as standards_main
         raise SystemExit(standards_main(sys.argv[2:]))
+    if len(sys.argv) > 1 and sys.argv[1] == 'closeout':
+        from engine.closeout import command as closeout_command
+        raise SystemExit(closeout_command(sys.argv[2:]))
     if len(sys.argv) > 1 and sys.argv[1] in ('run', 'history', 'creative', 'experiment', 'metrics', 'assets', 'export', 'cc'):
         from engine.cli import main as operations_main
         return operations_main(sys.argv[1:], sys.modules[__name__])

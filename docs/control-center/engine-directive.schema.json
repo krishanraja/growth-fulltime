@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://controlcenter.krishraja.com/schemas/engine-directive-1.0.0.json",
-  "title": "Growth engine directive, protocol 1.0.0 to 1.20.0 (ADR-038)",
+  "title": "Growth engine directive, protocol 1.0.0 to 1.21.0 (ADR-038)",
   "type": "object",
   "required": [
     "schema_version",
@@ -40,7 +40,8 @@
       "required": ["engine_state", "krish_instruction"],
       "properties": {
         "engine_state": { "type": "boolean" },
-        "krish_instruction": { "type": "boolean" }
+        "krish_instruction": { "type": "boolean" },
+        "inspiration_used": { "type": "boolean", "description": "1.21.0, growth-makeyourmindup: a report may carry inspiration_used." }
       }
     },
     "schema_version": {
@@ -1070,10 +1071,14 @@
           "type": "string",
           "description": "How to use them, word for word: the baseline standard, schedule a trial or say why it waits, rebuild never copy, never judge or rank."
         },
+        "instruction_rule": {
+          "type": "string",
+          "description": "1.21.0, present when any suggestion carries an instruction: what an instruction asks, word for word (use the style in your next fitting asset before its due_at, name the card in that concept's style_card, report it in inspiration_used)."
+        },
         "suggestions": {
           "type": "array",
           "maxItems": 40,
-          "description": "Newest first. Only cards that carry a trial, his words or his answer; a carousel's other slides, a feed and a corpus are left out.",
+          "description": "Cards Krish ticked as a style to use come first (1.21.0, instruction), the soonest due first; then newest first. Only cards that carry an instruction, a trial, his words or his answer; a carousel's other slides, a feed and a corpus are left out.",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -1239,6 +1244,19 @@
               "answered": {
                 "type": "boolean",
                 "description": "Whether he has answered the card on the board."
+              },
+              "instruction": {
+                "type": "object",
+                "description": "1.21.0, optional (features.inspiration_instructions): Krish ticked this card as an instruction, not just inspiration: use its style in a made asset before due_at (Ruling, Krish, 2026-11-12). Absent on every other card.",
+                "additionalProperties": false,
+                "required": ["action_id", "kind", "due_at", "overdue", "words"],
+                "properties": {
+                  "action_id": { "type": "string", "description": "inspiration_actions.id." },
+                  "kind": { "enum": ["copy_style"] },
+                  "due_at": { "type": "string", "format": "date-time", "description": "Use the style in a made asset before this time." },
+                  "overdue": { "type": "boolean", "description": "True once due_at has passed and no made asset used it yet." },
+                  "words": { "type": ["string", "null"], "description": "His words when he ticked it: his instruction, quoted as his." }
+                }
               }
             }
           }

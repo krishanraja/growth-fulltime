@@ -6,6 +6,8 @@ Ruling (Krish, 2026-10-29): a growth engine may spend up to its placement share 
 
 This is not one of the two consolidated jobs in `jobs/` and adds no row to `automations.json`. It is the only route by which this engine spends prepaid credits. The runner (`growth.py cc`) only reads the share and reports it (`engine/credits.py`).
 
+**Status (2026-11-12): not set up.** No scheduled session for it exists on claude.ai, and none is needed while Krish holds the engine: step 1 below would stop at once. Set it up when he releases the engine, then check that the first settled spend lowers `remaining_for_you`.
+
 ## Connectors
 
 - Control Center
@@ -18,8 +20,8 @@ This is not one of the two consolidated jobs in `jobs/` and adds no row to `auto
 1. **Read the share.** Call `get_engine_credits` with `engine: "fulltime"`.
    - If it says `held: true`, stop and end with "Held: nothing spent."
    - If `credits` is null (unknown), stop and end with "Credits unknown: nothing spent."
-   - Full Time is held today, so the run stops here until Krish releases it.
-2. **Set today's pace for each pool.** The pace is `remaining_for_you` divided by `days_left`. In the last three days before `use_by`, take everything that is left.
+   - Full Time is held (since 2026-10-29), so the run stops here until Krish releases it.
+2. **Set today's pace for each pool.** The pace is `remaining_for_you` divided by `days_left`. In the last three days before `use_by` (the pool's last day of use before `resets_on`), take everything that is left.
 3. **Make work that moves Full Time's objectives.** Only concepts that already exist in this repository (`creative-system/`, the drafts the morning batch saved), written to [COPY.md](../COPY.md) and held to every rule in AGENTS.md:
    - Full Time's own artwork only;
    - no football footage;
@@ -38,7 +40,7 @@ This is not one of the two consolidated jobs in `jobs/` and adds no row to `auto
    - `asset` in words;
    - the objective key.
 
-   If it refuses (`over_share`, `held`, `unknown`, `no_pool`, `open_reservation`), make nothing. After the generation, call `settle_credit_spend` with the provider's actual cost and its job ids as the receipt. Pass `0` if it failed or charged nothing.
+   If it refuses (`over_share`, `held`, `unknown`, `no_pool`, `inactive` or any other code), make nothing. Several reservations may be open at once; each comes off the share, so `over_share` still guards the total. After the generation, call `settle_credit_spend` with the provider's actual cost and its job ids as the receipt. Pass `0` if it failed or charged nothing.
 5. **Leave the work for review.** Keep everything made in the tool's own library or in the ignored `local/` of the persistent workspace. Nothing goes on any account.
 6. **End with one line:** what was made, credits spent per pool, and what is left.
 

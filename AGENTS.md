@@ -38,7 +38,7 @@ rejections. This offline standards command authorises no generation or go-live.
 
 ## Autonomy (Ruling, Krish, 2026-10-19)
 
-Krish: "the engine shows me what it is going to do, I approve, it gets up to go-live and asks me to review." This engine runs autonomously under Control Center protocol 1.1.0 (`docs/control-center/ENGINE-PROTOCOL.md`, "Autonomy" and "Amend"), in steps Krish answers on his one list in Control Center:
+Krish: "the engine shows me what it is going to do, I approve, it gets up to go-live and asks me to review." This engine is set to run autonomously under Control Center's growth engine protocol (`docs/control-center/ENGINE-PROTOCOL.md`, its "Autonomy" and "Amend" sections, which arrived in protocol 1.1.0), in steps Krish answers on his one list in Control Center. The loop is not built yet (`docs/GET-GOING.md`, Step 1): no report carries a `stage`, nothing here goes live, and the engine is held ("Held" below). The steps:
 
 1. **Plan.** Propose what the engine is going to do as `stage: "plan"`, behind a wall (usually `strategy`), with the plan itself in `exact_payload` so he can change it. Wait for his yes.
 2. **Go-live.** Once the plan is approved, build everything up to go-live: the assets, the exact words, the amount. Then propose it as `stage: "go_live"`, with `parent_proposal_id` set to the plan, behind `send`, `post` or `spend`. Nothing goes out yet.
@@ -94,8 +94,12 @@ going".
   `python3 growth.py cc ack --state started|done|blocked --line "..."` in its
   own words. Each report acks it by id: received, then started or blocked, then
   done.
-- While held, nothing runs on it: the report acks it received, then blocked
-  ("Engine held"), until Krish releases `activation.json`.
+- While Control Center holds the engine it does not wake it, and the directive
+  carries no instruction (`krish_instruction: null`); his instruction waits in
+  Control Center (`queued_held`) and is carried and woken once when he releases
+  it there. If one arrives while `activation.json` still says held, nothing runs
+  on it: the report acks it received, then blocked ("Engine held"), until Krish
+  releases `activation.json`.
 - When the directive says `features.engine_state`, each report also carries
   the engine's priorities, obsessions and next steps (`engine/engine_state.py`),
   read from docs/NORTH_STAR.md, this file, docs/GET-GOING.md and NOW.md. They
@@ -114,10 +118,13 @@ going".
 
 ## Owner instructions
 
-Krish, 17 October 2026: no personal social media accounts, no cold outbound
-email, and cost as close to free as possible. These apply to held drafts too.
-Krish, 17 October 2026: finish growth-fulltime before handing him a Control
-Centre brief. No implementation work in Control Centre.
+Krish, 17 October 2026: "this cannot use my personal social media accounts
+and no cold outbound email. This needs to be as low cost and close to free as
+possible." These apply to held drafts too.
+Krish, 17 October 2026: "you are not to do any actual work in control-center,
+only pass me a brief once you have completed your work". Since 19 October this
+engine reports through the protocol (below); there is still no implementation
+work in Control Centre.
 
 - Use Full Time's product and verified brand identities. Never inspect or use
   Krish's personal posts, followers, DMs, contacts or WhatsApp groups.
@@ -125,8 +132,12 @@ Centre brief. No implementation work in Control Centre.
   inbound request or explicit permission covering that message. Keep recipient
   details in their existing system, outside packs and this public repository.
 - No cold press or creator pitches, ads, paid creators, prizes, new SaaS or
-  paid generation. The active first public channel is branded YouTube, after
-  release and channel decisions. Other brand channels are expansion options.
+  paid generation. Prepaid credits Krish has already paid for are not new
+  money: once he releases the engine, its share may be spent by the daily
+  session in docs/CREDITS-SESSION.md (Ruling, Krish, 2026-10-29), and nothing
+  it makes goes out without its own approval. The active first public channel
+  is branded YouTube, after release and channel decisions. Other brand
+  channels are expansion options.
 - Target zero incremental marketing cash. Record known model/audio usage,
   hosting and agent costs separately; unknown costs stay null. Never run a paid
   production pipeline to diagnose a failure. Read stored verdicts first.
@@ -186,11 +197,13 @@ nothing else here sends, posts, spends or publishes. The bearer is
 `growth.py` handles sync, canon, rail, tracked links, pack checking and local
 storage. `post` is a compatibility name for saving locally; it makes no remote
 request. New operations are documented in README: `run`, `history`, `creative`,
-`experiment`, `metrics`, `assets`, `export`, and `cc`, the Control Center loop
+`experiment`, `metrics`, `assets`, `export`, `cc`, the Control Center loop
 (engine/control_center.py, the one transport; engine/reporting.py builds and
 checks the report; engine/engine_state.py reads Krish's instruction and fills
-the 1.20.0 state). `cc instruction` only reads the directive, and `cc ack`
-only writes the ignored ledger; neither sends a report.
+the 1.20.0 state; engine/credits.py reads the credits share), `standards`
+(the creative system) and `closeout` (engine/closeout.py). `cc instruction`
+only reads the directive, and `cc ack` only writes the ignored ledger; neither
+sends a report.
 
 A draft uses an exact creative ID, account scope, source commit and all held
 reasons in `holds`. Brand work without identity proof has CHANNEL; acquisition
@@ -213,14 +226,18 @@ from a validated backup; never silently reset it.
 private history survives. Hosted tasks must verify the existing workspace
 before running; never silently start a fresh ledger. No duplicate eight-job
 setup. The hourly GitHub source-sync workflow is infrastructure, not an agent
-job. So is `.github/workflows/control-center.yml`, which runs
+job; its commits are named `chore(heartbeat): sync full-time <sha>` so the
+NOW.md audit and the closeout rule read them as automation. So is
+`.github/workflows/control-center.yml`, which runs
 `python3 growth.py cc dispatch` on a clean runner when Control Center wakes
 the repository (about 06:10 London): the self-test, repository verification,
 the public sources, the committed rulings and contracts. It cannot see private
 history, so the objectives measured only in the workspace report as missing
-with that reason. A morning HOLD run produces at most three useful actions and
-no repeated bank of promotional copy. Krish's budget is twenty minutes daily,
-thirty weekly.
+with that reason. Control Center does not wake a held engine: its last wake
+here was on 29 October 2026, and no workspace run has ever reached it (every
+report it holds is a dispatch). A morning HOLD run produces at most three
+useful actions and no repeated bank of promotional copy. Krish's budget is
+twenty minutes daily, thirty weekly.
 
 ## Verification and handoff
 
@@ -230,8 +247,25 @@ runs, publication preservation, locking, recovery, report field preservation,
 real FFmpeg rendering, and the Control Center client against a local stand-in
 (the worked-example digest, schema-valid reports, attempts, replay, readback,
 409 and 401 handling, and that the bearer never appears in output). Also run
-`python3 scripts/verify_repository.py`. Finish with a fresh live held run and exported
-handoff bundle. Record changes in CHANGES and leave a current handover.
+`python3 scripts/verify_repository.py` and `python3 growth.py closeout check`. Finish with a
+fresh live HOLD run and exported handoff bundle where the persistent workspace exists. Record
+changes in CHANGES, leave a current handover, and close out (below).
+
+## Closeout
+
+A session that changes this repository closes out with one note,
+`now-notes/YYYY-MM-DD-<slug>.md`, in the harness format: `Status:`, optionally
+`Changed:`, `Next:` (the single next action), and one line
+`North Star check (YYYY-MM-DD): holds.` (or `recalibration proposed. <why>`).
+`python3 growth.py closeout check` refuses a note the fold cannot place, in the
+self-test and in CI. When the note reaches main, the `fold` job in
+`.github/workflows/check.yml` runs `python3 growth.py closeout fold`, which
+writes it into NOW.md, deletes it, and moves NOW.md's oldest lines to
+`docs/history/LOG.md` verbatim to keep NOW.md inside the harness audit's limits.
+ai-harness's repository administration publisher excludes this repository, so
+the fold is the repository's own (engine/closeout.py). Control Center shows
+NOW.md's "Where it is right now" and "What is next" as this engine's state of
+play, so a stale NOW.md is a stale dashboard.
 
 <!-- krish-canon:start release=v2026.11.11.1 sha=6fdbb8c16bbd rendered=2026-11-12 -->
 ## Krish canon
