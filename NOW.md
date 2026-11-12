@@ -2,7 +2,7 @@
 repo: krishanraja/growth-fulltime
 product: Full Time growth engine
 as_of: 2026-11-12
-head: 6c76cb5
+head: 0021e99
 lifecycle: building
 production_url: none
 state_doc: README.md
@@ -28,6 +28,7 @@ Football fans who become Full Time's returning listeners. It proves Mindmake can
 
 Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling, Krish, 2026-10-29: Not ready means a held activation state): Control Center's registry says held and so does the tracked `activation.json`. Control Center has not woken it since. Its last report there is the 29 October dispatch, sent before the hold landed, and no workspace run has ever reached Control Center: all 12 reports it holds are dispatches, from 19 to 29 October. So Control Center shows this file's "Where it is right now" and "What is next" as the engine's state of play.
 
+- The docs match the code and the live state, the engine's obsessions quote only Krish's own words, a repeated ack with a new line now updates Control Center (protocol 1.21.0), and closeout notes fold into NOW.md on every merge to main (engine/closeout.py). (2026-11-12)
 - The code speaks Control Center protocol 1.20.0: a run reads Krish's instruction, acks it by id and reports its priorities, obsessions and next steps (`engine/engine_state.py`). None of it has reached Control Center, since no run has happened after it merged, and Krish has given this engine no instruction. The protocol copy in `docs/control-center/` is 1.21.0. (2026-11-12)
 - The promotion rail is on HOLD: the four matches on fulltime.fm each have one AI Pundit of six, the newest from 19 October (`state/FULLTIME-NOW.md`, read hourly). A push needs a match with four. (2026-11-12)
 - Rulings D1 to D7 are all pending, and full-time's `docs/12-roadmap.md` records no release decision (`rulings.json`, `state/FULLTIME-NOW.md`). (2026-11-12)
@@ -36,6 +37,7 @@ Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling,
 
 ## What changed recently
 
+- 2026-11-12 Krish asked whether the documentation was up to date, every word. It was not: NOW.md had stopped at 27 October with six notes waiting and no fold to write them in, the brief still said the engine was switched on with dispatch on, the third obsession was a summary of his words rather than his words, and the hourly sync's commits would have marked NOW.md unreconciled two days after every update. Each is fixed, and the sync now commits as chore(heartbeat).
 - 2026-11-11 Protocol 1.20.0 (PR 19). Ruling (Krish, 2026-11-11): every growth engine's priorities, obsessions, next steps and outstanding items feed live across Control Centre, and he instructs each engine with his next best action. The morning job now pulls his instruction first (`growth.py cc instruction`) and records what it did (`growth.py cc ack`); his words stay in ignored `local/`, and a dispatch's run id is unique per wake.
 - 2026-11-10 Claude sessions here show Krish a ChatGPT sign-in link and code whenever Codex is signed out (`.claude/hooks/codex-login.sh`, commit 05d8b8b), so Codex runs on his subscription, never an API key.
 - 2026-10-30 The seven channel tasks joined the plan as Step 7 of docs/GET-GOING.md (PR 18), dormant while the engine is held and until D1 clears. Krish asked for each saved Instagram growth prompt to be its own task, defined once in ai-harness `contract/channel-tasks.md`.
@@ -53,7 +55,7 @@ Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling,
 
 ## What is next and what is waiting on Krish
 
-- Next (2026-11-12): Krish decides whether Full Time is ready and releases the hold, on Growth > Engines in Control Center and in `activation.json` through an interactive session that records his words and the date; until then Control Center does not wake it.
+- Next (2026-11-12): Krish decides whether Full Time is ready and releases the hold, on Growth > Engines in Control Center and in activation.json through an interactive session that records his words and the date; until then Control Center does not wake it.
 - Waiting on Krish (2026-11-12): the release decision and D1, each recorded in full-time's decision log, and a full listen to Liverpool v8 (HANDOVER-2026-10-27-CREATIVES.md).
 - North Star check (2026-11-12): holds.
 
