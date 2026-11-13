@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://controlcenter.krishraja.com/schemas/engine-directive-1.0.0.json",
-  "title": "Growth engine directive, protocol 1.0.0 to 1.21.0 (ADR-038)",
+  "title": "Growth engine directive, protocol 1.0.0 to 1.22.0 (ADR-038)",
   "type": "object",
   "required": [
     "schema_version",
@@ -41,7 +41,65 @@
       "properties": {
         "engine_state": { "type": "boolean" },
         "krish_instruction": { "type": "boolean" },
-        "inspiration_used": { "type": "boolean", "description": "1.21.0, growth-makeyourmindup: a report may carry inspiration_used." }
+        "inspiration_used": { "type": "boolean", "description": "1.21.0, growth-makeyourmindup: a report may carry inspiration_used." },
+        "ai_answers": { "type": "boolean", "description": "1.22.0, a venture's engine: ai_answers carries its product's AI-answer standing, and POST answers asks AEO-Engine for it." },
+        "answer_requests": { "type": "boolean", "description": "1.22.0, the AI-answers specialist: answer_requests carries the venture engines' open requests, and a report may carry answers_served." }
+      }
+    },
+    "ai_answers": {
+      "type": "object",
+      "description": "1.22.0, optional, a venture's engine (features.ai_answers): its own product's AI-answer standing from AEO-Engine, the one AI-answers specialist, and the rule for asking it. Never probe AI assistants yourself: ask AEO with POST answers. Added when the directive is served; absent when it could not be read.",
+      "additionalProperties": false,
+      "required": ["standing", "rule"],
+      "properties": {
+        "rule": { "type": "string" },
+        "standing": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["product_slug", "tracked", "latest", "misses", "moves", "history", "request"],
+              "properties": {
+                "product_slug": { "type": "string" },
+                "tracked": { "type": "boolean", "description": "AEO has an active subject for the product, so its research asks about it." },
+                "latest": {
+                  "description": "The newest fortnight AEO asked about the product, or null when it has not yet.",
+                  "oneOf": [
+                    { "type": "null" },
+                    { "type": "object", "additionalProperties": false, "required": ["as_of", "asked", "cited_first", "share"], "properties": { "as_of": { "type": "string", "format": "date" }, "asked": { "type": "integer", "minimum": 0 }, "cited_first": { "type": "integer", "minimum": 0 }, "share": { "type": "number", "minimum": 0, "maximum": 100 } } }
+                  ]
+                },
+                "misses": { "type": "array", "maxItems": 3, "items": { "type": "object", "additionalProperties": false, "required": ["question", "first"], "properties": { "question": { "type": "string" }, "first": { "type": ["string", "null"], "description": "The host cited first instead, or null when the answer cited nothing." } } } },
+                "moves": { "type": "array", "maxItems": 3, "items": { "type": "object", "additionalProperties": false, "required": ["title", "target_query"], "properties": { "title": { "type": "string" }, "target_query": { "type": ["string", "null"] } } } },
+                "history": { "type": "array", "maxItems": 6, "items": { "type": "object", "additionalProperties": false, "required": ["as_of", "asked", "cited_first"], "properties": { "as_of": { "type": "string", "format": "date" }, "asked": { "type": "integer" }, "cited_first": { "type": "integer" } } } },
+                "request": {
+                  "oneOf": [
+                    { "type": "null" },
+                    { "type": "object", "additionalProperties": false, "required": ["id", "state", "questions", "requested_at", "served_at"], "properties": { "id": { "type": "string" }, "state": { "enum": ["open", "served"] }, "questions": { "type": "integer" }, "requested_at": { "type": "string", "format": "date-time" }, "served_at": { "type": ["string", "null"], "format": "date-time" } } }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "answer_requests": {
+      "type": "array",
+      "description": "1.22.0, optional, the AI-answers specialist (features.answer_requests): each venture engine's open request, its product's buyer questions to ask verbatim under that product's subject at the next research run. Report the ones asked in answers_served. Added when the directive is served; absent when they could not be read.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request_id", "engine_id", "product_slug", "subject_slug", "questions", "requested_at"],
+        "properties": {
+          "request_id": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+          "engine_id": { "type": "string" },
+          "product_slug": { "type": "string" },
+          "subject_slug": { "type": "string" },
+          "questions": { "type": "array", "minItems": 1, "maxItems": 25, "items": { "type": "string", "minLength": 8, "maxLength": 300 } },
+          "requested_at": { "type": "string", "format": "date-time" }
+        }
       }
     },
     "schema_version": {
