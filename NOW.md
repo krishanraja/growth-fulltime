@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/growth-fulltime
 product: Full Time growth engine
-as_of: 2026-11-12
-head: c28b672
+as_of: 2026-11-13
+head: 9ecd7a8
 lifecycle: building
 production_url: none
 state_doc: README.md
@@ -22,12 +22,13 @@ Full Time's growth engine: it drafts the moves that bring football fans to Full 
 
 Football fans who become Full Time's returning listeners. It proves Mindmake can grow a product with drafted, approved moves and no paid acquisition.
 
-## Where it is right now (as of 2026-11-12)
+## Where it is right now (as of 2026-11-13)
 
 <!-- north-star-state {"week_of": "2026-11-09", "week_target": 30, "current": null, "current_as_of": "2026-11-12", "current_source": "Not measured: Full Time share links are not yet joined to new listens", "urgency": 4, "urgency_reason": "current number unmeasured"} --> **North Star number: U4, unmeasured.** New listeners this week who arrived through a fan's shared link or clip: unknown, against 30 this week, on the way to 1,250 by 25 January 2027. Nothing measures it yet: Full Time's share links are not joined to new listens (MEASUREMENT.md, and Step 3 of docs/GET-GOING.md).
 
 Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling, Krish, 2026-10-29: Not ready means a held activation state): Control Center's registry says held and so does the tracked `activation.json`. Control Center has not woken it since. Its last report there is the 29 October dispatch, sent before the hold landed, and no workspace run has ever reached Control Center: all 12 reports it holds are dispatches, from 19 to 29 October. So Control Center shows this file's "Where it is right now" and "What is next" as the engine's state of play.
 
+- Full Time's AI answers are AEO-Engine's, the one AI-answers specialist (Ruling, Krish, 2026-11-12): AEO already researches Full Time every fortnight, and the runner reads its standing from the directive into one line (protocol 1.22.0, engine/ai_answers.py). The protocol copy in docs/control-center/ is Control Center's at 36df34bc (protocol 1.22.0). (2026-11-13)
 - The protocol copy in docs/control-center/ is Control Center's at 212379e1 (1.21.0, the schemas unchanged): its voice_check row lists the 16 channels Control Center accepts, and it says a number objective's target comes from the repository's north-star block; Control Center reads no number objective for this engine (only Legibility, Mindmake, Heartside and Make Your Mind Up have one), so its registered objectives keep their registry targets. The code still speaks 1.20.0 and the engine is still held. (2026-11-12)
 - The docs match the code and the live state, the engine's obsessions quote only Krish's own words, a repeated ack with a new line now updates Control Center (protocol 1.21.0), and closeout notes fold into NOW.md on every merge to main (engine/closeout.py). (2026-11-12)
 - The code speaks Control Center protocol 1.20.0: a run reads Krish's instruction, acks it by id and reports its priorities, obsessions and next steps (`engine/engine_state.py`). None of it has reached Control Center, since no run has happened after it merged, and Krish has given this engine no instruction. The protocol copy in `docs/control-center/` is 1.21.0. (2026-11-12)
@@ -57,9 +58,9 @@ Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling,
 
 ## What is next and what is waiting on Krish
 
-- Next (2026-11-12): Krish decides whether Full Time is ready and releases the hold, on Growth > Engines in Control Center and in activation.json through an interactive session that records his words and the date; until then Control Center does not wake it.
+- Next (2026-11-13): When Krish releases this engine, read Full Time's AI answers on its tile and decide with him whether to ask AEO to track more questions.
 - Waiting on Krish (2026-11-12): the release decision and D1, each recorded in full-time's decision log, and a full listen to Liverpool v8 (HANDOVER-2026-10-27-CREATIVES.md).
-- North Star check (2026-11-12): holds.
+- North Star check (2026-11-13): holds.
 
 ## Read next
 
