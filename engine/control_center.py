@@ -29,7 +29,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-from . import activation, credits, engine_state, policy, reporting
+from . import activation, ai_answers, credits, engine_state, policy, reporting
 from .records import History, atomic_json
 
 DEFAULT_URL = 'https://controlcenter.krishraja.com'
@@ -403,6 +403,8 @@ def workspace_work(growth, mode, report_mode, offline, observations, require_exi
         notes = {'instruction': engine_state.shown(instr)} if instr else {}
         pools = credits.read(directive)
         activity += credits.lines(pools, is_held)
+        # AI answers are AEO-Engine's (protocol 1.22.0; Ruling, Krish, 2026-11-12): Full Time's standing in one line.
+        activity += ai_answers.lines(directive)
         guard = credits.Guard(pools, is_held)
         if is_held:
             activity.append(held_line(sources))
@@ -495,6 +497,8 @@ def runner_work(growth, report_mode, dispatched=None, run_id=None):
             notes['instruction'] = engine_state.shown(instr)
         pools = credits.read(directive)
         activity += credits.lines(pools, is_held)
+        # AI answers are AEO-Engine's (protocol 1.22.0; Ruling, Krish, 2026-11-12): Full Time's standing in one line.
+        activity += ai_answers.lines(directive)
         guard = credits.Guard(pools, is_held)
         if is_held:
             activity.append(held_line(sources))
