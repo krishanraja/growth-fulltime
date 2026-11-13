@@ -1,6 +1,6 @@
 {
   "canon": {
-    "AGENTS.md": "764bed3515462892",
+    "AGENTS.md": "d933c297a2f6c36f",
     "NOW.md": "edb54323c27cb8a9",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
@@ -17,53 +17,13 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "NOW.md"
+    "AGENTS.md"
   ],
   "commits": [
     {
-      "date": "2026-11-13T13:47:23Z",
-      "sha": "eebe54a7df",
-      "subject": "docs(closeout): fold closeout notes into NOW.md"
-    },
-    {
-      "date": "2026-11-13T13:47:15Z",
-      "sha": "ba9840c6a1",
-      "subject": "docs(intake): record the 13 November evidence intake diagnosis (#111)"
-    },
-    {
-      "date": "2026-11-13T13:26:18Z",
-      "sha": "7a68bd85cd",
-      "subject": "docs(closeout): fold closeout notes into NOW.md"
-    },
-    {
-      "date": "2026-11-13T13:26:09Z",
-      "sha": "9952b0652c",
-      "subject": "fix(deps): clear the dev-dependency audit advisories (#110)"
-    },
-    {
-      "date": "2026-11-13T11:32:41Z",
-      "sha": "f748944b80",
-      "subject": "docs(closeout): fold closeout notes into NOW.md"
-    },
-    {
-      "date": "2026-11-13T11:32:33Z",
-      "sha": "cf3e64239a",
-      "subject": "Merge pull request #103 from krishanraja/harness/repository-administration-e0054ead260d"
-    },
-    {
-      "date": "2026-11-13T11:29:01Z",
-      "sha": "148778226e",
-      "subject": "Merge main into harness/repository-administration-e0054ead260d"
-    },
-    {
-      "date": "2026-11-13T11:28:52Z",
-      "sha": "549b5c704f",
-      "subject": "fix(deps): clear the four moderate prod audit advisories (#109)"
-    },
-    {
-      "date": "2026-11-13T10:52:25Z",
-      "sha": "714c918dd4",
-      "subject": "Merge branch 'main' into harness/repository-administration-e0054ead260d"
+      "date": "2026-11-13T18:05:34Z",
+      "sha": "1af0c02486",
+      "subject": "docs(canon): sync the canon block to v2026.11.13.2 (#104)"
     }
   ],
   "decisions": [
@@ -87,15 +47,8 @@
     }
   ],
   "notes": [],
-  "open_pulls": [
-    {
-      "branch": "harness/canon-sync",
-      "number": 104,
-      "title": "Sync the canon block",
-      "updated": "2026-11-13T01:27:55Z"
-    }
-  ],
-  "previous_sha": "4371da1e911eba3f56fd08cc2c73afa29a148827",
+  "open_pulls": [],
+  "previous_sha": "eebe54a7dfb16b47b668efa2300d319fc086dd2c",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -210,6 +163,6 @@
       "status": "pending"
     }
   },
-  "sha": "eebe54a7dfb16b47b668efa2300d319fc086dd2c",
-  "synced_at": "2026-11-13T16:30:56+00:00"
+  "sha": "1af0c0248647229743bfd65b77ba5b236337c99c",
+  "synced_at": "2026-11-13T22:41:47+00:00"
 }
