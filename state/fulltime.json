@@ -1,7 +1,7 @@
 {
   "canon": {
     "AGENTS.md": "d933c297a2f6c36f",
-    "NOW.md": "edb54323c27cb8a9",
+    "NOW.md": "3dc3df02ef3f9941",
     "docs/00-product.md": "46beed6b2c22ed7a",
     "docs/01-brand.md": "f35e85845d0cfe4c",
     "docs/07-marketing.md": "e5e183e7188600fe",
@@ -17,13 +17,13 @@
   "canon_from_index": true,
   "canon_removed": [],
   "changed_since_last_sync": [
-    "AGENTS.md"
+    "NOW.md"
   ],
   "commits": [
     {
-      "date": "2026-11-13T18:05:34Z",
-      "sha": "1af0c02486",
-      "subject": "docs(canon): sync the canon block to v2026.11.13.2 (#104)"
+      "date": "2026-11-14T00:55:35Z",
+      "sha": "b2a3c5fc6b",
+      "subject": "docs(steward): 2026-11-14 re-stamp NOW.md, date the open Krish question"
     }
   ],
   "decisions": [
@@ -48,7 +48,7 @@
   ],
   "notes": [],
   "open_pulls": [],
-  "previous_sha": "eebe54a7dfb16b47b668efa2300d319fc086dd2c",
+  "previous_sha": "1af0c0248647229743bfd65b77ba5b236337c99c",
   "push": {
     "open": false,
     "why": "no match has 4 of 6 AI Pundits (newest: 1 of 6)"
@@ -163,6 +163,6 @@
       "status": "pending"
     }
   },
-  "sha": "1af0c0248647229743bfd65b77ba5b236337c99c",
-  "synced_at": "2026-11-13T22:41:47+00:00"
+  "sha": "b2a3c5fc6b293e274f06c11deffd721c9723e0fe",
+  "synced_at": "2026-11-14T03:22:12+00:00"
 }
