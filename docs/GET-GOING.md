@@ -54,7 +54,7 @@ The last live report, the dispatch of 2026-10-29 (sent before the hold landed), 
 - Holds: RAIL (no match has 4 of 6 AI Pundits; the newest has 1 of 6), RELEASE (no release decision recorded in full-time docs/12-roadmap.md), CHANNEL (brand proof is private), CONSENT (D7 not in force), and D4 to D6 (they open only channels he excluded on 2026-10-17).
 - Both objectives are missing: `attributed_new_completers` and `marketing_cash_gbp` (target 0).
 
-The next report, on the first run after he releases it, is the first at 1.20.0, with this engine's priorities, obsessions and next steps.
+The first report at 1.20.0, with this engine's priorities, obsessions and next steps, was the held run Krish's audit started by hand on 2026-11-14: status `held`, no proposals, one NOT_READY hold.
 
 ## The build
 

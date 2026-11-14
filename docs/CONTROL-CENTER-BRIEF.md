@@ -1,4 +1,4 @@
-> **Status, 2026-11-12: adopted, and held since 2026-10-29.** `python3 growth.py cc` runs the protocol loop at the end of both workspace tasks and on every `cc-growth-directive` dispatch (`.github/workflows/control-center.yml`); see README, "The Control Center loop". The dispatch ran live from 19 to 29 October; Control Center has not woken the engine since Krish held it, and no workspace run has reached Control Center.
+> **Status, 2026-11-12: adopted, and held since 2026-10-29.** `python3 growth.py cc` runs the protocol loop at the end of both workspace tasks and on every `cc-growth-directive` dispatch (`.github/workflows/control-center.yml`); see README, "The Control Center loop". The dispatch ran live from 19 to 29 October; Control Center has not woken the engine since Krish held it. A hand-started run on 2026-11-14 proved the held report live (`held`, 1.20.0, one NOT_READY hold, no proposals). No workspace run has reached Control Center.
 
 # Control Center brief: growth-fulltime
 
@@ -111,7 +111,7 @@ Ruling (Krish, 2026-11-11): every growth engine's priorities, obsessions, next s
 | `next_steps[]` | The first open step of docs/GET-GOING.md (one that waits while held is skipped while held), then NOW.md's "What is next", read without the fold's `Next (YYYY-MM-DD):` label. A step naming Krish waits on him. |
 | A second wake in a day | A dispatch's `run_id` adds `:gh<run>.<attempt>`. |
 
-All of it goes out only when the directive says `features.engine_state`, at `schema_version: "1.20.0"`. The walls do not move: an instruction never approves a send, post, spend or account change. This engine is held, so Control Center does not wake it for an instruction, and a held engine's directive carries `krish_instruction: null`: his instruction waits in Control Center (`queued_held`) and is carried and woken once when he releases it there. If it is released in Control Center while `activation.json` still says held, it acks `received` and then `blocked`. No run has happened since this was built, so none of it has reached Control Center yet; until it does, Control Center shows NOW.md's "Where it is right now" and "What is next" instead.
+All of it goes out only when the directive says `features.engine_state`, at `schema_version: "1.20.0"`. The walls do not move: an instruction never approves a send, post, spend or account change. This engine is held, so Control Center does not wake it for an instruction, and a held engine's directive carries `krish_instruction: null`: his instruction waits in Control Center (`queued_held`) and is carried and woken once when he releases it there. If it is released in Control Center while `activation.json` still says held, it acks `received` and then `blocked`. The state first reached Control Center in the held run of 2026-11-14.
 
 ## Acceptance
 

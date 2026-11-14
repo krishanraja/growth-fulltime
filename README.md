@@ -141,8 +141,8 @@ exactly one `NOT_READY` hold naming what would make it ready: the rail at 4 of
 which stays pending until its full-time decision-log entry exists
 (engine/activation.py, `reporting.held_build`). Both say held today: Krish held
 it on 29 October 2026 in Control Center and in `activation.json`. Control
-Center does not wake a held engine, so the last dispatch here was on 29
-October, before the hold landed.
+Center does not wake a held engine, so the last wake here was on 29
+October; a hand-started run proved the held report live on 14 November.
 
 **Krish's instruction and the engine's state** (protocol 1.20.0; Ruling,
 Krish, 2026-11-11: every growth engine's priorities, obsessions, next steps
@@ -179,8 +179,7 @@ against its target, then the open gates or constraints), `obsessions`
 (Krish's own quoted aims from docs/NORTH_STAR.md and AGENTS.md), `next_steps`
 (the first open step of docs/GET-GOING.md, then NOW.md's "What is next") and
 `instruction_acks` (engine/engine_state.py). Before that, nothing new is sent.
-None of it has reached Control Center yet: no run has happened since it merged
-on 11 November, because the engine is held.
+It first reached Control Center in a hand-started held run on 14 November.
 
 **Prepaid credits** (protocol 1.16.0; Ruling, Krish, 2026-10-29). The directive
 may carry a `credits` block, Full Time's share of each prepaid pool.
