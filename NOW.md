@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/growth-fulltime
 product: Full Time growth engine
-as_of: 2026-11-13
-head: 9ecd7a8
+as_of: 2026-11-14
+head: e528bbe
 lifecycle: building
 production_url: none
 state_doc: README.md
@@ -22,12 +22,13 @@ Full Time's growth engine: it drafts the moves that bring football fans to Full 
 
 Football fans who become Full Time's returning listeners. It proves Mindmake can grow a product with drafted, approved moves and no paid acquisition.
 
-## Where it is right now (as of 2026-11-13)
+## Where it is right now (as of 2026-11-14)
 
 <!-- north-star-state {"week_of": "2026-11-09", "week_target": 30, "current": null, "current_as_of": "2026-11-12", "current_source": "Not measured: Full Time share links are not yet joined to new listens", "urgency": 4, "urgency_reason": "current number unmeasured"} --> **North Star number: U4, unmeasured.** New listeners this week who arrived through a fan's shared link or clip: unknown, against 30 this week, on the way to 1,250 by 25 January 2027. Nothing measures it yet: Full Time's share links are not joined to new listens (MEASUREMENT.md, and Step 3 of docs/GET-GOING.md). To measure it, full-time must export one weekly aggregate, metric `attributed_new_completers` (MEASUREMENT.md, "The North Star number", lists its exact fields): new identities whose first completed show came through a shared link, joined on the link's `utm_*` tags.
 
 Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling, Krish, 2026-10-29: Not ready means a held activation state): Control Center's registry says held and so does the tracked `activation.json`. Control Center has not woken it since. On 14 November a hand-started run of the loop proved the held path live: Control Center accepted it as `held`, at 1.20.0, with no proposals and one NOT_READY hold, carrying the engine's priorities, obsessions and next steps. No workspace run has ever reached Control Center: its 13 reports are 12 dispatches from 19 to 29 October and that run. So Control Center shows this file's "Where it is right now" and "What is next" as the engine's state of play.
 
+- The fleet audit's repairs landed. The docs say the daily credits task exists and is switched off while held. NOW.md and MEASUREMENT.md name the one weekly aggregate full-time must export for the North Star to be measured. GET-GOING.md has a release checklist (re-copy the protocol, read `ai_answers_detail` first, switch the credits task back on). A hand-started run proved the held report live in Control Center: `held`, 1.20.0, no proposals, one NOT_READY hold. (2026-11-14)
 - Full Time's AI answers are AEO-Engine's, the one AI-answers specialist (Ruling, Krish, 2026-11-12): AEO already researches Full Time every fortnight, and the runner reads its standing from the directive into one line (protocol 1.22.0, engine/ai_answers.py). The protocol copy in docs/control-center/ is Control Center's at 36df34bc (protocol 1.22.0). (2026-11-13)
 - The protocol copy in docs/control-center/ is Control Center's at 212379e1 (1.21.0, the schemas unchanged): its voice_check row lists the 16 channels Control Center accepts, and it says a number objective's target comes from the repository's north-star block; Control Center reads no number objective for this engine (only Legibility, Mindmake, Heartside and Make Your Mind Up have one), so its registered objectives keep their registry targets. The code still speaks 1.20.0 and the engine is still held. (2026-11-12)
 - The docs match the code and the live state, the engine's obsessions quote only Krish's own words, a repeated ack with a new line now updates Control Center (protocol 1.21.0), and closeout notes fold into NOW.md on every merge to main (engine/closeout.py). (2026-11-12)
@@ -35,7 +36,6 @@ Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling,
 - The promotion rail is on HOLD: the four matches on fulltime.fm each have one AI Pundit of six, the newest from 19 October (`state/FULLTIME-NOW.md`, read hourly). A push needs a match with four. (2026-11-12)
 - Rulings D1 to D7 are all pending, and full-time's `docs/12-roadmap.md` records no release decision (`rulings.json`, `state/FULLTIME-NOW.md`). (2026-11-12)
 - The credits share is read and guarded (`engine/credits.py`) but nothing spends it: the engine is held. The daily credits task in docs/CREDITS-SESSION.md exists on claude.ai and is switched off while held (since 2026-11-14); it is switched back on at release, never recreated. (2026-11-14)
-- Creative: Liverpool v8 is a listening candidate Krish has not judged, and the Arsenal video is still rejected; neither ad is ready to post. The private package is in the Growth Build Drive folder named in HANDOVER-2026-10-27-CREATIVES.md. (2026-10-27)
 
 ## What changed recently
 
@@ -58,9 +58,9 @@ Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling,
 
 ## What is next and what is waiting on Krish
 
-- Next (2026-11-13): When Krish releases this engine, read Full Time's AI answers on its tile and decide with him whether to ask AEO to track more questions.
+- Next (2026-11-14): At release, re-copy docs/control-center/ from Control Center main (1.26.0 or later) and read `ai_answers_detail` before the first run.
 - Waiting on Krish (2026-11-12): the release decision and D1, each recorded in full-time's decision log, and a full listen to Liverpool v8 (HANDOVER-2026-10-27-CREATIVES.md).
-- North Star check (2026-11-13): holds.
+- North Star check (2026-11-14): holds.
 
 ## Read next
 

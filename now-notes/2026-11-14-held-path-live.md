@@ -1,3 +1,0 @@
-Status: The fleet audit's repairs landed. The docs say the daily credits task exists and is switched off while held. NOW.md and MEASUREMENT.md name the one weekly aggregate full-time must export for the North Star to be measured. GET-GOING.md has a release checklist (re-copy the protocol, read `ai_answers_detail` first, switch the credits task back on). A hand-started run proved the held report live in Control Center: `held`, 1.20.0, no proposals, one NOT_READY hold.
-Next: At release, re-copy docs/control-center/ from Control Center main (1.26.0 or later) and read `ai_answers_detail` before the first run.
-North Star check (2026-11-14): holds.

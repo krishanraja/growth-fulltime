@@ -5,6 +5,14 @@ by the docs steward (`krishanraja/ai-harness`, `docs/steward/RUNBOOK.md`) and by
 hand. Nothing in this file describes current behaviour; `NOW.md` and `README.md` do. Text moved here from
 `NOW.md` keeps its wording verbatim; only its relative links are re-pointed to work from here.
 
+## 2026-11-14
+
+Moved verbatim from `NOW.md` (closeout fold, to keep NOW.md inside the audit's limits).
+
+From "Where it is right now":
+
+- Creative: Liverpool v8 is a listening candidate Krish has not judged, and the Arsenal video is still rejected; neither ad is ready to post. The private package is in the Growth Build Drive folder named in HANDOVER-2026-10-27-CREATIVES.md. (2026-10-27)
+
 ## 2026-11-12
 
 Moved verbatim from `NOW.md` (the 12 November docs audit, when NOW.md was rewritten to match the code and
