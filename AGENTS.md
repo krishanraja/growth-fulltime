@@ -234,8 +234,8 @@ the repository (about 06:10 London): the self-test, repository verification,
 the public sources, the committed rulings and contracts. It cannot see private
 history, so the objectives measured only in the workspace report as missing
 with that reason. Control Center does not wake a held engine: its last wake
-here was on 29 October 2026, and no workspace run has ever reached it (every
-report it holds is a dispatch). A morning HOLD run produces at most three
+here was on 29 October 2026, a hand-started dispatch run proved the held report
+live on 14 November 2026, and no workspace run has ever reached it. A morning HOLD run produces at most three
 useful actions and no repeated bank of promotional copy. Krish's budget is
 twenty minutes daily, thirty weekly.
 
