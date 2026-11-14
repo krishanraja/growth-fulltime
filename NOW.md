@@ -34,7 +34,7 @@ Lifecycle: building, and held. Krish held the engine on 29 October 2026 (Ruling,
 - The code speaks Control Center protocol 1.20.0: a run reads Krish's instruction, acks it by id and reports its priorities, obsessions and next steps (`engine/engine_state.py`). None of it has reached Control Center, since no run has happened after it merged, and Krish has given this engine no instruction. The protocol copy in `docs/control-center/` is 1.21.0. (2026-11-12)
 - The promotion rail is on HOLD: the four matches on fulltime.fm each have one AI Pundit of six, the newest from 19 October (`state/FULLTIME-NOW.md`, read hourly). A push needs a match with four. (2026-11-12)
 - Rulings D1 to D7 are all pending, and full-time's `docs/12-roadmap.md` records no release decision (`rulings.json`, `state/FULLTIME-NOW.md`). (2026-11-12)
-- The credits share is read and guarded (`engine/credits.py`) but nothing spends it: the engine is held, and the daily credits session in docs/CREDITS-SESSION.md is not set up on claude.ai. (2026-11-12)
+- The credits share is read and guarded (`engine/credits.py`) but nothing spends it: the engine is held. The daily credits task in docs/CREDITS-SESSION.md exists on claude.ai and is switched off while held (since 2026-11-14); it is switched back on at release, never recreated. (2026-11-14)
 - Creative: Liverpool v8 is a listening candidate Krish has not judged, and the Arsenal video is still rejected; neither ad is ready to post. The private package is in the Growth Build Drive folder named in HANDOVER-2026-10-27-CREATIVES.md. (2026-10-27)
 
 ## What changed recently

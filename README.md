@@ -189,8 +189,8 @@ unknown: nothing is spent), and its guard refuses any spend past
 `remaining_for_you` or while held. A report carries `credits_spent` at
 `schema_version: "1.16.0"` only when a run itself spent. The runner holds no
 generator keys and spends nothing; the share is spent by the daily session in
-[docs/CREDITS-SESSION.md](docs/CREDITS-SESSION.md), which is not set up while
-the engine is held.
+[docs/CREDITS-SESSION.md](docs/CREDITS-SESSION.md), whose scheduled task exists
+and is switched off while the engine is held.
 
 The report maps the engine's own outputs:
 

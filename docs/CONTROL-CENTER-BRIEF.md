@@ -96,7 +96,7 @@ The walls do not move: never past `remaining_for_you`, never a top-up, a plan ch
 
 **Who spends it.** The GitHub runner holds no generator keys and spends nothing: it reads the block into its activity (`engine/credits.py`). The share is spent by one scheduled Claude session a day with the Control Center, Higgsfield, Runway and 21st Dev connectors attached (Krish, 2026-10-29: "Scheduled sessions"), by [CREDITS-SESSION.md](CREDITS-SESSION.md). It reads the share with `get_engine_credits`, calls `reserve_credit_spend` before every generation and `settle_credit_spend` after it, and Control Center takes those spends off the share. So the runner's report never repeats them in `credits_spent`, which stays for a spend a run itself makes.
 
-**Held.** This engine is held by Krish, in Control Center and in `activation.json` (CHANGES.md, 2026-10-29). A held engine proposes nothing and spends nothing, so this share applies only once he releases it, and the daily session is not set up until then.
+**Held.** This engine is held by Krish, in Control Center and in `activation.json` (CHANGES.md, 2026-10-29). A held engine proposes nothing and spends nothing, so this share applies only once he releases it. The daily credits task exists and is switched off while held; it is switched back on at release (docs/CREDITS-SESSION.md).
 
 ## Krish's instruction and the engine's state (protocol 1.20.0)
 

@@ -6,7 +6,7 @@ Ruling (Krish, 2026-10-29): a growth engine may spend up to its placement share 
 
 This is not one of the two consolidated jobs in `jobs/` and adds no row to `automations.json`. It is the only route by which this engine spends prepaid credits. The runner (`growth.py cc`) only reads the share and reports it (`engine/credits.py`).
 
-**Status (2026-11-12): not set up.** No scheduled session for it exists on claude.ai, and none is needed while Krish holds the engine: step 1 below would stop at once. Set it up when he releases the engine, then check that the first settled spend lowers `remaining_for_you`.
+**Status (2026-11-14): set up, and switched off while the engine is held.** A daily scheduled task on claude.ai, "Spend Full Time's prepaid credit share (held)", runs this playbook. It fired every day while the engine was held and spent nothing: Control Center refuses a reservation for a held engine, and step 1 below stops on `held: true`. On 14 November 2026 it was switched off (disabled, not deleted). When Krish releases the engine, switch that same task back on and rename it without "(held)"; never create a second one. Then check that the first settled spend lowers `remaining_for_you`.
 
 ## Connectors
 
