@@ -2,3 +2,6 @@
 # No line-ending or other conversion may touch them.
 knowledge/copywriting-offers-demand-corpus.md -text
 knowledge/copywriting-offers-demand-corpus-summary.md -text
+
+# Control Center's protocol bundle is kept byte for byte (its hash test and ai-harness pins/bytes); never convert it.
+docs/control-center/** -text
