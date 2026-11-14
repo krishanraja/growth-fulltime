@@ -4,6 +4,14 @@ When Krish opens this repository and says "Get going", this is the work. AGENTS.
 
 **Held (2026-10-29).** The engine is held by Control Center and by `activation.json` (Ruling, Krish, 2026-10-29: Not ready means a held activation state: no wake, no asks on his list, no growth council move, and the bearer stays valid). Control Center has not woken it since 29 October. While it is held, a "Get going" session prepares nothing for his list: every report carries one NOT_READY hold and no proposals, so a spend plan or a ruling ask would be dropped unseen. Step 2 (acting on his rulings), the spending in Step 6 and Step 7 wait for his release, and so does putting anything "on his list in Control Center" in item 2 below. Work that asks nothing of him (Steps 1, 3, 4 and 5) can still go ahead, proved against the stand-in. Only Krish releases the engine: on Growth > Engines in Control Center, and in `activation.json` through an interactive session that records his words and the date there and in `CHANGES.md`.
 
+## Before release
+
+When Krish releases the engine, and before its first run after release:
+
+1. Re-copy `docs/control-center/` from Control Center main (`docs/app/growth/ENGINE-PROTOCOL.md` and the two schemas beside it), at a named commit, as the copies at 212379e1 and 36df34bc were. The copy here is 1.22.0; Control Center served 1.26.0 on 2026-11-14.
+2. Read in that copy every version after 1.22.0 that a venture engine receives, and first `ai_answers_detail`: AEO-Engine's kits for Full Time reach Krish through this engine. Adopt only the fields this engine uses (protocol, "Versions").
+3. Switch the daily credits task back on (docs/CREDITS-SESSION.md); never create a second one.
+
 ## What "Get going" does
 
 For creative-continuity work, first follow the
@@ -19,7 +27,7 @@ Never ask Krish to paste a prompt or repeat a brief: everything needed is in thi
 
 ## The brief
 
-Read AGENTS.md first and follow it (it records Krish's rulings), then docs/NORTH_STAR.md, docs/CONTROL-CENTER-BRIEF.md and docs/control-center/ENGINE-PROTOCOL.md (Control Center's protocol, copied here at 1.21.0). Before you start, say which part of the North Star this work moves.
+Read AGENTS.md first and follow it (it records Krish's rulings), then docs/NORTH_STAR.md, docs/CONTROL-CENTER-BRIEF.md and docs/control-center/ENGINE-PROTOCOL.md (Control Center's protocol, copied here at 1.22.0, from Control Center at 36df34bc; Control Center served 1.26.0 on 2026-11-14). Before you start, say which part of the North Star this work moves.
 
 Where things stand (2026-11-12): the Control Center loop is built and ran live from 19 to 29 October. On each of those days Control Center wrote this engine a directive at 05:10 UTC and woke `.github/workflows/control-center.yml` (`python3 growth.py cc dispatch`) with a `cc-growth-directive` repository_dispatch; each run journaled its attempt, read the directive, sent a report, read it back by digest and read Krish's decisions. Since Krish held the engine on 29 October, Control Center does not wake it. The engine sends `schema_version: "1.0.0"`, raised to `1.16.0` when a run spent credits and to `1.20.0` when the directive asks for the engine's state. For the loop below, send `schema_version: "1.1.0"` or later with a proposal's `stage`, and read `stage`, `amended`, `exact_payload`, `amount_usd` and `amended_sha256` from decisions.
 
