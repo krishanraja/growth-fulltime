@@ -23,7 +23,8 @@ class ProtocolBundleTest(unittest.TestCase):
         bundle = json.loads((DIR / "bundle.json").read_text(encoding="utf-8"))
         self.assertTrue(bundle["files"], "a bundle with no files proves nothing")
         for name, want in bundle["files"].items():
-            got = hashlib.sha256((DIR / name).read_bytes()).hexdigest()
+            # Line endings as the bundle has them (LF): a Windows checkout may hand back CRLF.
+            got = hashlib.sha256((DIR / name).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
             self.assertEqual(got, want, "%s differs from Control Center's bundle; refresh it, never edit it" % name)
 
     def test_the_bundle_hash_is_the_documented_recipe(self):
