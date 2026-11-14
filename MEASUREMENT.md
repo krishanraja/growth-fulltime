@@ -4,6 +4,10 @@ Only aggregate data enters this engine. The source system resolves anonymous
 identity, consent, cross-device joins and deduplication. Do not export person
 IDs, addresses, contact records, event payloads or transcripts into a metric.
 
+## The North Star number
+
+What the product must provide for this engine to measure the North Star: one weekly aggregate observation, metric `attributed_new_completers`, in the version 1 export `growth.py metrics` reads (product `fulltime`; fields `metric`, `value`, `source`, `query_ref`, `window_start`, `window_end`, `observed_at` with its timezone, `status`; Monday to Sunday, Europe/London), counting distinct new identities whose first completed show came through a shared link or clip, joined inside full-time from the link's own tags (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content` carrying the creative id, as `growth.py` `tracked()` writes them) to that identity's first actual playback and completion.
+
 ## Input and observation windows
 
 `growth.py metrics FILE` validates a version 1 export with product `fulltime`
